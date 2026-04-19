@@ -8,10 +8,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.travelsouvenirs.main.ui.add.AddMagnetScreen
 import com.travelsouvenirs.main.ui.detail.MagnetDetailScreen
-import com.travelsouvenirs.main.ui.map.MapScreen
+import com.travelsouvenirs.main.ui.main.MainScreen
 
 sealed class Screen(val route: String) {
-    object Map : Screen("map")
+    object Main : Screen("main")
     object AddMagnet : Screen("add_magnet")
     object MagnetDetail : Screen("magnet_detail/{magnetId}") {
         fun createRoute(magnetId: Long) = "magnet_detail/$magnetId"
@@ -20,11 +20,11 @@ sealed class Screen(val route: String) {
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = Screen.Map.route) {
-        composable(Screen.Map.route) {
-            MapScreen(
+    NavHost(navController = navController, startDestination = Screen.Main.route) {
+        composable(Screen.Main.route) {
+            MainScreen(
                 onAddClick = { navController.navigate(Screen.AddMagnet.route) },
-                onPinClick = { magnetId ->
+                onItemClick = { magnetId ->
                     navController.navigate(Screen.MagnetDetail.createRoute(magnetId))
                 }
             )

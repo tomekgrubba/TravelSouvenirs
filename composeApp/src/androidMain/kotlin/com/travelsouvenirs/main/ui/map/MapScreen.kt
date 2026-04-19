@@ -4,11 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,12 +31,8 @@ import kotlinx.coroutines.launch
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(
-    onAddClick: () -> Unit,
-    onPinClick: (Long) -> Unit
-) {
+fun MapContent(onPinClick: (Long) -> Unit) {
     val context = LocalContext.current
     val repository = remember {
         MagnetRepository(MagnetDatabase.getDatabase(context).magnetDao())
@@ -65,79 +57,65 @@ fun MapScreen(
 
     val scope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("My Magnets") }) },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = onAddClick) {
-                Text("Add new magnet")
-            }
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            uiSettings = MapUiSettings(zoomControlsEnabled = false)
         ) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(zoomControlsEnabled = false)
-            ) {
-                if (showIndividual) {
-                    magnetPins.forEach { pin ->
-                        Marker(
-                            state = rememberMarkerState(position = pin.position),
-                            title = pin.magnet.name,
-                            snippet = pin.magnet.placeName,
-                            icon = individualIcons[pin.magnet.id],
-                            onClick = { onPinClick(pin.magnet.id); true }
-                        )
-                    }
-                } else {
-                    magnetGroups.forEachIndexed { idx, group ->
-                        val center = LatLng(group.centerLat, group.centerLng)
-                        Marker(
-                            state = rememberMarkerState(position = center),
-                            title = group.magnets.first().name,
-                            snippet = if (group.magnets.size > 1)
-                                "${group.magnets.size} magnets here" else group.magnets.first().placeName,
-                            icon = groupIcons[idx],
-                            onClick = {
-                                if (group.magnets.size == 1) {
-                                    onPinClick(group.magnets.first().id)
-                                } else {
-                                    val groupIds = group.magnets.map { it.id }.toSet()
-                                    val groupPins = magnetPins.filter { it.magnet.id in groupIds }
-                                    scope.launch {
-                                        val boundsBuilder = LatLngBounds.Builder()
-                                        groupPins.forEach { boundsBuilder.include(it.position) }
-                                        // If spread pins aren't computed yet, fall back to center
-                                        if (groupPins.isEmpty()) boundsBuilder.include(center)
-                                        cameraPositionState.animate(
-                                            CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 200),
-                                            600
-                                        )
-                                    }
-                                }
-                                true
-                            }
-                        )
-                    }
-                }
-            }
-
-            if (magnets.isEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(32.dp)
-                ) {
-                    Text(
-                        "No magnets yet.\nTap + to add your first!",
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
+            if (showIndividual) {
+                magnetPins.forEach { pin ->
+                    Marker(
+                        state = rememberMarkerState(position = pin.position),
+                        title = pin.magnet.name,
+                        snippet = pin.magnet.placeName,
+                        icon = individualIcons[pin.magnet.id],
+                        onClick = { onPinClick(pin.magnet.id); true }
                     )
                 }
+            } else {
+                magnetGroups.forEachIndexed { idx, group ->
+                    val center = LatLng(group.centerLat, group.centerLng)
+                    Marker(
+                        state = rememberMarkerState(position = center),
+                        title = group.magnets.first().name,
+                        snippet = if (group.magnets.size > 1)
+                            "${group.magnets.size} magnets here" else group.magnets.first().placeName,
+                        icon = groupIcons[idx],
+                        onClick = {
+                            if (group.magnets.size == 1) {
+                                onPinClick(group.magnets.first().id)
+                            } else {
+                                val groupIds = group.magnets.map { it.id }.toSet()
+                                val groupPins = magnetPins.filter { it.magnet.id in groupIds }
+                                scope.launch {
+                                    val boundsBuilder = LatLngBounds.Builder()
+                                    groupPins.forEach { boundsBuilder.include(it.position) }
+                                    if (groupPins.isEmpty()) boundsBuilder.include(center)
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 200),
+                                        600
+                                    )
+                                }
+                            }
+                            true
+                        }
+                    )
+                }
+            }
+        }
+
+        if (magnets.isEmpty()) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(32.dp)
+            ) {
+                Text(
+                    "No magnets yet.\nTap + to add your first!",
+                    modifier = Modifier.padding(16.dp),
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

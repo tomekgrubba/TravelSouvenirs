@@ -116,6 +116,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
         val intent = UCrop.of(sourceUri, destUri)
             .withOptions(options)
             .getIntent(context)
+            .setClass(context, CropActivity::class.java)
         cropLauncher.launch(intent)
     }
 
