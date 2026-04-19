@@ -43,7 +43,8 @@ import com.travelsouvenirs.main.location.LocationHelper
 import kotlinx.coroutines.launch
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
-private const val MY_LOCATION_ZOOM = 12f
+private const val MY_LOCATION_ZOOM = 8f
+private const val LAUNCH_ZOOM = 6f
 
 @Composable
 fun MapContent(onPinClick: (Long) -> Unit) {
@@ -101,21 +102,27 @@ fun MapContent(onPinClick: (Long) -> Unit) {
     }
 
     var initialZoomDone by remember { mutableStateOf(false) }
-    LaunchedEffect(magnets) {
-        if (!initialZoomDone && magnets.isNotEmpty()) {
+    LaunchedEffect(Unit) {
+        if (!initialZoomDone) {
             initialZoomDone = true
             try {
-                val update = if (magnets.size == 1) {
+                val location = if (ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.ACCESS_FINE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) locationHelper.getCurrentLocation() else null
+
+                val update = if (location != null) {
                     CameraUpdateFactory.newLatLngZoom(
-                        LatLng(magnets[0].latitude, magnets[0].longitude), 10f
+                        LatLng(location.first, location.second), LAUNCH_ZOOM
                     )
-                } else {
+                } else if (magnets.isNotEmpty()) {
                     val bounds = LatLngBounds.Builder().apply {
                         magnets.forEach { include(LatLng(it.latitude, it.longitude)) }
                     }.build()
                     CameraUpdateFactory.newLatLngBounds(bounds, 120)
-                }
-                cameraPositionState.animate(update, 800)
+                } else null
+
+                update?.let { cameraPositionState.animate(it, 800) }
             } catch (_: Exception) { }
         }
     }
