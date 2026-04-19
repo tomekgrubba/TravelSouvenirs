@@ -46,6 +46,8 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.material.icons.extended)
             implementation("com.github.yalantis:ucrop:2.2.9")
+            implementation("com.google.maps.android:maps-compose-utils:6.5.3")
+            implementation("androidx.appcompat:appcompat:1.7.0")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
