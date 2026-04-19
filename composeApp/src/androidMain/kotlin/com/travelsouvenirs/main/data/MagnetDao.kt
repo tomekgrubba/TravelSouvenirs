@@ -15,6 +15,9 @@ interface MagnetDao {
     @Query("SELECT * FROM magnets WHERE id = :id")
     suspend fun getMagnetById(id: Long): MagnetEntity?
 
+    @Query("SELECT * FROM magnets WHERE id = :id")
+    fun getMagnetByIdFlow(id: Long): Flow<MagnetEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMagnet(magnet: MagnetEntity): Long
 

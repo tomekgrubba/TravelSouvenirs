@@ -5,9 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.travelsouvenirs.main.data.MagnetRepository
 import com.travelsouvenirs.main.domain.Magnet
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MagnetDetailViewModel(
@@ -15,18 +15,12 @@ class MagnetDetailViewModel(
     private val magnetId: Long
 ) : ViewModel() {
 
-    private val _magnet = MutableStateFlow<Magnet?>(null)
-    val magnet: StateFlow<Magnet?> = _magnet.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            _magnet.value = repository.getMagnetById(magnetId)
-        }
-    }
+    val magnet: StateFlow<Magnet?> = repository.getMagnetByIdFlow(magnetId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun deleteMagnet(onDeleted: () -> Unit) {
         viewModelScope.launch {
-            _magnet.value?.let {
+            magnet.value?.let {
                 repository.deleteMagnet(it)
                 onDeleted()
             }

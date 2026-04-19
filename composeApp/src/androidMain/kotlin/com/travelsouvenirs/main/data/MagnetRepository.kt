@@ -12,6 +12,8 @@ class MagnetRepository(private val dao: MagnetDao) {
 
     suspend fun getMagnetById(id: Long): Magnet? = dao.getMagnetById(id)?.toDomain()
 
+    fun getMagnetByIdFlow(id: Long): Flow<Magnet?> = dao.getMagnetByIdFlow(id).map { it?.toDomain() }
+
     suspend fun insertMagnet(magnet: Magnet): Long = dao.insertMagnet(magnet.toEntity())
 
     suspend fun deleteMagnet(magnet: Magnet) = dao.deleteMagnet(magnet.toEntity())
