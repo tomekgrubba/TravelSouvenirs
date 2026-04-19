@@ -26,7 +26,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.unit.dp
 import com.travelsouvenirs.main.R
 import com.travelsouvenirs.main.ui.list.ListScreen
@@ -51,10 +53,10 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_app_logo),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(32.dp).clip(CircleShape)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
-                            Text("My Souvenirs")
+                            Text("Travel Souvenirs")
                         }
                     }
                 )
