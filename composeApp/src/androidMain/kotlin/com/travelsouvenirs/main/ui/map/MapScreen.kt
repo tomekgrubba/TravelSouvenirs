@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
 private const val MY_LOCATION_ZOOM = 8f
-private const val LAUNCH_ZOOM = 6f
+private const val LAUNCH_ZOOM = 4f
 
 @Composable
 fun MapContent(onPinClick: (Long) -> Unit) {
