@@ -48,7 +48,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = viewModel::onQueryChange,
-            placeholder = { Text("Search magnets…") },
+            placeholder = { Text("Search items…") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
             modifier = Modifier
@@ -59,7 +59,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
         when {
             allEmpty -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No souvenirs yet.\nTap + to add your first!")
+                    Text("No items yet.\nTap + to add your first!")
                 }
             }
             magnets.isEmpty() -> {

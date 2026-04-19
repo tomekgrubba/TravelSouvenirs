@@ -205,7 +205,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Souvenir") },
+                title = { Text("Add Item") },
                 navigationIcon = {
                     IconButton(onClick = onSaved) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -225,7 +225,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
             if (photoPath != null) {
                 AsyncImage(
                     model = photoPath,
-                    contentDescription = "Magnet photo",
+                    contentDescription = "Item photo",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
@@ -316,7 +316,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
                 enabled = isFormValid,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save Souvenir")
+                Text("Save Item")
             }
         }
     }

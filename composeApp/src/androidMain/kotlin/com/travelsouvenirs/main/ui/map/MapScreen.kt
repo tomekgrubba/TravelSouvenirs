@@ -24,7 +24,7 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberMarkerState
+import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.travelsouvenirs.main.data.MagnetDatabase
 import com.travelsouvenirs.main.data.MagnetRepository
 import kotlinx.coroutines.launch
@@ -66,7 +66,7 @@ fun MapContent(onPinClick: (Long) -> Unit) {
             if (showIndividual) {
                 magnetPins.forEach { pin ->
                     Marker(
-                        state = rememberMarkerState(position = pin.position),
+                        state = rememberUpdatedMarkerState(position = pin.position),
                         title = pin.magnet.name,
                         snippet = pin.magnet.placeName,
                         icon = individualIcons[pin.magnet.id],
@@ -77,10 +77,10 @@ fun MapContent(onPinClick: (Long) -> Unit) {
                 magnetGroups.forEachIndexed { idx, group ->
                     val center = LatLng(group.centerLat, group.centerLng)
                     Marker(
-                        state = rememberMarkerState(position = center),
+                        state = rememberUpdatedMarkerState(position = center),
                         title = group.magnets.first().name,
                         snippet = if (group.magnets.size > 1)
-                            "${group.magnets.size} souvenirs here" else group.magnets.first().placeName,
+                            "${group.magnets.size} items here" else group.magnets.first().placeName,
                         icon = groupIcons[idx],
                         onClick = {
                             if (group.magnets.size == 1) {
@@ -112,7 +112,7 @@ fun MapContent(onPinClick: (Long) -> Unit) {
                     .padding(32.dp)
             ) {
                 Text(
-                    "No souvenirs yet.\nTap + to add your first!",
+                    "No items yet.\nTap + to add your first!",
                     modifier = Modifier.padding(16.dp),
                     textAlign = TextAlign.Center
                 )

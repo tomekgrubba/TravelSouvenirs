@@ -68,8 +68,8 @@ fun MagnetDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete magnet?") },
-            text = { Text("This will permanently delete this magnet.") },
+            title = { Text("Delete item?") },
+            text = { Text("This will permanently delete this item.") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
@@ -108,7 +108,7 @@ fun MagnetDetailScreen(
             ) {
                 AsyncImage(
                     model = m.photoPath,
-                    contentDescription = "Magnet photo",
+                    contentDescription = "Item photo",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(280.dp),

@@ -78,7 +78,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(onClick = onAddClick) {
-                Text("Add new souvenir")
+                Text("Add new item")
             }
         }
     ) { padding ->
