@@ -45,6 +45,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.kotlinx.datetime)
             implementation(libs.material.icons.extended)
+            implementation("com.github.yalantis:ucrop:2.2.9")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

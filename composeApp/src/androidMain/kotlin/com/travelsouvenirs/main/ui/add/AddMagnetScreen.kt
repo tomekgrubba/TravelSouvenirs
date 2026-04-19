@@ -65,6 +65,7 @@ import coil.compose.AsyncImage
 import com.travelsouvenirs.main.data.MagnetDatabase
 import com.travelsouvenirs.main.data.MagnetRepository
 import com.travelsouvenirs.main.image.ImageStorageHelper
+import com.yalantis.ucrop.UCrop
 import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,10 +93,36 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
 
     var cameraOutputUri by remember { mutableStateOf<Uri?>(null) }
 
+    val cropLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            result.data?.let { data ->
+                UCrop.getOutput(data)?.let { viewModel.onPhotoSelected(it, context) }
+            }
+        }
+    }
+
+    fun launchCrop(sourceUri: Uri) {
+        val (destUri, _) = ImageStorageHelper.createCameraOutputUri(context)
+        val options = UCrop.Options().apply {
+            setFreeStyleCropEnabled(true)
+            setToolbarColor(0xFF1C1C1E.toInt())
+            setStatusBarColor(0xFF1C1C1E.toInt())
+            setToolbarWidgetColor(android.graphics.Color.WHITE)
+            setActiveControlsWidgetColor(0xFFBBBBBB.toInt())
+            setDimmedLayerColor(0xCC000000.toInt())
+        }
+        val intent = UCrop.of(sourceUri, destUri)
+            .withOptions(options)
+            .getIntent(context)
+        cropLauncher.launch(intent)
+    }
+
     val takePictureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success) cameraOutputUri?.let { viewModel.onPhotoSelected(it, context) }
+        if (success) cameraOutputUri?.let { launchCrop(it) }
         cameraOutputUri = null
     }
 
@@ -111,7 +138,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
-    ) { uri -> uri?.let { viewModel.onPhotoSelected(it, context) } }
+    ) { uri -> uri?.let { launchCrop(it) } }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
