@@ -21,12 +21,13 @@ class ListViewModel(repository: MagnetRepository) : ViewModel() {
         repository.allMagnets,
         _searchQuery
     ) { magnets, query ->
-        if (query.isBlank()) magnets
+        val filtered = if (query.isBlank()) magnets
         else magnets.filter { m ->
             m.name.contains(query, ignoreCase = true) ||
                 m.placeName.contains(query, ignoreCase = true) ||
                 m.notes.contains(query, ignoreCase = true)
         }
+        filtered.sortedBy { it.name.lowercase() }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onQueryChange(q: String) { _searchQuery.value = q }
