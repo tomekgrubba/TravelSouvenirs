@@ -200,7 +200,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
         )
     }
 
-    val isFormValid = photoPath != null && name.isNotBlank()
+    val isFormValid = photoPath != null && name.isNotBlank() && placeName.isNotBlank()
 
     Scaffold(
         topBar = {
@@ -306,7 +306,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(
-                    if (placeName.isBlank()) "Set location…" else placeName,
+                    if (placeName.isBlank()) "Set location… *" else placeName,
                     maxLines = 1
                 )
             }
