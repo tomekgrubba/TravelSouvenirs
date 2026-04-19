@@ -59,7 +59,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
         when {
             allEmpty -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No magnets yet.\nTap + to add your first!")
+                    Text("No souvenirs yet.\nTap + to add your first!")
                 }
             }
             magnets.isEmpty() -> {

@@ -205,7 +205,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Magnet") },
+                title = { Text("Add Souvenir") },
                 navigationIcon = {
                     IconButton(onClick = onSaved) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -316,7 +316,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
                 enabled = isFormValid,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save Magnet")
+                Text("Save Souvenir")
             }
         }
     }

@@ -80,7 +80,7 @@ fun MapContent(onPinClick: (Long) -> Unit) {
                         state = rememberMarkerState(position = center),
                         title = group.magnets.first().name,
                         snippet = if (group.magnets.size > 1)
-                            "${group.magnets.size} magnets here" else group.magnets.first().placeName,
+                            "${group.magnets.size} souvenirs here" else group.magnets.first().placeName,
                         icon = groupIcons[idx],
                         onClick = {
                             if (group.magnets.size == 1) {
@@ -112,7 +112,7 @@ fun MapContent(onPinClick: (Long) -> Unit) {
                     .padding(32.dp)
             ) {
                 Text(
-                    "No magnets yet.\nTap + to add your first!",
+                    "No souvenirs yet.\nTap + to add your first!",
                     modifier = Modifier.padding(16.dp),
                     textAlign = TextAlign.Center
                 )
