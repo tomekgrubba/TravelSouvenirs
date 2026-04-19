@@ -170,7 +170,7 @@ fun MapContent(onPinClick: (Long) -> Unit) {
         SmallFloatingActionButton(
             onClick = { jumpToMyLocation() },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.TopEnd)
                 .padding(16.dp)
         ) {
             Icon(Icons.Default.MyLocation, contentDescription = "My location")
