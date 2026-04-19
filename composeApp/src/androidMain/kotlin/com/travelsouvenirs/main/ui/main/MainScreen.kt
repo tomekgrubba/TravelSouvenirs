@@ -34,8 +34,10 @@ import com.travelsouvenirs.main.R
 import com.travelsouvenirs.main.ui.list.ListScreen
 import com.travelsouvenirs.main.ui.map.MapContent
 
+/** The two available top-level tabs. */
 enum class MainTab { MAP, LIST }
 
+/** Root scaffold with app bar, Material 3 top tab row, FAB, and tab content. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {

@@ -13,19 +13,25 @@ import kotlinx.coroutines.flow.stateIn
 import kotlin.math.cos
 import kotlin.math.sin
 
+/** A single map pin with its (possibly spread) position to avoid exact overlap. */
 data class MagnetPin(val magnet: Magnet, val position: LatLng)
+/** A cluster of items that share approximately the same coordinates, with a computed centre. */
 data class MagnetGroup(val magnets: List<Magnet>, val centerLat: Double, val centerLng: Double)
 
+/** Supplies the map screen with pre-computed pin positions, groups, and raw item list. */
 class MapViewModel(repository: MagnetRepository) : ViewModel() {
 
+    /** Individual pin positions with overlapping items spread in a small circle. */
     val magnetPins: StateFlow<List<MagnetPin>> = repository.allMagnets
         .map(::spreadOverlapping)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** Pre-computed exact-location groups used only at low zoom (not currently observed by UI). */
     val magnetGroups: StateFlow<List<MagnetGroup>> = repository.allMagnets
         .map(::computeGroups)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** Raw list of all items, used for initial camera bounds and empty-state detection. */
     val magnets: StateFlow<List<Magnet>> = repository.allMagnets
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -34,6 +40,7 @@ class MapViewModel(repository: MagnetRepository) : ViewModel() {
 
         // Groups magnets that would visually overlap at the given zoom level.
         // threshold = ~100px of map space in degrees at this zoom.
+        /** Clusters items that would visually overlap at [zoom]; threshold ≈ 100 px of map space. */
         fun groupByZoom(magnets: List<Magnet>, zoom: Float): List<MagnetGroup> {
             if (magnets.isEmpty()) return emptyList()
             val threshold = 60.0 * 360.0 / (256.0 * Math.pow(2.0, zoom.toDouble()))
@@ -98,6 +105,7 @@ class MapViewModel(repository: MagnetRepository) : ViewModel() {
         }
     }
 
+    /** Standard [ViewModelProvider.Factory] that injects [MagnetRepository]. */
     class Factory(private val repository: MagnetRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =

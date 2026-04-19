@@ -13,12 +13,15 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+/** A geocoded search result with a display name and coordinates. */
 data class PlaceResult(val name: String, val latitude: Double, val longitude: Double)
 
+/** Wraps FusedLocationProviderClient and Android Geocoder for location and search operations. */
 class LocationHelper(private val context: Context) {
 
     private val client = LocationServices.getFusedLocationProviderClient(context)
 
+    /** Returns the device's current coordinates, or null if unavailable. Requires location permission. */
     @SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(): Pair<Double, Double>? =
         suspendCancellableCoroutine { cont ->
@@ -33,6 +36,7 @@ class LocationHelper(private val context: Context) {
                 .addOnFailureListener { cont.resumeWithException(it) }
         }
 
+    /** Resolves coordinates to a human-readable place name; falls back to "lat, lng" on failure. */
     suspend fun reverseGeocode(lat: Double, lng: Double): String {
         return try {
             val geocoder = Geocoder(context)
@@ -59,6 +63,7 @@ class LocationHelper(private val context: Context) {
         }
     }
 
+    /** Geocodes [query] and returns up to 5 matching [PlaceResult]s; returns empty list on failure. */
     suspend fun searchByName(query: String): List<PlaceResult> {
         if (query.length < 2) return emptyList()
         return try {

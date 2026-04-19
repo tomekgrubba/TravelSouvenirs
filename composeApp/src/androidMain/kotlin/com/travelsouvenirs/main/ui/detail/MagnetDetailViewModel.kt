@@ -10,14 +10,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/** Drives the detail screen; observes a single item via Flow so edits reflect immediately. */
 class MagnetDetailViewModel(
     private val repository: MagnetRepository,
     private val magnetId: Long
 ) : ViewModel() {
 
+    /** The item being viewed; null until the database emits the first value. */
     val magnet: StateFlow<Magnet?> = repository.getMagnetByIdFlow(magnetId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** Deletes the current item and invokes [onDeleted] when the operation completes. */
     fun deleteMagnet(onDeleted: () -> Unit) {
         viewModelScope.launch {
             magnet.value?.let {
@@ -27,6 +30,7 @@ class MagnetDetailViewModel(
         }
     }
 
+    /** Standard [ViewModelProvider.Factory] that injects [MagnetRepository] and [magnetId]. */
     class Factory(
         private val repository: MagnetRepository,
         private val magnetId: Long

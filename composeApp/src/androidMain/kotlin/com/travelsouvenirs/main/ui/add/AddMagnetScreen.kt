@@ -68,6 +68,7 @@ import com.travelsouvenirs.main.image.ImageStorageHelper
 import com.yalantis.ucrop.UCrop
 import kotlinx.datetime.LocalDate
 
+/** Form for creating or editing an item; shows "Edit Item" title when [magnetId] is non-null. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {

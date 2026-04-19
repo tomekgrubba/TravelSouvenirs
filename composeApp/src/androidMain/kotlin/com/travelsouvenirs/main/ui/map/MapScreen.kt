@@ -46,6 +46,7 @@ private const val CLUSTER_ZOOM_THRESHOLD = 13f
 private const val MY_LOCATION_ZOOM = 8f
 private const val LAUNCH_ZOOM = 4f
 
+/** Full-screen map with photo pin markers, zoom-based clustering, and a "my location" button. */
 @Composable
 fun MapContent(onPinClick: (Long) -> Unit) {
     val context = LocalContext.current

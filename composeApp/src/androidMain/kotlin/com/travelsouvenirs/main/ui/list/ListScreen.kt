@@ -32,6 +32,7 @@ import coil.compose.AsyncImage
 import com.travelsouvenirs.main.data.MagnetDatabase
 import com.travelsouvenirs.main.data.MagnetRepository
 
+/** Displays all items in a searchable list; tapping a row navigates to its detail screen. */
 @Composable
 fun ListScreen(onItemClick: (Long) -> Unit) {
     val context = LocalContext.current

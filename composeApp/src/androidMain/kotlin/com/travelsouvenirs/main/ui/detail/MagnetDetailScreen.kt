@@ -54,6 +54,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.travelsouvenirs.main.data.MagnetDatabase
 import com.travelsouvenirs.main.data.MagnetRepository
 
+/** Shows a single item's photo, metadata, and map preview; supports fullscreen photo, edit, and delete. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MagnetDetailScreen(

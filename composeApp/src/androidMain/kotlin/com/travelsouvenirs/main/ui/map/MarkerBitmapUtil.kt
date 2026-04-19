@@ -22,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** Builds and caches circular photo map markers for individual items, keyed by item id. */
 @Composable
 fun rememberIndividualIcons(pins: List<MagnetPin>, sizePx: Int = 120): Map<Long, BitmapDescriptor> {
     val context = LocalContext.current
@@ -39,6 +40,7 @@ fun rememberIndividualIcons(pins: List<MagnetPin>, sizePx: Int = 120): Map<Long,
     return icons
 }
 
+/** Builds and caches circular photo map markers for clusters; shows a count badge when group size > 1. */
 @Composable
 fun rememberGroupIcons(groups: List<MagnetGroup>, sizePx: Int = 120): Map<Int, BitmapDescriptor> {
     val context = LocalContext.current

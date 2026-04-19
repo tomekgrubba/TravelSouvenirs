@@ -22,6 +22,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
+/**
+ * Drives both the Add and Edit screens.
+ * When [editId] is non-null, pre-populates fields from the existing item and upserts on save.
+ */
 class AddMagnetViewModel(
     private val repository: MagnetRepository,
     private val appContext: Context,
@@ -88,6 +92,7 @@ class AddMagnetViewModel(
         }
     }
 
+    /** Copies the image at [uri] to internal storage on IO dispatcher and updates [photoPath]. */
     fun onPhotoSelected(uri: Uri, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             val path = ImageStorageHelper.copyToInternalStorage(context, uri)
@@ -95,10 +100,14 @@ class AddMagnetViewModel(
         }
     }
 
+    /** Updates the item name field. */
     fun onNameChange(value: String) { _name.value = value }
+    /** Updates the notes field. */
     fun onNotesChange(value: String) { _notes.value = value }
+    /** Updates the acquisition date. */
     fun onDateChange(date: LocalDate) { _dateAcquired.value = date }
 
+    /** Resets search state and opens the location picker dialog. */
     fun openLocationDialog() {
         _searchQuery.value = ""
         _searchResults.value = emptyList()
@@ -106,11 +115,13 @@ class AddMagnetViewModel(
         _showLocationDialog.value = true
     }
 
+    /** Closes the location picker dialog and cancels any in-flight search. */
     fun closeLocationDialog() {
         _showLocationDialog.value = false
         searchJob?.cancel()
     }
 
+    /** Debounces geocoder search by 400 ms; clears results when query is fewer than 2 characters. */
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
         searchJob?.cancel()
@@ -126,6 +137,7 @@ class AddMagnetViewModel(
         }
     }
 
+    /** Stores the chosen [place] coordinates and name, then closes the dialog. */
     fun onPlaceSelected(place: PlaceResult) {
         _latitude.value = place.latitude
         _longitude.value = place.longitude
@@ -133,6 +145,7 @@ class AddMagnetViewModel(
         closeLocationDialog()
     }
 
+    /** Requests the device's current location, reverse-geocodes it, and closes the dialog. */
     fun fetchCurrentLocation() {
         viewModelScope.launch {
             _isLocating.value = true
@@ -156,6 +169,7 @@ class AddMagnetViewModel(
         }
     }
 
+    /** Persists the item; no-ops if photo or name is missing. Sets [isSaved] to true on success. */
     fun saveMagnet() {
         val path = _photoPath.value ?: return
         if (_name.value.isBlank()) return
@@ -176,6 +190,7 @@ class AddMagnetViewModel(
         }
     }
 
+    /** Standard [ViewModelProvider.Factory]; pass [editId] to enter edit mode. */
     class Factory(
         private val repository: MagnetRepository,
         private val context: Context,

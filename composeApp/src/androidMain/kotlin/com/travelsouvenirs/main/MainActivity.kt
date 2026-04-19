@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import com.travelsouvenirs.main.navigation.AppNavGraph
 import com.travelsouvenirs.main.theme.AppTheme
 
+/** App entry point — bootstraps the Compose navigation host inside the app theme. */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

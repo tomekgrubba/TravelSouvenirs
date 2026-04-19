@@ -8,6 +8,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 
+/** Room entity that maps to the `magnets` table; dates stored as epoch milliseconds. */
 @Entity(tableName = "magnets")
 data class MagnetEntity(
     @PrimaryKey(autoGenerate = true)
@@ -21,6 +22,7 @@ data class MagnetEntity(
     val dateAcquiredMillis: Long
 )
 
+/** Maps this Room entity to the domain [Magnet] model. */
 fun MagnetEntity.toDomain(): Magnet = Magnet(
     id = id,
     name = name,
@@ -33,6 +35,7 @@ fun MagnetEntity.toDomain(): Magnet = Magnet(
         .toLocalDateTime(TimeZone.currentSystemDefault()).date
 )
 
+/** Maps this domain [Magnet] to a Room entity for persistence. */
 fun Magnet.toEntity(): MagnetEntity = MagnetEntity(
     id = id,
     name = name,

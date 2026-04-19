@@ -12,11 +12,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
+/** Drives the list screen; combines live data with a search query to produce a filtered, sorted list. */
 class ListViewModel(repository: MagnetRepository) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
+    /** Current search query entered by the user. */
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    /** Items filtered by [searchQuery] and sorted alphabetically by name. */
     val filteredMagnets: StateFlow<List<Magnet>> = combine(
         repository.allMagnets,
         _searchQuery
@@ -30,8 +33,10 @@ class ListViewModel(repository: MagnetRepository) : ViewModel() {
         filtered.sortedBy { it.name.lowercase() }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** Updates the search query, triggering a new filtered emission. */
     fun onQueryChange(q: String) { _searchQuery.value = q }
 
+    /** Standard [ViewModelProvider.Factory] that injects [MagnetRepository]. */
     class Factory(private val repo: MagnetRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = ListViewModel(repo) as T
