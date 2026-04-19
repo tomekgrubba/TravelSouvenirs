@@ -43,6 +43,7 @@ import com.travelsouvenirs.main.location.LocationHelper
 import kotlinx.coroutines.launch
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
+private const val MY_LOCATION_ZOOM = 12f
 
 @Composable
 fun MapContent(onPinClick: (Long) -> Unit) {
@@ -77,7 +78,7 @@ fun MapContent(onPinClick: (Long) -> Unit) {
         if (granted) scope.launch {
             locationHelper.getCurrentLocation()?.let { (lat, lng) ->
                 cameraPositionState.animate(
-                    CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 14f), 600
+                    CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), MY_LOCATION_ZOOM), 600
                 )
             }
         }
@@ -90,7 +91,7 @@ fun MapContent(onPinClick: (Long) -> Unit) {
             scope.launch {
                 locationHelper.getCurrentLocation()?.let { (lat, lng) ->
                     cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 14f), 600
+                        CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), MY_LOCATION_ZOOM), 600
                     )
                 }
             }
