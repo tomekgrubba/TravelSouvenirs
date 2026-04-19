@@ -1,9 +1,17 @@
 package com.travelsouvenirs.main.ui.map
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -30,6 +39,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.travelsouvenirs.main.data.MagnetDatabase
 import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.location.LocationHelper
 import kotlinx.coroutines.launch
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
@@ -59,6 +69,35 @@ fun MapContent(onPinClick: (Long) -> Unit) {
     val groupIcons = rememberGroupIcons(magnetGroups)
 
     val scope = rememberCoroutineScope()
+
+    val locationHelper = remember { LocationHelper(context) }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) scope.launch {
+            locationHelper.getCurrentLocation()?.let { (lat, lng) ->
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 14f), 600
+                )
+            }
+        }
+    }
+
+    fun jumpToMyLocation() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            scope.launch {
+                locationHelper.getCurrentLocation()?.let { (lat, lng) ->
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 14f), 600
+                    )
+                }
+            }
+        } else {
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
 
     var initialZoomDone by remember { mutableStateOf(false) }
     LaunchedEffect(magnets) {
@@ -126,6 +165,15 @@ fun MapContent(onPinClick: (Long) -> Unit) {
                     )
                 }
             }
+        }
+
+        SmallFloatingActionButton(
+            onClick = { jumpToMyLocation() },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Default.MyLocation, contentDescription = "My location")
         }
 
         if (magnets.isEmpty()) {
