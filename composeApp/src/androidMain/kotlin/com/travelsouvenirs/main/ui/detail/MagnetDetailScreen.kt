@@ -1,5 +1,7 @@
 package com.travelsouvenirs.main.ui.detail
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,9 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.google.android.gms.maps.model.CameraPosition
@@ -64,6 +69,31 @@ fun MagnetDetailScreen(
     )
     val magnet by viewModel.magnet.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showFullscreenPhoto by remember { mutableStateOf(false) }
+
+    if (showFullscreenPhoto) {
+        magnet?.let { m ->
+            Dialog(
+                onDismissRequest = { showFullscreenPhoto = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                        .clickable { showFullscreenPhoto = false },
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = m.photoPath,
+                        contentDescription = "Item photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
+        }
+    }
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -111,7 +141,8 @@ fun MagnetDetailScreen(
                     contentDescription = "Item photo",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(280.dp),
+                        .height(280.dp)
+                        .clickable { showFullscreenPhoto = true },
                     contentScale = ContentScale.Crop
                 )
 
