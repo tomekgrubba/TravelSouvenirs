@@ -9,7 +9,10 @@ import com.travelsouvenirs.main.data.MagnetRepository
 import com.travelsouvenirs.main.domain.Magnet
 import com.travelsouvenirs.main.image.ImageStorageHelper
 import com.travelsouvenirs.main.location.LocationHelper
+import com.travelsouvenirs.main.location.PlaceResult
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +22,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
-class AddMagnetViewModel(private val repository: MagnetRepository) : ViewModel() {
+class AddMagnetViewModel(
+    private val repository: MagnetRepository,
+    private val appContext: Context
+) : ViewModel() {
 
     private val _photoPath = MutableStateFlow<String?>(null)
     val photoPath: StateFlow<String?> = _photoPath.asStateFlow()
@@ -41,14 +47,29 @@ class AddMagnetViewModel(private val repository: MagnetRepository) : ViewModel()
     private val _placeName = MutableStateFlow("")
     val placeName: StateFlow<String> = _placeName.asStateFlow()
 
+    private val _isSaved = MutableStateFlow(false)
+    val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
+
+    // Location dialog state
+    private val _showLocationDialog = MutableStateFlow(false)
+    val showLocationDialog: StateFlow<Boolean> = _showLocationDialog.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _searchResults = MutableStateFlow<List<PlaceResult>>(emptyList())
+    val searchResults: StateFlow<List<PlaceResult>> = _searchResults.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
     private val _isLocating = MutableStateFlow(false)
     val isLocating: StateFlow<Boolean> = _isLocating.asStateFlow()
 
     private val _locationError = MutableStateFlow<String?>(null)
     val locationError: StateFlow<String?> = _locationError.asStateFlow()
 
-    private val _isSaved = MutableStateFlow(false)
-    val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
+    private var searchJob: Job? = null
 
     fun onPhotoSelected(uri: Uri, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -60,19 +81,53 @@ class AddMagnetViewModel(private val repository: MagnetRepository) : ViewModel()
     fun onNameChange(value: String) { _name.value = value }
     fun onNotesChange(value: String) { _notes.value = value }
     fun onDateChange(date: LocalDate) { _dateAcquired.value = date }
-    fun onPlaceNameChange(value: String) { _placeName.value = value }
 
-    fun fetchCurrentLocation(context: Context) {
+    fun openLocationDialog() {
+        _searchQuery.value = ""
+        _searchResults.value = emptyList()
+        _locationError.value = null
+        _showLocationDialog.value = true
+    }
+
+    fun closeLocationDialog() {
+        _showLocationDialog.value = false
+        searchJob?.cancel()
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
+        searchJob?.cancel()
+        if (query.length < 2) {
+            _searchResults.value = emptyList()
+            return
+        }
+        searchJob = viewModelScope.launch {
+            delay(400)
+            _isSearching.value = true
+            _searchResults.value = LocationHelper(appContext).searchByName(query)
+            _isSearching.value = false
+        }
+    }
+
+    fun onPlaceSelected(place: PlaceResult) {
+        _latitude.value = place.latitude
+        _longitude.value = place.longitude
+        _placeName.value = place.name
+        closeLocationDialog()
+    }
+
+    fun fetchCurrentLocation() {
         viewModelScope.launch {
             _isLocating.value = true
             _locationError.value = null
             try {
-                val helper = LocationHelper(context)
+                val helper = LocationHelper(appContext)
                 val location = helper.getCurrentLocation()
                 if (location != null) {
                     _latitude.value = location.first
                     _longitude.value = location.second
                     _placeName.value = helper.reverseGeocode(location.first, location.second)
+                    closeLocationDialog()
                 } else {
                     _locationError.value = "Could not get location. Try again."
                 }
@@ -104,9 +159,9 @@ class AddMagnetViewModel(private val repository: MagnetRepository) : ViewModel()
         }
     }
 
-    class Factory(private val repository: MagnetRepository) : ViewModelProvider.Factory {
+    class Factory(private val repository: MagnetRepository, private val context: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            AddMagnetViewModel(repository) as T
+            AddMagnetViewModel(repository, context.applicationContext) as T
     }
 }
