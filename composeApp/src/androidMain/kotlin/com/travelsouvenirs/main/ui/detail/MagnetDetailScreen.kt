@@ -180,7 +180,7 @@ fun MagnetDetailScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         val cameraPositionState = rememberCameraPositionState {
                             position = CameraPosition.fromLatLngZoom(
-                                LatLng(m.latitude, m.longitude), 6f
+                                LatLng(m.latitude, m.longitude), 5f
                             )
                         }
                         GoogleMap(
