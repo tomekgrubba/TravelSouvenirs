@@ -16,6 +16,9 @@ sealed class Screen(val route: String) {
     object MagnetDetail : Screen("magnet_detail/{magnetId}") {
         fun createRoute(magnetId: Long) = "magnet_detail/$magnetId"
     }
+    object EditItem : Screen("edit_item/{magnetId}") {
+        fun createRoute(magnetId: Long) = "edit_item/$magnetId"
+    }
 }
 
 @Composable
@@ -39,7 +42,18 @@ fun AppNavGraph(navController: NavHostController) {
             val magnetId = backStackEntry.arguments!!.getLong("magnetId")
             MagnetDetailScreen(
                 magnetId = magnetId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onEdit = { navController.navigate(Screen.EditItem.createRoute(magnetId)) }
+            )
+        }
+        composable(
+            route = Screen.EditItem.route,
+            arguments = listOf(navArgument("magnetId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val magnetId = backStackEntry.arguments!!.getLong("magnetId")
+            AddMagnetScreen(
+                onSaved = { navController.popBackStack() },
+                magnetId = magnetId
             )
         }
     }

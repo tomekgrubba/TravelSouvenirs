@@ -70,13 +70,14 @@ import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddMagnetScreen(onSaved: () -> Unit) {
+fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
     val context = LocalContext.current
     val repository = remember {
         MagnetRepository(MagnetDatabase.getDatabase(context).magnetDao())
     }
     val viewModel: AddMagnetViewModel = viewModel(
-        factory = AddMagnetViewModel.Factory(repository, context)
+        key = magnetId?.toString() ?: "add",
+        factory = AddMagnetViewModel.Factory(repository, context, magnetId)
     )
 
     val photoPath by viewModel.photoPath.collectAsState()
@@ -205,7 +206,7 @@ fun AddMagnetScreen(onSaved: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Item") },
+                title = { Text(if (magnetId != null) "Edit Item" else "Add Item") },
                 navigationIcon = {
                     IconButton(onClick = onSaved) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

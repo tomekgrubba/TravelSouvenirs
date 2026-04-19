@@ -24,7 +24,8 @@ import kotlinx.datetime.todayIn
 
 class AddMagnetViewModel(
     private val repository: MagnetRepository,
-    private val appContext: Context
+    private val appContext: Context,
+    private val editId: Long? = null
 ) : ViewModel() {
 
     private val _photoPath = MutableStateFlow<String?>(null)
@@ -70,6 +71,22 @@ class AddMagnetViewModel(
     val locationError: StateFlow<String?> = _locationError.asStateFlow()
 
     private var searchJob: Job? = null
+
+    init {
+        if (editId != null) {
+            viewModelScope.launch {
+                repository.getMagnetById(editId)?.let { m ->
+                    _photoPath.value = m.photoPath
+                    _name.value = m.name
+                    _notes.value = m.notes
+                    _dateAcquired.value = m.dateAcquired
+                    _placeName.value = m.placeName
+                    _latitude.value = m.latitude
+                    _longitude.value = m.longitude
+                }
+            }
+        }
+    }
 
     fun onPhotoSelected(uri: Uri, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -145,7 +162,7 @@ class AddMagnetViewModel(
         viewModelScope.launch {
             repository.insertMagnet(
                 Magnet(
-                    id = 0,
+                    id = editId ?: 0,
                     name = _name.value,
                     notes = _notes.value,
                     photoPath = path,
@@ -159,9 +176,13 @@ class AddMagnetViewModel(
         }
     }
 
-    class Factory(private val repository: MagnetRepository, private val context: Context) : ViewModelProvider.Factory {
+    class Factory(
+        private val repository: MagnetRepository,
+        private val context: Context,
+        private val editId: Long? = null
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            AddMagnetViewModel(repository, context.applicationContext) as T
+            AddMagnetViewModel(repository, context.applicationContext, editId) as T
     }
 }

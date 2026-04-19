@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,7 +58,8 @@ import com.travelsouvenirs.main.data.MagnetRepository
 @Composable
 fun MagnetDetailScreen(
     magnetId: Long,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onEdit: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val repository = remember {
@@ -122,6 +124,9 @@ fun MagnetDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
