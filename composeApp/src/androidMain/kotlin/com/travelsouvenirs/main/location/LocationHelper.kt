@@ -7,6 +7,7 @@ import android.os.Build
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -23,18 +24,35 @@ class LocationHelper(private val context: Context) {
 
     /** Returns the device's current coordinates, or null if unavailable. Requires location permission. */
     @SuppressLint("MissingPermission")
-    suspend fun getCurrentLocation(): Pair<Double, Double>? =
-        suspendCancellableCoroutine { cont ->
-            val request = CurrentLocationRequest.Builder()
-                .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
-                .build()
-            client.getCurrentLocation(request, null)
-                .addOnSuccessListener { location ->
-                    if (location != null) cont.resume(Pair(location.latitude, location.longitude))
-                    else cont.resume(null)
+    suspend fun getCurrentLocation(): Pair<Double, Double>? {
+        val cts = CancellationTokenSource()
+        return try {
+            suspendCancellableCoroutine { cont ->
+                cont.invokeOnCancellation { cts.cancel() }
+                val request = CurrentLocationRequest.Builder()
+                    .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
+                    .setDurationMillis(10_000)
+                    .build()
+                client.getCurrentLocation(request, cts.token)
+                    .addOnSuccessListener { location ->
+                        if (location != null) cont.resume(Pair(location.latitude, location.longitude))
+                        else cont.resume(null)
+                    }
+                    .addOnFailureListener { cont.resumeWithException(it) }
+            }
+        } catch (_: Exception) {
+            // Fresh fix failed or timed out — fall back to last known location
+            try {
+                suspendCancellableCoroutine { cont ->
+                    client.lastLocation
+                        .addOnSuccessListener { loc ->
+                            cont.resume(if (loc != null) Pair(loc.latitude, loc.longitude) else null)
+                        }
+                        .addOnFailureListener { cont.resume(null) }
                 }
-                .addOnFailureListener { cont.resumeWithException(it) }
+            } catch (_: Exception) { null }
         }
+    }
 
     /** Resolves coordinates to a human-readable place name; falls back to "lat, lng" on failure. */
     suspend fun reverseGeocode(lat: Double, lng: Double): String {

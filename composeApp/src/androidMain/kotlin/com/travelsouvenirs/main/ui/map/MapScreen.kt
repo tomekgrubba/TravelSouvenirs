@@ -78,11 +78,13 @@ fun MapContent(onPinClick: (Long) -> Unit) {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) scope.launch {
-            locationHelper.getCurrentLocation()?.let { (lat, lng) ->
-                cameraPositionState.animate(
-                    CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), MY_LOCATION_ZOOM), 600
-                )
-            }
+            try {
+                locationHelper.getCurrentLocation()?.let { (lat, lng) ->
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), MY_LOCATION_ZOOM), 600
+                    )
+                }
+            } catch (_: Exception) { }
         }
     }
 
@@ -91,11 +93,13 @@ fun MapContent(onPinClick: (Long) -> Unit) {
             == PackageManager.PERMISSION_GRANTED
         ) {
             scope.launch {
-                locationHelper.getCurrentLocation()?.let { (lat, lng) ->
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), MY_LOCATION_ZOOM), 600
-                    )
-                }
+                try {
+                    locationHelper.getCurrentLocation()?.let { (lat, lng) ->
+                        cameraPositionState.animate(
+                            CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), MY_LOCATION_ZOOM), 600
+                        )
+                    }
+                } catch (_: Exception) { }
             }
         } else {
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
