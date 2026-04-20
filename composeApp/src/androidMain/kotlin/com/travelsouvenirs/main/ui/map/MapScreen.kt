@@ -33,6 +33,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
@@ -43,8 +44,7 @@ import com.travelsouvenirs.main.location.LocationHelper
 import kotlinx.coroutines.launch
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
-private const val MY_LOCATION_ZOOM = 8f
-private const val LAUNCH_ZOOM = 4f
+private const val LOCATION_ZOOM = 4f
 
 /** Full-screen map with photo pin markers, zoom-based clustering, and a "my location" button. */
 @Composable
@@ -74,29 +74,36 @@ fun MapContent(onPinClick: (Long) -> Unit) {
     val scope = rememberCoroutineScope()
 
     val locationHelper = remember { LocationHelper(context) }
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+        )
+    }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) scope.launch {
-            try {
-                locationHelper.getCurrentLocation()?.let { (lat, lng) ->
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), MY_LOCATION_ZOOM), 600
-                    )
-                }
-            } catch (_: Exception) { }
-        }
-    }
-
-    fun jumpToMyLocation() {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
+        if (granted) {
+            hasLocationPermission = true
             scope.launch {
                 try {
                     locationHelper.getCurrentLocation()?.let { (lat, lng) ->
                         cameraPositionState.animate(
-                            CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), MY_LOCATION_ZOOM), 600
+                            CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), LOCATION_ZOOM), 600
+                        )
+                    }
+                } catch (_: Exception) { }
+            }
+        }
+    }
+
+    fun jumpToMyLocation() {
+        if (hasLocationPermission) {
+            scope.launch {
+                try {
+                    locationHelper.getCurrentLocation()?.let { (lat, lng) ->
+                        cameraPositionState.animate(
+                            CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), LOCATION_ZOOM), 600
                         )
                     }
                 } catch (_: Exception) { }
@@ -118,7 +125,7 @@ fun MapContent(onPinClick: (Long) -> Unit) {
 
                 val update = if (location != null) {
                     CameraUpdateFactory.newLatLngZoom(
-                        LatLng(location.first, location.second), LAUNCH_ZOOM
+                        LatLng(location.first, location.second), LOCATION_ZOOM
                     )
                 } else if (magnets.isNotEmpty()) {
                     val bounds = LatLngBounds.Builder().apply {
@@ -133,10 +140,15 @@ fun MapContent(onPinClick: (Long) -> Unit) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        @Suppress("MissingPermission")
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(zoomControlsEnabled = false)
+            properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
+            uiSettings = MapUiSettings(
+                zoomControlsEnabled = false,
+                myLocationButtonEnabled = false
+            )
         ) {
             if (showIndividual) {
                 magnetPins.forEach { pin ->
