@@ -35,19 +35,20 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.androidx.navigation.compose)
-            implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.room.ktx)
             implementation(libs.maps.compose)
             implementation(libs.play.services.maps)
             implementation(libs.play.services.location)
-            implementation(libs.coil.compose)
+            implementation(libs.coil.android)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.kotlinx.datetime)
             implementation(libs.material.icons.extended)
+            implementation(libs.androidx.sqlite.bundled)
             implementation("com.github.yalantis:ucrop:2.2.9")
             implementation("com.google.maps.android:maps-compose-utils:6.5.3")
             implementation("androidx.appcompat:appcompat:1.7.0")
+        }
+        iosMain.dependencies {
+            implementation(libs.androidx.sqlite.bundled)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -58,6 +59,16 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.jetbrains.navigation.compose)
+            implementation(libs.multiplatform.settings)
+            implementation(libs.coil.compose)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.androidx.room.runtime)
+            @Suppress("DEPRECATION")
+            implementation(compose.material)
+            @Suppress("DEPRECATION")
+            implementation(compose.materialIconsExtended)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -120,4 +131,6 @@ ksp {
 dependencies {
     debugImplementation(libs.compose.uiTooling)
     add("kspAndroid", libs.androidx.room.compiler)
+    add("kspIosArm64", libs.androidx.room.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
 }

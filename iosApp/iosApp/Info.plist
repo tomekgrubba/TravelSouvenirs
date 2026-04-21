@@ -4,5 +4,11 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo of your souvenir</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo from your library for your souvenir</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Used to tag where you acquired your souvenir</string>
 </dict>
 </plist>

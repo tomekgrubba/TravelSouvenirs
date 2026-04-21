@@ -1,9 +1,11 @@
 package com.travelsouvenirs.main.ui.add
 
-import android.content.Context
 import com.travelsouvenirs.main.data.FakeMagnetDao
 import com.travelsouvenirs.main.data.MagnetEntity
 import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.domain.LatLon
+import com.travelsouvenirs.main.image.ImageStorage
+import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.location.PlaceResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,10 +18,19 @@ import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+
+private class FakeLocationService : LocationService {
+    override suspend fun getCurrentLocation(): LatLon? = null
+    override suspend fun reverseGeocode(lat: Double, lng: Double): String = "$lat, $lng"
+    override suspend fun searchByName(query: String): List<PlaceResult> = emptyList()
+}
+
+private class FakeImageStorage : ImageStorage {
+    override suspend fun copyToInternalStorage(sourcePath: String): String = sourcePath
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddMagnetViewModelTest {
@@ -27,7 +38,8 @@ class AddMagnetViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var dao: FakeMagnetDao
     private lateinit var repository: MagnetRepository
-    private val mockContext: Context = mock()
+    private val fakeLocationService = FakeLocationService()
+    private val fakeImageStorage = FakeImageStorage()
 
     @Before
     fun setup() {
@@ -42,7 +54,7 @@ class AddMagnetViewModelTest {
     }
 
     private fun viewModel(editId: Long? = null) =
-        AddMagnetViewModel(repository, mockContext, editId)
+        AddMagnetViewModel(repository, fakeLocationService, fakeImageStorage, editId)
 
     @Test
     fun `initial state has blank name and notes`() {

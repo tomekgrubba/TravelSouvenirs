@@ -8,14 +8,15 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Shader
 import android.graphics.Typeface
-import android.graphics.drawable.BitmapDrawable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import coil.imageLoader
-import coil.request.ImageRequest
+import coil3.SingletonImageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.toBitmap
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import kotlinx.coroutines.Dispatchers
@@ -67,11 +68,15 @@ private suspend fun buildMarkerBitmap(
     try {
         val request = ImageRequest.Builder(context)
             .data(photoPath)
-            .allowHardware(false)
             .size(sizePx, sizePx)
             .build()
-        val drawable = context.imageLoader.execute(request).drawable ?: return@withContext null
-        val source = (drawable as? BitmapDrawable)?.bitmap ?: return@withContext null
+        val result = SingletonImageLoader.get(context).execute(request) as? SuccessResult
+            ?: return@withContext null
+        val decoded = try { result.image.toBitmap() } catch (_: Exception) { return@withContext null }
+        // BitmapShader requires a software bitmap; copy from hardware if needed
+        val source = if (decoded.config == Bitmap.Config.HARDWARE) {
+            decoded.copy(Bitmap.Config.ARGB_8888, false)
+        } else decoded
 
         val out = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)
