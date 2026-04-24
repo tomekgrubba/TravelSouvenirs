@@ -24,6 +24,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,10 +33,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.travelsouvenirs.main.di.LocalCategoryFilter
+import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.platform.PlatformBackHandler
 import com.travelsouvenirs.main.platform.PlatformMapContent
 import com.travelsouvenirs.main.ui.list.ListScreen
 import com.travelsouvenirs.main.ui.settings.SettingsScreen
+import com.travelsouvenirs.main.ui.shared.CategoryFilterViewModel
 import org.jetbrains.compose.resources.painterResource
 import travelsouvenirs.composeapp.generated.resources.Res
 import travelsouvenirs.composeapp.generated.resources.ic_app_logo
@@ -51,8 +56,12 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
     val selectedTab = MainTab.valueOf(selectedTabName)
     var showSettings by rememberSaveable { mutableStateOf(false) }
 
+    val settings = LocalSettings.current
+    val categoryFilterVM: CategoryFilterViewModel = viewModel { CategoryFilterViewModel(settings) }
+
     PlatformBackHandler(enabled = showSettings) { showSettings = false }
 
+    CompositionLocalProvider(LocalCategoryFilter provides categoryFilterVM) {
     Scaffold(
         topBar = {
             Column {
@@ -115,4 +124,5 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
             }
         }
     }
+    } // CompositionLocalProvider
 }

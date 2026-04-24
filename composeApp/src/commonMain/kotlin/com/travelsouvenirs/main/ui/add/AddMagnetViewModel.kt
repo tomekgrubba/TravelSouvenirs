@@ -2,7 +2,9 @@ package com.travelsouvenirs.main.ui.add
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.Magnet
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
@@ -17,6 +19,8 @@ import kotlinx.coroutines.launch
 import com.travelsouvenirs.main.platform.todayLocalDate
 import kotlinx.datetime.LocalDate
 
+private const val KEY_CATEGORIES = "categories"
+
 /**
  * Drives both the Add and Edit screens.
  * When [editId] is non-null, pre-populates fields from the existing item and upserts on save.
@@ -25,7 +29,8 @@ class AddMagnetViewModel(
     private val repository: MagnetRepository,
     private val locationService: LocationService,
     private val imageStorage: ImageStorage,
-    private val editId: Long? = null
+    private val editId: Long? = null,
+    settings: Settings
 ) : ViewModel() {
 
     private val _photoPath = MutableStateFlow<String?>(null)
@@ -67,6 +72,17 @@ class AddMagnetViewModel(
     private val _locationError = MutableStateFlow<String?>(null)
     val locationError: StateFlow<String?> = _locationError.asStateFlow()
 
+    /** All selectable categories: Default + user-defined custom categories. */
+    val availableCategories: List<String> = buildList {
+        add(DEFAULT_CATEGORY)
+        val raw = settings.getStringOrNull(KEY_CATEGORIES) ?: ""
+        addAll(raw.split(",").filter { it.isNotBlank() })
+    }
+
+    private val _category = MutableStateFlow(resolveDefaultCategory(availableCategories, editId))
+    /** Currently selected category for this item. */
+    val category: StateFlow<String> = _category.asStateFlow()
+
     private var searchJob: Job? = null
 
     init {
@@ -80,6 +96,7 @@ class AddMagnetViewModel(
                     _placeName.value = m.placeName
                     _latitude.value = m.latitude
                     _longitude.value = m.longitude
+                    _category.value = m.category
                 }
             }
         }
@@ -99,6 +116,8 @@ class AddMagnetViewModel(
     fun onNotesChange(value: String) { _notes.value = value }
     /** Updates the acquisition date. */
     fun onDateChange(date: LocalDate) { _dateAcquired.value = date }
+    /** Updates the selected category. */
+    fun onCategoryChange(value: String) { _category.value = value }
 
     /** Resets search state and opens the location picker dialog. */
     fun openLocationDialog() {
@@ -175,10 +194,17 @@ class AddMagnetViewModel(
                     latitude = _latitude.value,
                     longitude = _longitude.value,
                     placeName = _placeName.value,
-                    dateAcquired = _dateAcquired.value
+                    dateAcquired = _dateAcquired.value,
+                    category = _category.value
                 )
             )
             _isSaved.value = true
         }
     }
+}
+
+private fun resolveDefaultCategory(available: List<String>, editId: Long?): String {
+    if (editId != null) return DEFAULT_CATEGORY  // will be overwritten by init block
+    val custom = available.filter { it != DEFAULT_CATEGORY }
+    return if (custom.size == 1) custom[0] else DEFAULT_CATEGORY
 }

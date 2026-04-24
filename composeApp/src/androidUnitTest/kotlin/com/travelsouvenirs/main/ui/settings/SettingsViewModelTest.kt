@@ -1,6 +1,8 @@
 package com.travelsouvenirs.main.ui.settings
 
 import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.data.FakeMagnetDao
+import com.travelsouvenirs.main.data.MagnetRepository
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -42,21 +44,23 @@ private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings
 
 class SettingsViewModelTest {
 
+    private val fakeRepo = MagnetRepository(FakeMagnetDao())
+
     @Test
     fun `initial notes is empty string when no key stored`() {
-        val vm = SettingsViewModel(FakeSettings())
+        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
         assertEquals("", vm.notes.value)
     }
 
     @Test
     fun `initial notes loaded from pre-existing settings`() {
-        val vm = SettingsViewModel(FakeSettings(mapOf("notes" to "My travel journal")))
+        val vm = SettingsViewModel(FakeSettings(mapOf("notes" to "My travel journal")), fakeRepo)
         assertEquals("My travel journal", vm.notes.value)
     }
 
     @Test
     fun `onNotesChange updates notes state`() {
-        val vm = SettingsViewModel(FakeSettings())
+        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
         vm.onNotesChange("Remember Paris")
         assertEquals("Remember Paris", vm.notes.value)
     }
@@ -64,7 +68,7 @@ class SettingsViewModelTest {
     @Test
     fun `onNotesChange persists value to settings`() {
         val settings = FakeSettings()
-        val vm = SettingsViewModel(settings)
+        val vm = SettingsViewModel(settings, fakeRepo)
         vm.onNotesChange("Persisted note")
         assertEquals("Persisted note", settings.getStringOrNull("notes"))
     }
@@ -72,14 +76,14 @@ class SettingsViewModelTest {
     @Test
     fun `new ViewModel instance reads value persisted by previous instance`() {
         val settings = FakeSettings()
-        SettingsViewModel(settings).onNotesChange("Saved text")
-        assertEquals("Saved text", SettingsViewModel(settings).notes.value)
+        SettingsViewModel(settings, fakeRepo).onNotesChange("Saved text")
+        assertEquals("Saved text", SettingsViewModel(settings, fakeRepo).notes.value)
     }
 
     @Test
     fun `onNotesChange with empty string clears persisted value`() {
         val settings = FakeSettings(mapOf("notes" to "Old note"))
-        val vm = SettingsViewModel(settings)
+        val vm = SettingsViewModel(settings, fakeRepo)
         vm.onNotesChange("")
         assertEquals("", vm.notes.value)
         assertEquals("", settings.getStringOrNull("notes"))
@@ -88,7 +92,7 @@ class SettingsViewModelTest {
     @Test
     fun `successive onNotesChange calls each update state and persistence`() {
         val settings = FakeSettings()
-        val vm = SettingsViewModel(settings)
+        val vm = SettingsViewModel(settings, fakeRepo)
         vm.onNotesChange("First")
         vm.onNotesChange("Second")
         vm.onNotesChange("Third")
@@ -99,7 +103,7 @@ class SettingsViewModelTest {
     @Test
     fun `settings key used is notes`() {
         val settings = FakeSettings()
-        SettingsViewModel(settings).onNotesChange("value")
+        SettingsViewModel(settings, fakeRepo).onNotesChange("value")
         // Verify the exact key so a rename doesn't silently break persistence
         assertNull(settings.getStringOrNull("note"))   // typo key should be absent
         assertEquals("value", settings.getStringOrNull("notes"))

@@ -1,45 +1,225 @@
 package com.travelsouvenirs.main.ui.settings
 
+import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.travelsouvenirs.main.di.LocalMagnetRepository
 import com.travelsouvenirs.main.di.LocalSettings
 
-/** Settings screen — persistent notes text field backed by multiplatform-settings. */
+/** Settings screen — categories management at top, persistent notes at bottom. */
 @Composable
 fun SettingsScreen() {
     val settings = LocalSettings.current
-    val settingsViewModel: SettingsViewModel = viewModel { SettingsViewModel(settings) }
-    val notes by settingsViewModel.notes.collectAsState()
+    val repository = LocalMagnetRepository.current
+    val vm: SettingsViewModel = viewModel { SettingsViewModel(settings, repository) }
+
+    val notes by vm.notes.collectAsState()
+    val customCategories by vm.customCategories.collectAsState()
+    val allMagnets by repository.allMagnets.collectAsState(initial = emptyList())
+
+    var newCategoryInput by remember { mutableStateOf("") }
+    var pendingDeleteCategory by remember { mutableStateOf<String?>(null) }
+
+    // Confirmation dialog
+    pendingDeleteCategory?.let { categoryToDelete ->
+        val affectedCount = allMagnets.count { it.category == categoryToDelete }
+        val bodyText = when (affectedCount) {
+            0 -> "No items are currently using \"$categoryToDelete\"."
+            1 -> "1 item is currently assigned to \"$categoryToDelete\" and will be moved to Default."
+            else -> "$affectedCount items are currently assigned to \"$categoryToDelete\" and will all be moved to Default."
+        }
+        AlertDialog(
+            onDismissRequest = { pendingDeleteCategory = null },
+            title = { Text("Delete \"$categoryToDelete\"?") },
+            text = { Text(bodyText) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        vm.deleteCategory(categoryToDelete)
+                        pendingDeleteCategory = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteCategory = null }) { Text("Cancel") }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp)
+    ) {
+        // ── Categories ──────────────────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(top = 16.dp)
+        ) {
+            Text(
+                "Categories",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            Text(
+                "Assign a category to each item. You can add up to 5 custom categories.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Surface(
+                tonalElevation = 1.dp,
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column {
+                    CategoryRow(
+                        name = DEFAULT_CATEGORY,
+                        deletable = false,
+                        onDeleteRequest = {}
+                    )
+
+                    customCategories.forEach { name ->
+                        HorizontalDivider()
+                        CategoryRow(
+                            name = name,
+                            deletable = true,
+                            onDeleteRequest = { pendingDeleteCategory = name }
+                        )
+                    }
+
+                    if (vm.canAddCategory) {
+                        HorizontalDivider()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = newCategoryInput,
+                                onValueChange = { newCategoryInput = it },
+                                placeholder = { Text("New category name") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    vm.addCategory(newCategoryInput)
+                                    newCategoryInput = ""
+                                },
+                                enabled = newCategoryInput.isNotBlank()
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = "Add category",
+                                    tint = if (newCategoryInput.isNotBlank())
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                )
+                            }
+                        }
+                    }
+
+                    if (!vm.canAddCategory) {
+                        HorizontalDivider()
+                        Text(
+                            "Maximum of 5 custom categories reached.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Notes ────────────────────────────────────────────────────────────
+        Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
+            Text(
+                "Notes",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            OutlinedTextField(
+                value = notes,
+                onValueChange = vm::onNotesChange,
+                label = { Text("Your notes") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp),
+                maxLines = Int.MAX_VALUE
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategoryRow(name: String, deletable: Boolean, onDeleteRequest: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            "Notes",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
+            text = name,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
         )
-        OutlinedTextField(
-            value = notes,
-            onValueChange = settingsViewModel::onNotesChange,
-            label = { Text("Your notes") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            maxLines = Int.MAX_VALUE
-        )
+        if (deletable) {
+            IconButton(onClick = onDeleteRequest, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Delete $name",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        } else {
+            Icon(
+                Icons.Default.Lock,
+                contentDescription = "Built-in category",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }

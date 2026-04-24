@@ -110,7 +110,20 @@ class MagnetRepositoryTest {
         assertEquals("After", result?.name)
     }
 
-    private fun magnet(id: Long = 0, name: String = "Test", place: String = "City") = Magnet(
+    @Test
+    fun reassignCategory_movesOnlySpecifiedItems() = runTest {
+        repository.insertMagnet(magnet(id = 1, name = "A", category = "Custom Category"))
+        repository.insertMagnet(magnet(id = 2, name = "B", category = "Custom Category"))
+        repository.insertMagnet(magnet(id = 3, name = "C", category = "Other Category"))
+
+        repository.reassignCategory("Custom Category", "Default")
+
+        assertEquals("Default", repository.getMagnetById(1)?.category)
+        assertEquals("Default", repository.getMagnetById(2)?.category)
+        assertEquals("Other Category", repository.getMagnetById(3)?.category) // untouched
+    }
+
+    private fun magnet(id: Long = 0, name: String = "Test", place: String = "City", category: String = "Default") = Magnet(
         id = id,
         name = name,
         notes = "",
@@ -118,6 +131,7 @@ class MagnetRepositoryTest {
         latitude = 0.0,
         longitude = 0.0,
         placeName = place,
-        dateAcquired = LocalDate(2024, 1, 1)
+        dateAcquired = LocalDate(2024, 1, 1),
+        category = category
     )
 }

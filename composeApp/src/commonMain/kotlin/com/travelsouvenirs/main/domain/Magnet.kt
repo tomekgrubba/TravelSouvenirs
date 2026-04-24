@@ -2,6 +2,8 @@ package com.travelsouvenirs.main.domain
 
 import kotlinx.datetime.LocalDate
 
+const val DEFAULT_CATEGORY = "Default"
+
 /** Domain model representing a single travel souvenir item. */
 data class Magnet(
     val id: Long,
@@ -11,5 +13,6 @@ data class Magnet(
     val latitude: Double,
     val longitude: Double,
     val placeName: String,
-    val dateAcquired: LocalDate
+    val dateAcquired: LocalDate,
+    val category: String = DEFAULT_CATEGORY
 )

@@ -1,5 +1,6 @@
 package com.travelsouvenirs.main.ui.add
 
+import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.data.FakeMagnetDao
 import com.travelsouvenirs.main.data.MagnetEntity
 import com.travelsouvenirs.main.data.MagnetRepository
@@ -40,6 +41,33 @@ private class FakeImageStorage : ImageStorage {
     override suspend fun copyToInternalStorage(sourcePath: String): String = sourcePath
 }
 
+private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings {
+    private val map = mutableMapOf<String, Any>().also { it.putAll(initial) }
+    override val keys: Set<String> get() = map.keys
+    override val size: Int get() = map.size
+    override fun clear() = map.clear()
+    override fun remove(key: String) { map.remove(key) }
+    override fun hasKey(key: String) = map.containsKey(key)
+    override fun putInt(key: String, value: Int) { map[key] = value }
+    override fun getInt(key: String, defaultValue: Int) = map[key] as? Int ?: defaultValue
+    override fun getIntOrNull(key: String) = map[key] as? Int
+    override fun putLong(key: String, value: Long) { map[key] = value }
+    override fun getLong(key: String, defaultValue: Long) = map[key] as? Long ?: defaultValue
+    override fun getLongOrNull(key: String) = map[key] as? Long
+    override fun putString(key: String, value: String) { map[key] = value }
+    override fun getString(key: String, defaultValue: String) = map[key] as? String ?: defaultValue
+    override fun getStringOrNull(key: String) = map[key] as? String
+    override fun putFloat(key: String, value: Float) { map[key] = value }
+    override fun getFloat(key: String, defaultValue: Float) = map[key] as? Float ?: defaultValue
+    override fun getFloatOrNull(key: String) = map[key] as? Float
+    override fun putDouble(key: String, value: Double) { map[key] = value }
+    override fun getDouble(key: String, defaultValue: Double) = map[key] as? Double ?: defaultValue
+    override fun getDoubleOrNull(key: String) = map[key] as? Double
+    override fun putBoolean(key: String, value: Boolean) { map[key] = value }
+    override fun getBoolean(key: String, defaultValue: Boolean) = map[key] as? Boolean ?: defaultValue
+    override fun getBooleanOrNull(key: String) = map[key] as? Boolean
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddMagnetViewModelTest {
 
@@ -48,6 +76,7 @@ class AddMagnetViewModelTest {
     private lateinit var repository: MagnetRepository
     private val fakeLocationService = FakeLocationService()
     private val fakeImageStorage = FakeImageStorage()
+    private val fakeSettings = FakeSettings()
 
     @Before
     fun setup() {
@@ -63,15 +92,19 @@ class AddMagnetViewModelTest {
 
     private fun viewModel(
         editId: Long? = null,
-        locationService: LocationService = fakeLocationService
-    ) = AddMagnetViewModel(repository, locationService, fakeImageStorage, editId)
+        locationService: LocationService = fakeLocationService,
+        settings: Settings = fakeSettings
+    ) = AddMagnetViewModel(repository, locationService, fakeImageStorage, editId, settings)
 
     @Test
-    fun `initial state has blank name and notes`() {
-        val vm = viewModel()
+    fun `initial state has blank name and notes and parses available categories`() {
+        val settings = FakeSettings(mapOf("categories" to "Trip,Gifts"))
+        val vm = viewModel(settings = settings)
         assertEquals("", vm.name.value)
         assertEquals("", vm.notes.value)
         assertEquals("", vm.placeName.value)
+        assertEquals(listOf("Default", "Trip", "Gifts"), vm.availableCategories)
+        assertEquals("Default", vm.category.value)
     }
 
     @Test
@@ -86,6 +119,21 @@ class AddMagnetViewModelTest {
         val vm = viewModel()
         vm.onNotesChange("Bought at the entrance")
         assertEquals("Bought at the entrance", vm.notes.value)
+    }
+
+    @Test
+    fun `onCategoryChange updates category state`() {
+        val vm = viewModel()
+        vm.onCategoryChange("Custom Category")
+        assertEquals("Custom Category", vm.category.value)
+    }
+
+    @Test
+    fun `onPhotoSelected copies photo and updates photoPath state`() = runTest {
+        val vm = viewModel()
+        vm.onPhotoSelected("/source/image.jpg")
+        advanceUntilIdle() // wait for coroutine to finish
+        assertEquals("/source/image.jpg", vm.photoPath.value)
     }
 
     @Test
@@ -165,10 +213,16 @@ class AddMagnetViewModelTest {
         val vm = viewModel()
         setPhotoPath(vm, "/photo.jpg")
         vm.onNameChange("Eiffel Tower")
+        vm.onCategoryChange("Souvenir")
         vm.onPlaceSelected(PlaceResult("Paris", 48.85, 2.35))
+        advanceUntilIdle()
         vm.saveMagnet()
         advanceUntilIdle()
         assertTrue(vm.isSaved.value)
+        
+        val savedMagnet = (dao.getAllMagnets() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.MagnetEntity>>).value.first()
+        assertEquals("Eiffel Tower", savedMagnet.name)
+        assertEquals("Souvenir", savedMagnet.category)
     }
 
     @Test

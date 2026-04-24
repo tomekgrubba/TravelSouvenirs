@@ -129,6 +129,32 @@ class MapViewModelTest {
         assertEquals(2, highZoom.size)
     }
 
+    @Test
+    fun `groupByZoom at zoom 0 clusters almost everything`() {
+        val m1 = magnet(1, 10.0, 10.0)
+        val m2 = magnet(2, 20.0, 20.0)
+        val m3 = magnet(3, -10.0, -10.0)
+        // Zoom 0 threshold is ~84.3 degrees, these are close enough
+        val groups = MapViewModel.groupByZoom(listOf(m1, m2, m3), 0f)
+        assertEquals(1, groups.size)
+        assertEquals(3, groups[0].magnets.size)
+    }
+
+    @Test
+    fun `groupByZoom at zoom 20 uses very small threshold`() {
+        // At zoom 20, threshold is approx 0.00008 degrees.
+        // 0.00001 apart -> Should cluster
+        val m1 = magnet(1, 48.0, 2.0)
+        val m2 = magnet(2, 48.00001, 2.00001)
+        val groupsCluster = MapViewModel.groupByZoom(listOf(m1, m2), 20f)
+        assertEquals(1, groupsCluster.size)
+        
+        // 0.0001 apart -> Should NOT cluster
+        val m3 = magnet(3, 48.0001, 2.0001)
+        val groupsSeparate = MapViewModel.groupByZoom(listOf(m1, m3), 20f)
+        assertEquals(2, groupsSeparate.size)
+    }
+
     // ── magnetPins StateFlow (spreadOverlapping behaviour) ───────────────────
 
     @Test
@@ -191,6 +217,30 @@ class MapViewModelTest {
         val positions = pins.map { it.position }
         val unique = positions.distinctBy { Pair(it.lat, it.lng) }
         assertEquals(3, unique.size, "All three spread positions should be distinct")
+    }
+
+    @Test
+    fun `spreadOverlapping circle math is exact`() = runTest {
+        activate()
+        dao.insertMagnet(entity(1, 48.0, 2.0))
+        dao.insertMagnet(entity(2, 48.0, 2.0))
+        dao.insertMagnet(entity(3, 48.0, 2.0))
+        dao.insertMagnet(entity(4, 48.0, 2.0))
+        advanceUntilIdle()
+
+        val pins = viewModel.magnetPins.value
+        assertEquals(4, pins.size)
+        // Expecting 4 points in a circle:
+        // angle = 0: lat + R*cos(0)=lat+R, lng + R*sin(0)=lng
+        assertEquals(48.0 + 0.0004, pins[0].position.lat, 1e-9)
+        assertEquals(2.0, pins[0].position.lng, 1e-9)
+        // angle = PI/2: lat + R*cos(PI/2)=lat, lng + R*sin(PI/2)=lng+R
+        assertEquals(48.0, pins[1].position.lat, 1e-9)
+        assertEquals(2.0 + 0.0004, pins[1].position.lng, 1e-9)
+        // angle = PI: lat - R, lng
+        assertEquals(48.0 - 0.0004, pins[2].position.lat, 1e-9)
+        // angle = 3PI/2: lat, lng - R
+        assertEquals(2.0 - 0.0004, pins[3].position.lng, 1e-9)
     }
 
     // ── magnetGroups StateFlow (computeGroups behaviour) ────────────────────

@@ -2,6 +2,7 @@ package com.travelsouvenirs.main.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.Magnet
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -19,7 +20,8 @@ data class MagnetEntity(
     val latitude: Double,
     val longitude: Double,
     val placeName: String,
-    val dateAcquiredMillis: Long
+    val dateAcquiredMillis: Long,
+    val category: String = DEFAULT_CATEGORY
 )
 
 /** Maps this Room entity to the domain [Magnet] model. */
@@ -32,7 +34,8 @@ fun MagnetEntity.toDomain(): Magnet = Magnet(
     longitude = longitude,
     placeName = placeName,
     dateAcquired = Instant.fromEpochMilliseconds(dateAcquiredMillis)
-        .toLocalDateTime(TimeZone.currentSystemDefault()).date
+        .toLocalDateTime(TimeZone.currentSystemDefault()).date,
+    category = category
 )
 
 /** Maps this domain [Magnet] to a Room entity for persistence. */
@@ -45,5 +48,6 @@ fun Magnet.toEntity(): MagnetEntity = MagnetEntity(
     longitude = longitude,
     placeName = placeName,
     dateAcquiredMillis = dateAcquired.atStartOfDayIn(TimeZone.currentSystemDefault())
-        .toEpochMilliseconds()
+        .toEpochMilliseconds(),
+    category = category
 )

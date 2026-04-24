@@ -40,7 +40,7 @@ class ListViewModelTest {
     }
 
     private fun TestScope.activate() = backgroundScope.launch(testDispatcher) {
-        viewModel.filteredMagnets.collect {}
+        viewModel.sortedMagnets.collect {}
     }
 
     @Test
@@ -50,7 +50,7 @@ class ListViewModelTest {
         dao.insertMagnet(magnet("Apple", 2))
         dao.insertMagnet(magnet("Mango", 3))
 
-        assertEquals(listOf("Apple", "Mango", "Zebra"), viewModel.filteredMagnets.value.map { it.name })
+        assertEquals(listOf("Apple", "Mango", "Zebra"), viewModel.sortedMagnets.value.map { it.name })
     }
 
     @Test
@@ -59,7 +59,7 @@ class ListViewModelTest {
         dao.insertMagnet(magnet("zebra", 1))
         dao.insertMagnet(magnet("Apple", 2))
 
-        assertEquals(listOf("Apple", "zebra"), viewModel.filteredMagnets.value.map { it.name })
+        assertEquals(listOf("Apple", "zebra"), viewModel.sortedMagnets.value.map { it.name })
     }
 
     @Test
@@ -70,8 +70,8 @@ class ListViewModelTest {
 
         viewModel.onQueryChange("eiffel")
 
-        assertEquals(1, viewModel.filteredMagnets.value.size)
-        assertEquals("Eiffel Tower", viewModel.filteredMagnets.value[0].name)
+        assertEquals(1, viewModel.sortedMagnets.value.size)
+        assertEquals("Eiffel Tower", viewModel.sortedMagnets.value[0].name)
     }
 
     @Test
@@ -82,8 +82,8 @@ class ListViewModelTest {
 
         viewModel.onQueryChange("buda")
 
-        assertEquals(1, viewModel.filteredMagnets.value.size)
-        assertEquals("Item B", viewModel.filteredMagnets.value[0].name)
+        assertEquals(1, viewModel.sortedMagnets.value.size)
+        assertEquals("Item B", viewModel.sortedMagnets.value[0].name)
     }
 
     @Test
@@ -94,8 +94,8 @@ class ListViewModelTest {
 
         viewModel.onQueryChange("harbour")
 
-        assertEquals(1, viewModel.filteredMagnets.value.size)
-        assertEquals("Item A", viewModel.filteredMagnets.value[0].name)
+        assertEquals(1, viewModel.sortedMagnets.value.size)
+        assertEquals("Item A", viewModel.sortedMagnets.value[0].name)
     }
 
     @Test
@@ -105,10 +105,10 @@ class ListViewModelTest {
         dao.insertMagnet(magnet("Beta", 2))
 
         viewModel.onQueryChange("Alpha")
-        assertEquals(1, viewModel.filteredMagnets.value.size)
+        assertEquals(1, viewModel.sortedMagnets.value.size)
 
         viewModel.onQueryChange("")
-        assertEquals(2, viewModel.filteredMagnets.value.size)
+        assertEquals(2, viewModel.sortedMagnets.value.size)
     }
 
     @Test
@@ -118,20 +118,21 @@ class ListViewModelTest {
 
         viewModel.onQueryChange("xyz_not_found")
 
-        assertTrue(viewModel.filteredMagnets.value.isEmpty())
+        assertTrue(viewModel.sortedMagnets.value.isEmpty())
     }
 
     @Test
     fun `empty list when no items exist`() = runTest {
         activate()
-        assertTrue(viewModel.filteredMagnets.value.isEmpty())
+        assertTrue(viewModel.sortedMagnets.value.isEmpty())
     }
 
     private fun magnet(
         name: String,
         id: Long,
         place: String = "City",
-        notes: String = ""
+        notes: String = "",
+        dateString: String = "2024-01-01"
     ) = com.travelsouvenirs.main.data.MagnetEntity(
         id = id,
         name = name,
@@ -140,7 +141,33 @@ class ListViewModelTest {
         latitude = 0.0,
         longitude = 0.0,
         placeName = place,
-        dateAcquiredMillis = LocalDate(2024, 1, 1)
+        dateAcquiredMillis = LocalDate.parse(dateString)
             .atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
     )
+
+    @Test
+    fun `sorting by date returns items descending by dateAcquired`() = runTest {
+        activate()
+        dao.insertMagnet(magnet("A", 1, dateString = "2024-01-05"))
+        dao.insertMagnet(magnet("B", 2, dateString = "2024-01-10"))
+        dao.insertMagnet(magnet("C", 3, dateString = "2024-01-01"))
+
+        viewModel.onSortChange(SortOption.DATE)
+
+        // Should be B (10th), A (5th), C (1st)
+        assertEquals(listOf("B", "A", "C"), viewModel.sortedMagnets.value.map { it.name })
+    }
+
+    @Test
+    fun `sorting by location returns items alphabetically by place name`() = runTest {
+        activate()
+        dao.insertMagnet(magnet("A", 1, place = "Zurich"))
+        dao.insertMagnet(magnet("B", 2, place = "Amsterdam"))
+        dao.insertMagnet(magnet("C", 3, place = "Paris"))
+
+        viewModel.onSortChange(SortOption.LOCATION)
+
+        // Should be Amsterdam (B), Paris (C), Zurich (A)
+        assertEquals(listOf("B", "C", "A"), viewModel.sortedMagnets.value.map { it.name })
+    }
 }

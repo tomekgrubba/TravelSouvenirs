@@ -36,7 +36,7 @@ actual fun rememberPhotoPicker(onResult: (String?) -> Unit): () -> Unit {
     }
 
     fun launchCrop(sourceUri: Uri) {
-        val (destUri, _) = ImageStorageHelper.createCameraOutputUri(context)
+        val (destUri, _) = ImageStorageHelper.createTempUri(context)
         val options = UCrop.Options().apply {
             setFreeStyleCropEnabled(true)
             setToolbarColor(0xFF1C1C1E.toInt())
@@ -84,7 +84,7 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
     }
 
     fun launchCrop(sourceUri: Uri) {
-        val (destUri, _) = ImageStorageHelper.createCameraOutputUri(context)
+        val (destUri, _) = ImageStorageHelper.createTempUri(context)
         val options = UCrop.Options().apply {
             setFreeStyleCropEnabled(true)
             setToolbarColor(0xFF1C1C1E.toInt())
@@ -111,7 +111,7 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            val (uri, _) = ImageStorageHelper.createCameraOutputUri(context)
+            val (uri, _) = ImageStorageHelper.createTempUri(context)
             cameraOutputUri = uri
             takePictureLauncher.launch(uri)
         } else currentOnResult.value(null)
@@ -119,8 +119,9 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
 
     return remember {
         {
+            ImageStorageHelper.clearTempFiles(context)
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PERMISSION_GRANTED) {
-                val (uri, _) = ImageStorageHelper.createCameraOutputUri(context)
+                val (uri, _) = ImageStorageHelper.createTempUri(context)
                 cameraOutputUri = uri
                 takePictureLauncher.launch(uri)
             } else {
@@ -135,15 +136,23 @@ actual fun rememberLocationPermissionLauncher(onGranted: () -> Unit): () -> Unit
     val context = LocalContext.current
     val currentOnGranted = rememberUpdatedState(onGranted)
     val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted -> if (granted) currentOnGranted.value() }
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        if (results.values.any { it }) currentOnGranted.value()
+    }
 
     return remember {
         {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PERMISSION_GRANTED) {
+            val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PERMISSION_GRANTED
+            val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED
+
+            if (hasFine || hasCoarse) {
                 currentOnGranted.value()
             } else {
-                launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                launcher.launch(arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ))
             }
         }
     }

@@ -30,4 +30,11 @@ class FakeMagnetDao : MagnetDao {
         store.remove(magnet.id)
         publish()
     }
+
+    override suspend fun reassignCategory(fromCategory: String, toCategory: String) {
+        store.values.filter { it.category == fromCategory }.forEach {
+            store[it.id] = it.copy(category = toCategory)
+        }
+        publish()
+    }
 }

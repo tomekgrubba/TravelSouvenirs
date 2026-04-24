@@ -6,7 +6,7 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 
 /** Room database holding the [MagnetDao]; constructed via platform-specific builder. */
-@Database(entities = [MagnetEntity::class], version = 1, exportSchema = true)
+@Database(entities = [MagnetEntity::class], version = 2, exportSchema = true)
 @ConstructedBy(MagnetDatabaseConstructor::class)
 abstract class MagnetDatabase : RoomDatabase() {
     /** Returns the DAO used for all item queries. */

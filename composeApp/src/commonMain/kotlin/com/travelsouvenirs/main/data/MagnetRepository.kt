@@ -23,4 +23,8 @@ class MagnetRepository(private val dao: MagnetDao) {
 
     /** Permanently removes [magnet] from the database. */
     suspend fun deleteMagnet(magnet: Magnet) = dao.deleteMagnet(magnet.toEntity())
+
+    /** Moves all items assigned to [fromCategory] to [toCategory]. */
+    suspend fun reassignCategory(fromCategory: String, toCategory: String) =
+        dao.reassignCategory(fromCategory, toCategory)
 }

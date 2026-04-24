@@ -26,12 +26,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -57,6 +61,7 @@ import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalImageStorage
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.location.PlaceResult
 import com.travelsouvenirs.main.platform.rememberCameraCapture
 import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
@@ -71,8 +76,9 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
     val repository = LocalMagnetRepository.current
     val locationService = LocalLocationService.current
     val imageStorage = LocalImageStorage.current
+    val settings = LocalSettings.current
     val viewModel: AddMagnetViewModel = viewModel(key = magnetId?.toString() ?: "add") {
-        AddMagnetViewModel(repository, locationService, imageStorage, magnetId)
+        AddMagnetViewModel(repository, locationService, imageStorage, magnetId, settings)
     }
 
     val photoPath by viewModel.photoPath.collectAsState()
@@ -80,6 +86,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
     val notes by viewModel.notes.collectAsState()
     val dateAcquired by viewModel.dateAcquired.collectAsState()
     val placeName by viewModel.placeName.collectAsState()
+    val category by viewModel.category.collectAsState()
     val isSaved by viewModel.isSaved.collectAsState()
     val showLocationDialog by viewModel.showLocationDialog.collectAsState()
 
@@ -98,6 +105,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
     )
 
     var showDatePicker by remember { mutableStateOf(false) }
+    var showCategoryDropdown by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = kotlin.time.Clock.System.now().toEpochMilliseconds()
     )
@@ -202,6 +210,37 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                 minLines = 2,
                 maxLines = 4
             )
+
+            ExposedDropdownMenuBox(
+                expanded = showCategoryDropdown,
+                onExpandedChange = { showCategoryDropdown = it }
+            ) {
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Category") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryDropdown) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(
+                    expanded = showCategoryDropdown,
+                    onDismissRequest = { showCategoryDropdown = false }
+                ) {
+                    viewModel.availableCategories.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = {
+                                viewModel.onCategoryChange(option)
+                                showCategoryDropdown = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = "${dateAcquired.dayOfMonth} " +

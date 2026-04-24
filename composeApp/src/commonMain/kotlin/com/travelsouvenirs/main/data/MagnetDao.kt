@@ -29,4 +29,8 @@ interface MagnetDao {
     /** Permanently removes an item from the database. */
     @Delete
     suspend fun deleteMagnet(magnet: MagnetEntity)
+
+    /** Moves all items assigned to [fromCategory] to [toCategory]. */
+    @Query("UPDATE magnets SET category = :toCategory WHERE category = :fromCategory")
+    suspend fun reassignCategory(fromCategory: String, toCategory: String)
 }

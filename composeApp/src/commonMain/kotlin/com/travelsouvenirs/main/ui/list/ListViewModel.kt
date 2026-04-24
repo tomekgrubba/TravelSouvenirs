@@ -11,27 +11,36 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
-/** Drives the list screen; combines live data with a search query to produce a filtered, sorted list. */
+enum class SortOption { NAME, DATE, LOCATION }
+
+/** Drives the list screen — applies search query and sort order to the repository stream. */
 class ListViewModel(repository: MagnetRepository) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
-    /** Current search query entered by the user. */
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    /** Items filtered by [searchQuery] and sorted alphabetically by name. */
-    val filteredMagnets: StateFlow<List<Magnet>> = combine(
+    private val _sortOption = MutableStateFlow(SortOption.NAME)
+    val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
+
+    /** Items matching the search query, sorted by the current sort option. Category filtering is applied at the screen level using the shared CategoryFilterViewModel. */
+    val sortedMagnets: StateFlow<List<Magnet>> = combine(
         repository.allMagnets,
-        _searchQuery
-    ) { magnets, query ->
+        _searchQuery,
+        _sortOption
+    ) { magnets, query, sort ->
         val filtered = if (query.isBlank()) magnets
         else magnets.filter { m ->
             m.name.contains(query, ignoreCase = true) ||
                 m.placeName.contains(query, ignoreCase = true) ||
                 m.notes.contains(query, ignoreCase = true)
         }
-        filtered.sortedBy { it.name.lowercase() }
+        when (sort) {
+            SortOption.NAME -> filtered.sortedBy { it.name.lowercase() }
+            SortOption.DATE -> filtered.sortedByDescending { it.dateAcquired }
+            SortOption.LOCATION -> filtered.sortedBy { it.placeName.lowercase() }
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /** Updates the search query, triggering a new filtered emission. */
     fun onQueryChange(q: String) { _searchQuery.value = q }
+    fun onSortChange(option: SortOption) { _sortOption.value = option }
 }
