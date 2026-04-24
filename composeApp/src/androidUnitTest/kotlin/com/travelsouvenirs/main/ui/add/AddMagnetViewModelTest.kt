@@ -22,10 +22,18 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-private class FakeLocationService : LocationService {
-    override suspend fun getCurrentLocation(): LatLon? = null
-    override suspend fun reverseGeocode(lat: Double, lng: Double): String = "$lat, $lng"
-    override suspend fun searchByName(query: String): List<PlaceResult> = emptyList()
+private class FakeLocationService(
+    private val location: LatLon? = null,
+    private val geocodedPlace: String = "",
+    private val results: List<PlaceResult> = emptyList(),
+    private val shouldThrow: Boolean = false
+) : LocationService {
+    override suspend fun getCurrentLocation(): LatLon? {
+        if (shouldThrow) throw RuntimeException("GPS unavailable")
+        return location
+    }
+    override suspend fun reverseGeocode(lat: Double, lng: Double): String = geocodedPlace
+    override suspend fun searchByName(query: String): List<PlaceResult> = results
 }
 
 private class FakeImageStorage : ImageStorage {
@@ -53,8 +61,10 @@ class AddMagnetViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(editId: Long? = null) =
-        AddMagnetViewModel(repository, fakeLocationService, fakeImageStorage, editId)
+    private fun viewModel(
+        editId: Long? = null,
+        locationService: LocationService = fakeLocationService
+    ) = AddMagnetViewModel(repository, locationService, fakeImageStorage, editId)
 
     @Test
     fun `initial state has blank name and notes`() {
@@ -148,6 +158,121 @@ class AddMagnetViewModelTest {
         assertEquals("Nice museum", vm.notes.value)
         assertEquals("Paris", vm.placeName.value)
         assertEquals("/photos/louvre.jpg", vm.photoPath.value)
+    }
+
+    @Test
+    fun `saveMagnet with valid photo and name persists item and sets isSaved`() = runTest {
+        val vm = viewModel()
+        setPhotoPath(vm, "/photo.jpg")
+        vm.onNameChange("Eiffel Tower")
+        vm.onPlaceSelected(PlaceResult("Paris", 48.85, 2.35))
+        vm.saveMagnet()
+        advanceUntilIdle()
+        assertTrue(vm.isSaved.value)
+    }
+
+    @Test
+    fun `saveMagnet in edit mode upserts existing item`() = runTest {
+        dao.insertMagnet(
+            MagnetEntity(
+                id = 7,
+                name = "Old Name",
+                notes = "",
+                photoPath = "/old.jpg",
+                latitude = 0.0,
+                longitude = 0.0,
+                placeName = "Rome",
+                dateAcquiredMillis = 0L
+            )
+        )
+        val vm = viewModel(editId = 7)
+        advanceUntilIdle()
+        vm.onNameChange("New Name")
+        setPhotoPath(vm, "/old.jpg")
+        vm.saveMagnet()
+        advanceUntilIdle()
+        assertTrue(vm.isSaved.value)
+        assertEquals("New Name", dao.getMagnetById(7)?.name)
+    }
+
+    @Test
+    fun `fetchCurrentLocation success updates placeName and closes dialog`() = runTest {
+        val location = LatLon(51.51, -0.12)
+        val vm = viewModel(locationService = FakeLocationService(location = location, geocodedPlace = "London"))
+        vm.openLocationDialog()
+        assertTrue(vm.showLocationDialog.value)
+
+        vm.fetchCurrentLocation()
+        advanceUntilIdle()
+
+        assertEquals("London", vm.placeName.value)
+        assertFalse(vm.showLocationDialog.value)
+        assertFalse(vm.isLocating.value)
+    }
+
+    @Test
+    fun `fetchCurrentLocation null result sets locationError`() = runTest {
+        val vm = viewModel(locationService = FakeLocationService(location = null))
+        vm.openLocationDialog()
+
+        vm.fetchCurrentLocation()
+        advanceUntilIdle()
+
+        assertTrue(vm.locationError.value != null)
+        assertTrue(vm.showLocationDialog.value, "Dialog should stay open on error")
+        assertFalse(vm.isLocating.value)
+    }
+
+    @Test
+    fun `fetchCurrentLocation exception sets locationError`() = runTest {
+        val vm = viewModel(locationService = FakeLocationService(shouldThrow = true))
+        vm.fetchCurrentLocation()
+        advanceUntilIdle()
+
+        assertTrue(vm.locationError.value?.contains("GPS unavailable") == true)
+        assertFalse(vm.isLocating.value)
+    }
+
+    @Test
+    fun `onSearchQueryChange shorter than 2 chars clears results`() = runTest {
+        val vm = viewModel(locationService = FakeLocationService(results = listOf(PlaceResult("Rome", 41.9, 12.5))))
+        vm.onSearchQueryChange("R")
+        assertTrue(vm.searchResults.value.isEmpty())
+    }
+
+    @Test
+    fun `onSearchQueryChange triggers search after debounce delay`() = runTest {
+        val vm = viewModel(locationService = FakeLocationService(results = listOf(PlaceResult("Rome", 41.9, 12.5))))
+        vm.onSearchQueryChange("Rome")
+        assertTrue(vm.searchResults.value.isEmpty(), "Results should not arrive before delay")
+
+        advanceUntilIdle()
+
+        assertEquals(1, vm.searchResults.value.size)
+        assertEquals("Rome", vm.searchResults.value[0].name)
+    }
+
+    @Test
+    fun `onSearchQueryChange rapid updates only execute the last search`() = runTest {
+        val vm = viewModel(locationService = FakeLocationService(results = listOf(PlaceResult("Berlin", 52.5, 13.4))))
+        vm.onSearchQueryChange("Be")
+        vm.onSearchQueryChange("Ber")
+        vm.onSearchQueryChange("Berl")
+        advanceUntilIdle()
+
+        // Only one search should have fired
+        assertEquals(1, vm.searchResults.value.size)
+    }
+
+    @Test
+    fun `closeLocationDialog cancels in-flight search`() = runTest {
+        val vm = viewModel(locationService = FakeLocationService(results = listOf(PlaceResult("Oslo", 59.9, 10.7))))
+        vm.openLocationDialog()
+        vm.onSearchQueryChange("Oslo")
+        vm.closeLocationDialog()
+        advanceUntilIdle()
+
+        assertTrue(vm.searchResults.value.isEmpty(), "Search cancelled by closing dialog should yield no results")
     }
 
     private fun setPhotoPath(vm: AddMagnetViewModel, path: String) {
