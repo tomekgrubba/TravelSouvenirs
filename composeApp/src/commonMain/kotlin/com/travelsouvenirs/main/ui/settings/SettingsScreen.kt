@@ -214,12 +214,17 @@ private fun CategoryRow(name: String, deletable: Boolean, onDeleteRequest: () ->
                 )
             }
         } else {
-            Icon(
-                Icons.Default.Lock,
-                contentDescription = "Built-in category",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.size(36.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Lock,
+                    contentDescription = "Built-in category",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
