@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Reisesouvenirs</string>
+    <string name="app_name">Travel Souvenirs</string>
     <string name="tab_map">Karte</string>
     <string name="tab_list">Liste</string>
     <string name="fab_add_item">Element hinzufügen</string>
