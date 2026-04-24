@@ -59,7 +59,10 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
     val settings = LocalSettings.current
     val categoryFilterVM: CategoryFilterViewModel = viewModel { CategoryFilterViewModel(settings) }
 
-    PlatformBackHandler(enabled = showSettings) { showSettings = false }
+    PlatformBackHandler(enabled = showSettings) {
+        showSettings = false
+        categoryFilterVM.refreshCategories()
+    }
 
     CompositionLocalProvider(LocalCategoryFilter provides categoryFilterVM) {
     Scaffold(
@@ -78,7 +81,14 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                         }
                     },
                     actions = {
-                        IconButton(onClick = { showSettings = true }) {
+                        IconButton(onClick = {
+                            if (showSettings) {
+                                showSettings = false
+                                categoryFilterVM.refreshCategories()
+                            } else {
+                                showSettings = true
+                            }
+                        }) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
                     }
@@ -87,13 +97,19 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                     PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
                         Tab(
                             selected = selectedTab == MainTab.MAP,
-                            onClick = { selectedTabName = MainTab.MAP.name },
+                            onClick = {
+                                if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
+                                selectedTabName = MainTab.MAP.name
+                            },
                             text = { Text("Map") },
                             icon = { Icon(Icons.Default.LocationOn, contentDescription = null) }
                         )
                         Tab(
                             selected = selectedTab == MainTab.LIST,
-                            onClick = { selectedTabName = MainTab.LIST.name },
+                            onClick = {
+                                if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
+                                selectedTabName = MainTab.LIST.name
+                            },
                             text = { Text("List") },
                             icon = { Icon(Icons.Default.Search, contentDescription = null) }
                         )

@@ -53,6 +53,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
+    val availableCategories by categoryFilter.availableCategories.collectAsState()
     val sortedMagnets by viewModel.sortedMagnets.collectAsState()
 
     // Apply category filter at screen level so it stays in sync with the map
@@ -145,7 +146,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
 
-                    categoryFilter.availableCategories.forEach { category ->
+                    availableCategories.forEach { category ->
                         DropdownMenuItem(
                             text = { Text(category) },
                             leadingIcon = {

@@ -7,4 +7,10 @@ interface ImageStorage {
      * On Android [sourcePath] is a Uri string; on iOS it is a file-system path.
      */
     suspend fun copyToInternalStorage(sourcePath: String): String?
+
+    /**
+     * Deletes the image file at [path] from app-private storage.
+     * No-ops silently if the file does not exist or the path is null/blank.
+     */
+    suspend fun deleteImage(path: String)
 }

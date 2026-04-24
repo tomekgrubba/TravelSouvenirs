@@ -3,6 +3,7 @@ package com.travelsouvenirs.main.ui.detail
 import com.travelsouvenirs.main.data.FakeMagnetDao
 import com.travelsouvenirs.main.data.MagnetEntity
 import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.image.ImageStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -40,7 +41,13 @@ class MagnetDetailViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(id: Long) = MagnetDetailViewModel(repository, id)
+    private val fakeImageStorage = object : ImageStorage {
+        val deletedPaths = mutableListOf<String>()
+        override suspend fun copyToInternalStorage(sourcePath: String): String = sourcePath
+        override suspend fun deleteImage(path: String) { deletedPaths.add(path) }
+    }
+
+    private fun viewModel(id: Long) = MagnetDetailViewModel(repository, id, fakeImageStorage)
 
     private fun TestScope.activate(vm: MagnetDetailViewModel) =
         backgroundScope.launch(testDispatcher) { vm.magnet.collect {} }

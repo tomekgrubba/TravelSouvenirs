@@ -75,6 +75,7 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
     val allMagnets by viewModel.magnets.collectAsState()
     val allPins by viewModel.magnetPins.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
+    val availableCategories by categoryFilter.availableCategories.collectAsState()
 
     // Apply category filter at screen level
     val magnets = remember(allMagnets, selectedCategories) {
@@ -289,7 +290,7 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
 
-                    categoryFilter.availableCategories.forEach { category ->
+                    availableCategories.forEach { category ->
                         DropdownMenuItem(
                             text = { Text(category) },
                             leadingIcon = {

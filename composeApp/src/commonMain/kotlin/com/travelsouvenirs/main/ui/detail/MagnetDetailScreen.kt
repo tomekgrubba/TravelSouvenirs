@@ -46,6 +46,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.travelsouvenirs.main.di.LocalImageStorage
 import com.travelsouvenirs.main.di.LocalMagnetRepository
 import com.travelsouvenirs.main.platform.PlatformMapPreview
 
@@ -58,8 +59,9 @@ fun MagnetDetailScreen(
     onEdit: () -> Unit = {}
 ) {
     val repository = LocalMagnetRepository.current
+    val imageStorage = LocalImageStorage.current
     val viewModel: MagnetDetailViewModel = viewModel(key = magnetId.toString()) {
-        MagnetDetailViewModel(repository, magnetId)
+        MagnetDetailViewModel(repository, magnetId, imageStorage)
     }
     val magnet by viewModel.magnet.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }

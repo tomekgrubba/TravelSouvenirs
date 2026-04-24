@@ -15,4 +15,14 @@ class IosImageStorage : ImageStorage {
         fm.copyItemAtPath(sourcePath, toPath = destPath, error = null)
         return destPath
     }
+
+    /** Deletes the image file at [path] if it exists within the app's Documents directory. */
+    override suspend fun deleteImage(path: String) {
+        if (path.isBlank()) return
+        val fm = NSFileManager.defaultManager
+        val documentsDir = "${NSHomeDirectory()}/Documents"
+        if (path.startsWith(documentsDir) && fm.fileExistsAtPath(path)) {
+            fm.removeItemAtPath(path, error = null)
+        }
+    }
 }

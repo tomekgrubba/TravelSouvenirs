@@ -20,7 +20,7 @@ class MagnetEntityMapperTest {
             latitude = 52.516,
             longitude = 13.377,
             placeName = "Berlin",
-            dateAcquiredMillis = date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            dateAcquiredMillis = date.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
         )
 
         val domain = entity.toDomain()

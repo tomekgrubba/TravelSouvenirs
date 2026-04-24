@@ -85,11 +85,17 @@ class AddMagnetViewModel(
 
     private var searchJob: Job? = null
 
+    // Tracks all image files copied during this session so orphans can be cleaned up.
+    private val copiedPhotoPaths = mutableSetOf<String>()
+    // The original photo path when editing — must never be deleted by this ViewModel.
+    private var originalPhotoPath: String? = null
+
     init {
         if (editId != null) {
             viewModelScope.launch {
                 repository.getMagnetById(editId)?.let { m ->
                     _photoPath.value = m.photoPath
+                    originalPhotoPath = m.photoPath
                     _name.value = m.name
                     _notes.value = m.notes
                     _dateAcquired.value = m.dateAcquired
@@ -104,8 +110,11 @@ class AddMagnetViewModel(
 
     /** Copies the image at [sourcePath] to internal storage on the IO dispatcher and updates [photoPath]. */
     fun onPhotoSelected(sourcePath: String) {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.IO) {
             val path = imageStorage.copyToInternalStorage(sourcePath)
+            if (path != null) {
+                copiedPhotoPaths.add(path)
+            }
             _photoPath.value = path
         }
     }
@@ -185,6 +194,18 @@ class AddMagnetViewModel(
         val path = _photoPath.value ?: return
         if (_name.value.isBlank()) return
         viewModelScope.launch {
+            // Clean up any previously-copied photos that were replaced before saving.
+            copiedPhotoPaths
+                .filter { it != path }
+                .forEach { imageStorage.deleteImage(it) }
+            copiedPhotoPaths.clear()
+
+            // If editing and the user picked a new photo, delete the old one.
+            val orig = originalPhotoPath
+            if (orig != null && orig != path) {
+                imageStorage.deleteImage(orig)
+            }
+
             repository.insertMagnet(
                 Magnet(
                     id = editId ?: 0,
@@ -199,6 +220,24 @@ class AddMagnetViewModel(
                 )
             )
             _isSaved.value = true
+        }
+    }
+
+    /**
+     * Called when the ViewModel is destroyed (user navigated away).
+     * Deletes any copied photos that were never saved to the database.
+     */
+    override fun onCleared() {
+        super.onCleared()
+        if (!_isSaved.value && copiedPhotoPaths.isNotEmpty()) {
+            // User abandoned the form — clean up all copies we made.
+            // viewModelScope is cancelled by now, so use a standalone scope.
+            val paths = copiedPhotoPaths.toList()
+            kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch {
+                paths.forEach { path ->
+                    try { imageStorage.deleteImage(path) } catch (_: Exception) { }
+                }
+            }
         }
     }
 }

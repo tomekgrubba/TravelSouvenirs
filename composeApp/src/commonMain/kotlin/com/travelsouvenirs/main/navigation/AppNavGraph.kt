@@ -46,9 +46,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.MagnetDetail.route,
-            arguments = listOf(navArgument("magnetId") { type = NavType.StringType })
+            arguments = listOf(navArgument("magnetId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val magnetId = backStackEntry.arguments?.read { getStringOrNull("magnetId") }?.toLongOrNull() ?: 0L
+            val magnetId = backStackEntry.arguments?.read { getLong("magnetId") } ?: 0L
             MagnetDetailScreen(
                 magnetId = magnetId,
                 onBack = { navController.popBackStack() },
@@ -57,9 +57,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.EditItem.route,
-            arguments = listOf(navArgument("magnetId") { type = NavType.StringType })
+            arguments = listOf(navArgument("magnetId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val magnetId = backStackEntry.arguments?.read { getStringOrNull("magnetId") }?.toLongOrNull() ?: 0L
+            val magnetId = backStackEntry.arguments?.read { getLong("magnetId") } ?: 0L
             AddMagnetScreen(
                 onSaved = { navController.popBackStack() },
                 magnetId = magnetId

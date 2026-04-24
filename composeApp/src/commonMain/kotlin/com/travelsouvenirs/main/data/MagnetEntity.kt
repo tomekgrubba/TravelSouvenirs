@@ -34,7 +34,7 @@ fun MagnetEntity.toDomain(): Magnet = Magnet(
     longitude = longitude,
     placeName = placeName,
     dateAcquired = Instant.fromEpochMilliseconds(dateAcquiredMillis)
-        .toLocalDateTime(TimeZone.currentSystemDefault()).date,
+        .toLocalDateTime(TimeZone.UTC).date,
     category = category
 )
 
@@ -47,7 +47,7 @@ fun Magnet.toEntity(): MagnetEntity = MagnetEntity(
     latitude = latitude,
     longitude = longitude,
     placeName = placeName,
-    dateAcquiredMillis = dateAcquired.atStartOfDayIn(TimeZone.currentSystemDefault())
+    dateAcquiredMillis = dateAcquired.atStartOfDayIn(TimeZone.UTC)
         .toEpochMilliseconds(),
     category = category
 )
