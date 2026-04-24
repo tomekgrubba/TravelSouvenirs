@@ -42,6 +42,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalMagnetRepository
+import org.jetbrains.compose.resources.stringResource
+import travelsouvenirs.composeapp.generated.resources.*
 
 /** Displays all items in a searchable, filterable list; tapping a row navigates to its detail screen. */
 @Composable
@@ -79,7 +81,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = viewModel::onQueryChange,
-                placeholder = { Text("Search items…") },
+                placeholder = { Text(stringResource(Res.string.search_placeholder)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
@@ -89,7 +91,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
                 IconButton(onClick = { showMenu = true }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = "Sort and filter",
+                        contentDescription = stringResource(Res.string.cd_sort_filter),
                         tint = if (isIconHighlighted)
                             MaterialTheme.colorScheme.primary
                         else
@@ -104,7 +106,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
                 ) {
                     // — Sort group —
                     Text(
-                        text = "Sort by",
+                        text = stringResource(Res.string.sort_by),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -112,9 +114,9 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
                     )
 
                     listOf(
-                        SortOption.NAME to "Name",
-                        SortOption.DATE to "Date acquired",
-                        SortOption.LOCATION to "Location name"
+                        SortOption.NAME to stringResource(Res.string.sort_name),
+                        SortOption.DATE to stringResource(Res.string.sort_date),
+                        SortOption.LOCATION to stringResource(Res.string.sort_location)
                     ).forEach { (option, label) ->
                         DropdownMenuItem(
                             text = { Text(label) },
@@ -139,7 +141,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
 
                     // — Filter group —
                     Text(
-                        text = "Filter by category",
+                        text = stringResource(Res.string.filter_by_category),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -166,12 +168,12 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
         when {
             allEmpty -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No items yet.\nTap + to add your first!")
+                    Text(stringResource(Res.string.empty_state_no_items))
                 }
             }
             magnets.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No results.")
+                    Text(stringResource(Res.string.empty_state_no_results))
                 }
             }
             else -> {
@@ -180,7 +182,7 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
                         ListItem(
                             headlineContent = { Text(magnet.name) },
                             supportingContent = {
-                                val place = magnet.placeName.ifBlank { "No location" }
+                                val place = magnet.placeName.ifBlank { stringResource(Res.string.no_location) }
                                 val date = "${magnet.dateAcquired.dayOfMonth} " +
                                     magnet.dateAcquired.month.name.lowercase()
                                         .replaceFirstChar { it.uppercase() } +

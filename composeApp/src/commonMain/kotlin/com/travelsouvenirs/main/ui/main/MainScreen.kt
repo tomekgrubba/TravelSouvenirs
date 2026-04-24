@@ -42,8 +42,8 @@ import com.travelsouvenirs.main.ui.list.ListScreen
 import com.travelsouvenirs.main.ui.settings.SettingsScreen
 import com.travelsouvenirs.main.ui.shared.CategoryFilterViewModel
 import org.jetbrains.compose.resources.painterResource
-import travelsouvenirs.composeapp.generated.resources.Res
-import travelsouvenirs.composeapp.generated.resources.ic_app_logo
+import org.jetbrains.compose.resources.stringResource
+import travelsouvenirs.composeapp.generated.resources.*
 
 /** The two available content tabs (Settings is accessed via the app bar icon). */
 enum class MainTab { MAP, LIST }
@@ -77,7 +77,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                                 modifier = Modifier.size(32.dp).clip(CircleShape)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
-                            Text("Travel Souvenirs")
+                            Text(stringResource(Res.string.app_name))
                         }
                     },
                     actions = {
@@ -89,7 +89,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                                 showSettings = true
                             }
                         }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(Res.string.cd_settings))
                         }
                     }
                 )
@@ -101,7 +101,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                                 if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
                                 selectedTabName = MainTab.MAP.name
                             },
-                            text = { Text("Map") },
+                            text = { Text(stringResource(Res.string.tab_map)) },
                             icon = { Icon(Icons.Default.LocationOn, contentDescription = null) }
                         )
                         Tab(
@@ -110,7 +110,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                                 if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
                                 selectedTabName = MainTab.LIST.name
                             },
-                            text = { Text("List") },
+                            text = { Text(stringResource(Res.string.tab_list)) },
                             icon = { Icon(Icons.Default.Search, contentDescription = null) }
                         )
                     }
@@ -120,7 +120,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
         floatingActionButton = {
             if (!showSettings) {
                 ExtendedFloatingActionButton(onClick = onAddClick) {
-                    Text("Add item")
+                    Text(stringResource(Res.string.fab_add_item))
                 }
             }
         }

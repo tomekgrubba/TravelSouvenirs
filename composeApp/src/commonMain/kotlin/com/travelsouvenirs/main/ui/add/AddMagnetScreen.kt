@@ -68,6 +68,8 @@ import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import org.jetbrains.compose.resources.stringResource
+import travelsouvenirs.composeapp.generated.resources.*
 
 /** Form for creating or editing an item; shows "Edit Item" title when [magnetId] is non-null. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,10 +121,10 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                         viewModel.onDateChange(LocalDate.fromEpochDays((millis / 86_400_000).toInt()))
                     }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(Res.string.btn_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(Res.string.btn_cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -141,10 +143,10 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (magnetId != null) "Edit Item" else "Add Item") },
+                title = { Text(stringResource(if (magnetId != null) Res.string.title_edit_item else Res.string.title_add_item)) },
                 navigationIcon = {
                     IconButton(onClick = onSaved) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.cd_back))
                     }
                 }
             )
@@ -161,7 +163,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
             if (photoPath != null) {
                 AsyncImage(
                     model = photoPath,
-                    contentDescription = "Item photo",
+                    contentDescription = stringResource(Res.string.cd_item_photo),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
@@ -176,7 +178,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "No photo selected",
+                        stringResource(Res.string.no_photo_selected),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -186,18 +188,18 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                 OutlinedButton(
                     onClick = { launchCamera() },
                     modifier = Modifier.weight(1f)
-                ) { Text("Take Photo") }
+                ) { Text(stringResource(Res.string.btn_take_photo)) }
 
                 OutlinedButton(
                     onClick = { launchPhotoPicker() },
                     modifier = Modifier.weight(1f)
-                ) { Text("Gallery") }
+                ) { Text(stringResource(Res.string.btn_gallery)) }
             }
 
             OutlinedTextField(
                 value = name,
                 onValueChange = viewModel::onNameChange,
-                label = { Text("Name *") },
+                label = { Text(stringResource(Res.string.label_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -205,7 +207,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
             OutlinedTextField(
                 value = notes,
                 onValueChange = viewModel::onNotesChange,
-                label = { Text("Notes") },
+                label = { Text(stringResource(Res.string.label_notes)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 maxLines = 4
@@ -219,7 +221,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                     value = category,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Category") },
+                    label = { Text(stringResource(Res.string.label_category)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryDropdown) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -252,7 +254,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Pick date")
+                        Icon(Icons.Default.DateRange, contentDescription = stringResource(Res.string.cd_pick_date))
                     }
                 }
             )
@@ -268,7 +270,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                 )
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(
-                    if (placeName.isBlank()) "Set location… *" else placeName,
+                    if (placeName.isBlank()) stringResource(Res.string.label_set_location) else placeName,
                     maxLines = 1
                 )
             }
@@ -278,7 +280,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                 enabled = isFormValid,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save Item")
+                Text(stringResource(Res.string.btn_save_item))
             }
         }
     }
@@ -301,7 +303,7 @@ private fun LocationPickerDialog(
             tonalElevation = 6.dp
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
-                Text("Set Location", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(Res.string.dialog_set_location), style = MaterialTheme.typography.titleLarge)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -317,7 +319,7 @@ private fun LocationPickerDialog(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                         Spacer(modifier = Modifier.size(8.dp))
-                        Text("Getting location…")
+                        Text(stringResource(Res.string.getting_location))
                     } else {
                         Icon(
                             Icons.Default.LocationOn,
@@ -325,7 +327,7 @@ private fun LocationPickerDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.size(8.dp))
-                        Text("Use Current Location")
+                        Text(stringResource(Res.string.btn_use_current_location))
                     }
                 }
 
@@ -346,7 +348,7 @@ private fun LocationPickerDialog(
                 ) {
                     HorizontalDivider(modifier = Modifier.weight(1f))
                     Text(
-                        "or search",
+                        stringResource(Res.string.text_or_search),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -358,7 +360,7 @@ private fun LocationPickerDialog(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
-                    label = { Text("City or place name") },
+                    label = { Text(stringResource(Res.string.label_city_or_place)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -393,7 +395,7 @@ private fun LocationPickerDialog(
                         }
                         searchQuery.length >= 2 -> {
                             Text(
-                                "No results found",
+                                stringResource(Res.string.no_results_found),
                                 modifier = Modifier.align(Alignment.Center),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -407,7 +409,7 @@ private fun LocationPickerDialog(
                 TextButton(
                     onClick = { viewModel.closeLocationDialog() },
                     modifier = Modifier.align(Alignment.End)
-                ) { Text("Cancel") }
+                ) { Text(stringResource(Res.string.btn_cancel)) }
             }
         }
     }

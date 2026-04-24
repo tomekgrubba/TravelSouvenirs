@@ -49,6 +49,8 @@ import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalImageStorage
 import com.travelsouvenirs.main.di.LocalMagnetRepository
 import com.travelsouvenirs.main.platform.PlatformMapPreview
+import org.jetbrains.compose.resources.stringResource
+import travelsouvenirs.composeapp.generated.resources.*
 
 /** Shows a single item's photo, metadata, and map preview; supports fullscreen photo, edit, and delete. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,7 +84,7 @@ fun MagnetDetailScreen(
                 ) {
                     AsyncImage(
                         model = m.photoPath,
-                        contentDescription = "Item photo",
+                        contentDescription = stringResource(Res.string.cd_item_photo),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Fit
                     )
@@ -94,16 +96,16 @@ fun MagnetDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete item?") },
-            text = { Text("This will permanently delete this item.") },
+            title = { Text(stringResource(Res.string.dialog_delete_item_title)) },
+            text = { Text(stringResource(Res.string.dialog_delete_item_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
                     viewModel.deleteMagnet(onBack)
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(Res.string.btn_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(Res.string.btn_cancel)) }
             }
         )
     }
@@ -114,15 +116,15 @@ fun MagnetDetailScreen(
                 title = { Text(magnet?.name ?: "") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(Res.string.cd_edit))
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(Res.string.cd_delete))
                     }
                 }
             )
@@ -137,7 +139,7 @@ fun MagnetDetailScreen(
             ) {
                 AsyncImage(
                     model = m.photoPath,
-                    contentDescription = "Item photo",
+                    contentDescription = stringResource(Res.string.cd_item_photo),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(280.dp)

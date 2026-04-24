@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Travel Souvenirs</string>
+    <string name="tab_map">Map</string>
+    <string name="tab_list">List</string>
+    <string name="fab_add_item">Add item</string>
+    
+    <string name="cd_settings">Settings</string>
+    <string name="cd_sort_filter">Sort and filter</string>
+    <string name="cd_my_location">My location</string>
+    <string name="cd_filter_category">Filter by category</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_item_photo">Item photo</string>
+    <string name="cd_pick_date">Pick date</string>
+    <string name="cd_edit">Edit</string>
+    <string name="cd_locked">Locked</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_delete_category">Delete category</string>
+    <string name="cd_add_category">Add category</string>
+
+    <string name="search_placeholder">Search items…</string>
+    <string name="sort_by">Sort by</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_date">Date acquired</string>
+    <string name="sort_location">Location name</string>
+    <string name="filter_by_category">Filter by category</string>
+    <string name="empty_state_no_items">No items yet.\nTap + to add your first!</string>
+    <string name="empty_state_no_results">No results.</string>
+    <string name="empty_state_no_match">No items match\nthe selected categories.</string>
+    <string name="no_location">No location</string>
+    <string name="items_here">%1$d items here</string>
+
+    <string name="title_edit_item">Edit Item</string>
+    <string name="title_add_item">Add Item</string>
+    <string name="no_photo_selected">No photo selected</string>
+    <string name="btn_take_photo">Take Photo</string>
+    <string name="btn_gallery">Gallery</string>
+    <string name="label_name">Name *</string>
+    <string name="label_notes">Notes</string>
+    <string name="label_category">Category</string>
+    <string name="label_date_acquired">Date acquired</string>
+    <string name="label_set_location">Set location… *</string>
+    <string name="btn_save_item">Save Item</string>
+
+    <string name="dialog_set_location">Set Location</string>
+    <string name="getting_location">Getting location…</string>
+    <string name="btn_use_current_location">Use Current Location</string>
+    <string name="text_or_search">or search</string>
+    <string name="label_city_or_place">City or place name</string>
+    <string name="no_results_found">No results found</string>
+
+    <string name="dialog_delete_item_title">Delete item?</string>
+    <string name="dialog_delete_item_text">This will permanently delete this item.</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_ok">OK</string>
+
+    <string name="title_settings">Settings</string>
+    <string name="section_categories">Categories</string>
+    <string name="text_categories_hint">Assign a category to each item. You can add up to 5 custom categories.</string>
+    <string name="dialog_delete_category_title">Delete \"%1$s\"?</string>
+    <string name="label_new_category">New category name</string>
+    <string name="max_categories_reached">Maximum of 5 custom categories reached.</string>
+    <string name="cd_builtin_category">Built-in category</string>
+    <string name="cd_delete_item">Delete %1$s</string>
+    <string name="section_notes">Notes</string>
+    <string name="label_your_notes">Your notes</string>
+    <string name="section_data_privacy">Data &amp; Privacy</string>
+    <string name="btn_delete_all_data">Delete all data</string>
+    <string name="dialog_delete_all_title">Delete all data?</string>
+    <string name="dialog_delete_all_text">This will permanently delete all your items and photos. This cannot be undone.</string>
+    <string name="btn_delete_all">Delete All</string>
+    <string name="section_about">About</string>
+    <string name="app_version">Version 1.0.0</string>
+</resources>

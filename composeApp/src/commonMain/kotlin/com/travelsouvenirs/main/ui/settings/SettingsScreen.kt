@@ -35,7 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalMagnetRepository
 import com.travelsouvenirs.main.di.LocalSettings
+import org.jetbrains.compose.resources.stringResource
+import travelsouvenirs.composeapp.generated.resources.*
 
 /** Settings screen — categories management at top, persistent notes at bottom. */
 @Composable
@@ -61,7 +64,7 @@ fun SettingsScreen() {
         }
         AlertDialog(
             onDismissRequest = { pendingDeleteCategory = null },
-            title = { Text("Delete \"$categoryToDelete\"?") },
+            title = { Text(stringResource(Res.string.dialog_delete_category_title, categoryToDelete)) },
             text = { Text(bodyText) },
             confirmButton = {
                 TextButton(
@@ -72,10 +75,10 @@ fun SettingsScreen() {
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
-                ) { Text("Delete") }
+                ) { Text(stringResource(Res.string.btn_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDeleteCategory = null }) { Text("Cancel") }
+                TextButton(onClick = { pendingDeleteCategory = null }) { Text(stringResource(Res.string.btn_cancel)) }
             }
         )
     }
@@ -93,12 +96,12 @@ fun SettingsScreen() {
                 .padding(top = 16.dp)
         ) {
             Text(
-                "Categories",
+                stringResource(Res.string.section_categories),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                "Assign a category to each item. You can add up to 5 custom categories.",
+                stringResource(Res.string.text_categories_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp)
@@ -135,7 +138,7 @@ fun SettingsScreen() {
                             OutlinedTextField(
                                 value = newCategoryInput,
                                 onValueChange = { newCategoryInput = it },
-                                placeholder = { Text("New category name") },
+                                placeholder = { Text(stringResource(Res.string.label_new_category)) },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f)
                             )
@@ -148,7 +151,7 @@ fun SettingsScreen() {
                             ) {
                                 Icon(
                                     Icons.Default.Add,
-                                    contentDescription = "Add category",
+                                    contentDescription = stringResource(Res.string.cd_add_category),
                                     tint = if (newCategoryInput.isNotBlank())
                                         MaterialTheme.colorScheme.primary
                                     else
@@ -161,7 +164,7 @@ fun SettingsScreen() {
                     if (!vm.canAddCategory) {
                         HorizontalDivider()
                         Text(
-                            "Maximum of 5 custom categories reached.",
+                            stringResource(Res.string.max_categories_reached),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(12.dp)
@@ -174,14 +177,14 @@ fun SettingsScreen() {
         // ── Notes ────────────────────────────────────────────────────────────
         Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
             Text(
-                "Notes",
+                stringResource(Res.string.section_notes),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             OutlinedTextField(
                 value = notes,
                 onValueChange = vm::onNotesChange,
-                label = { Text("Your notes") },
+                label = { Text(stringResource(Res.string.label_your_notes)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(160.dp),
@@ -208,7 +211,7 @@ private fun CategoryRow(name: String, deletable: Boolean, onDeleteRequest: () ->
             IconButton(onClick = onDeleteRequest, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Delete $name",
+                    contentDescription = stringResource(Res.string.cd_delete_item, name),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(20.dp)
                 )
@@ -220,7 +223,7 @@ private fun CategoryRow(name: String, deletable: Boolean, onDeleteRequest: () ->
             ) {
                 Icon(
                     Icons.Default.Lock,
-                    contentDescription = "Built-in category",
+                    contentDescription = stringResource(Res.string.cd_builtin_category),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )

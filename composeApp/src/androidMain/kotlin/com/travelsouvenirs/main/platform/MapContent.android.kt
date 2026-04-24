@@ -57,6 +57,8 @@ import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.map.rememberGroupIcons
 import com.travelsouvenirs.main.ui.map.rememberIndividualIcons
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import travelsouvenirs.composeapp.generated.resources.*
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
 private const val LOCATION_ZOOM = 4f
@@ -226,7 +228,7 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
                         state = rememberUpdatedMarkerState(position = center),
                         title = group.magnets.first().name,
                         snippet = if (group.magnets.size > 1)
-                            "${group.magnets.size} items here" else group.magnets.first().placeName,
+                            stringResource(Res.string.items_here, group.magnets.size) else group.magnets.first().placeName,
                         icon = groupIcons[idx],
                         onClick = {
                             if (group.magnets.size == 1) {
@@ -259,7 +261,7 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SmallFloatingActionButton(onClick = { jumpToMyLocation() }) {
-                Icon(Icons.Default.MyLocation, contentDescription = "My location")
+                Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.cd_my_location))
             }
 
             Box {
@@ -274,7 +276,7 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
-                    Icon(Icons.Default.FilterList, contentDescription = "Filter by category")
+                    Icon(Icons.Default.FilterList, contentDescription = stringResource(Res.string.cd_filter_category))
                 }
 
                 DropdownMenu(
@@ -283,7 +285,7 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
                     modifier = Modifier.width(220.dp)
                 ) {
                     Text(
-                        text = "Filter by category",
+                        text = stringResource(Res.string.filter_by_category),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -315,9 +317,9 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
             ) {
                 Text(
                     if (allMagnets.isEmpty())
-                        "No items yet.\nTap + to add your first!"
+                        stringResource(Res.string.empty_state_no_items)
                     else
-                        "No items match\nthe selected categories.",
+                        stringResource(Res.string.empty_state_no_match),
                     modifier = Modifier.padding(16.dp),
                     textAlign = TextAlign.Center
                 )
