@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Reisesouvenirs</string>
+    <string name="tab_map">Karte</string>
+    <string name="tab_list">Liste</string>
+    <string name="fab_add_item">Element hinzufügen</string>
+    
+    <string name="cd_settings">Einstellungen</string>
+    <string name="cd_sort_filter">Sortieren und filtern</string>
+    <string name="cd_my_location">Mein Standort</string>
+    <string name="cd_filter_category">Nach Kategorie filtern</string>
+    <string name="cd_back">Zurück</string>
+    <string name="cd_item_photo">Artikelfoto</string>
+    <string name="cd_pick_date">Datum auswählen</string>
+    <string name="cd_edit">Bearbeiten</string>
+    <string name="cd_locked">Gesperrt</string>
+    <string name="cd_delete">Löschen</string>
+    <string name="cd_delete_category">Kategorie löschen</string>
+    <string name="cd_add_category">Kategorie hinzufügen</string>
+
+    <string name="search_placeholder">Elemente suchen…</string>
+    <string name="sort_by">Sortieren nach</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_date">Erwerbsdatum</string>
+    <string name="sort_location">Ortsname</string>
+    <string name="filter_by_category">Nach Kategorie filtern</string>
+    <string name="empty_state_no_items">Noch keine Elemente.\nTippe auf +, um dein erstes hinzuzufügen!</string>
+    <string name="empty_state_no_results">Keine Ergebnisse.</string>
+    <string name="empty_state_no_match">Keine Elemente entsprechen\nden ausgewählten Kategorien.</string>
+    <string name="no_location">Kein Ort</string>
+    <string name="items_here">%1$d Elemente hier</string>
+
+    <string name="title_edit_item">Element bearbeiten</string>
+    <string name="title_add_item">Element hinzufügen</string>
+    <string name="no_photo_selected">Kein Foto ausgewählt</string>
+    <string name="btn_take_photo">Foto aufnehmen</string>
+    <string name="btn_gallery">Galerie</string>
+    <string name="label_name">Name *</string>
+    <string name="label_notes">Notizen</string>
+    <string name="label_category">Kategorie</string>
+    <string name="label_date_acquired">Erwerbsdatum</string>
+    <string name="label_set_location">Ort festlegen… *</string>
+    <string name="btn_save_item">Element speichern</string>
+
+    <string name="dialog_set_location">Ort festlegen</string>
+    <string name="getting_location">Standort wird ermittelt…</string>
+    <string name="btn_use_current_location">Aktuellen Standort verwenden</string>
+    <string name="text_or_search">oder suchen</string>
+    <string name="label_city_or_place">Stadt oder Ortsname</string>
+    <string name="no_results_found">Keine Ergebnisse gefunden</string>
+
+    <string name="dialog_delete_item_title">Element löschen?</string>
+    <string name="dialog_delete_item_text">Dadurch wird dieses Element dauerhaft gelöscht.</string>
+    <string name="btn_delete">Löschen</string>
+    <string name="btn_cancel">Abbrechen</string>
+    <string name="btn_ok">OK</string>
+
+    <string name="title_settings">Einstellungen</string>
+    <string name="section_categories">Kategorien</string>
+    <string name="text_categories_hint">Weise jedem Element eine Kategorie zu. Du kannst bis zu 5 benutzerdefinierte Kategorien hinzufügen.</string>
+    <string name="dialog_delete_category_title">\"%1$s\" löschen?</string>
+    <string name="label_new_category">Neuer Kategoriename</string>
+    <string name="max_categories_reached">Maximal 5 benutzerdefinierte Kategorien erreicht.</string>
+    <string name="cd_builtin_category">Integrierte Kategorie</string>
+    <string name="cd_delete_item">%1$s löschen</string>
+    <string name="section_notes">Notizen</string>
+    <string name="label_your_notes">Deine Notizen</string>
+    <string name="section_data_privacy">Daten &amp; Datenschutz</string>
+    <string name="btn_delete_all_data">Alle Daten löschen</string>
+    <string name="dialog_delete_all_title">Alle Daten löschen?</string>
+    <string name="dialog_delete_all_text">Dadurch werden alle deine Elemente und Fotos dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="btn_delete_all">Alle löschen</string>
+    <string name="section_about">Über</string>
+    <string name="app_version">Version 1.0.0</string>
+</resources>
