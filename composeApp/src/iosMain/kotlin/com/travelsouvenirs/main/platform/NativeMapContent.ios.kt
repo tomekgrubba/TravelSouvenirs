@@ -10,8 +10,18 @@ import androidx.compose.ui.interop.UIKitView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalMagnetRepository
-import com.travelsouvenirs.main.ui.map.MapViewModel
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import kotlinx.cinterop.ExperimentalForeignApi
+import org.jetbrains.compose.resources.stringResource
+import travelsouvenirs.composeapp.generated.resources.*
 import platform.CoreLocation.CLLocationCoordinate2DMake
 import platform.MapKit.MKAnnotationProtocol
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
@@ -20,7 +30,7 @@ import platform.MapKit.MKPointAnnotation
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
-internal fun NativeMapsContent(onPinClick: (Long) -> Unit) {
+internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val repository = LocalMagnetRepository.current
     val locationService = LocalLocationService.current
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
@@ -60,5 +70,24 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit) {
         }
     }
 
-    UIKitView(factory = { mapView }, modifier = Modifier)
+    Box(modifier = Modifier.fillMaxSize()) {
+        UIKitView(factory = { mapView }, modifier = Modifier.fillMaxSize())
+
+        if (magnets.isEmpty()) {
+            // Empty state card shown when no items exist
+            // Added clickable modifier so tapping the overlay opens the add item screen
+            Card(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(32.dp)
+                    .clickable { onAddClick() }
+            ) {
+                Text(
+                    stringResource(Res.string.empty_state_no_items),
+                    modifier = Modifier.padding(16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -67,7 +68,7 @@ private const val OSM_CLUSTER_ZOOM_THRESHOLD = 13
 private const val OSM_LOCATION_ZOOM = 4.0
 
 @Composable
-internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
+internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val context = LocalContext.current
     val repository = LocalMagnetRepository.current
     val locationService = LocalLocationService.current
@@ -393,10 +394,13 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         }
 
         if (magnets.isEmpty()) {
+            // Empty state card shown when no items exist or match the filter
+            // Added clickable modifier so tapping the overlay opens the add item screen
             Card(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp)
+                    .clickable { onAddClick() }
             ) {
                 Text(
                     if (allMagnets.isEmpty())

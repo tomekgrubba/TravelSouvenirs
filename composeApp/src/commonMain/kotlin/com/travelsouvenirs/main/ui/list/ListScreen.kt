@@ -47,7 +47,7 @@ import travelsouvenirs.composeapp.generated.resources.*
 
 /** Displays all items in a searchable, filterable list; tapping a row navigates to its detail screen. */
 @Composable
-fun ListScreen(onItemClick: (Long) -> Unit) {
+fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val repository = LocalMagnetRepository.current
     val categoryFilter = LocalCategoryFilter.current
     val viewModel: ListViewModel = viewModel { ListViewModel(repository) }
@@ -167,7 +167,10 @@ fun ListScreen(onItemClick: (Long) -> Unit) {
 
         when {
             allEmpty -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.fillMaxSize().clickable { onAddClick() }, 
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(stringResource(Res.string.empty_state_no_items))
                 }
             }

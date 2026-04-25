@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -63,7 +64,7 @@ private const val CLUSTER_ZOOM_THRESHOLD = 13f
 private const val LOCATION_ZOOM = 4f
 
 @Composable
-internal fun GoogleMapsContent(onPinClick: (Long) -> Unit) {
+internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val context = LocalContext.current
     val repository = LocalMagnetRepository.current
     val locationService = LocalLocationService.current
@@ -292,10 +293,13 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit) {
         }
 
         if (magnets.isEmpty()) {
+            // Empty state card shown when no items exist or match the filter
+            // Added clickable modifier so tapping the overlay opens the add item screen
             Card(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp)
+                    .clickable { onAddClick() }
             ) {
                 Text(
                     if (allMagnets.isEmpty())

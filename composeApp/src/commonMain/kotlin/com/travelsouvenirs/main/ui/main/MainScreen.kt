@@ -134,8 +134,8 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                 SettingsScreen()
             } else {
                 when (selectedTab) {
-                    MainTab.MAP -> PlatformMapContent(onPinClick = onItemClick)
-                    MainTab.LIST -> ListScreen(onItemClick = onItemClick)
+                    MainTab.MAP -> PlatformMapContent(onPinClick = onItemClick, onAddClick = onAddClick)
+                    MainTab.LIST -> ListScreen(onItemClick = onItemClick, onAddClick = onAddClick)
                 }
             }
         }
