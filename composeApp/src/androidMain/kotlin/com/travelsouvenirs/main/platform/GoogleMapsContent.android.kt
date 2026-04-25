@@ -185,8 +185,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit) {
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission,
-                minZoomPreference = 2f,
-                latLngBoundsForCameraTarget = LatLngBounds(LatLng(-85.0, -180.0), LatLng(85.0, 180.0))
+                minZoomPreference = 2f
             ),
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,

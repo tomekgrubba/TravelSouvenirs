@@ -19,11 +19,7 @@ internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: Strin
         modifier = modifier,
         cameraPositionState = cameraPositionState,
         properties = com.google.maps.android.compose.MapProperties(
-            minZoomPreference = 2f,
-            latLngBoundsForCameraTarget = com.google.android.gms.maps.model.LatLngBounds(
-                com.google.android.gms.maps.model.LatLng(-85.0, -180.0), 
-                com.google.android.gms.maps.model.LatLng(85.0, 180.0)
-            )
+            minZoomPreference = 2f
         ),
         uiSettings = MapUiSettings(
             scrollGesturesEnabled = false,
