@@ -128,6 +128,10 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
             setMultiTouchControls(true)
             setBuiltInZoomControls(false)
             
+            // Limit zoom out and prevent vertical map repetition
+            minZoomLevel = 3.0
+            isVerticalMapRepetitionEnabled = false
+            
             // Restore primitive zoom and center state from ViewModel to prevent memory leaks 
             // caused by holding the Activity Context inside the ViewModel.
             val savedZoom = viewModel.osmZoom

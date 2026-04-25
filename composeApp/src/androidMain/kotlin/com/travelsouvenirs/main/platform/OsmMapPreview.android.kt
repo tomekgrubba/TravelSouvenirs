@@ -55,6 +55,8 @@ internal fun OsmMapPreview(latitude: Double, longitude: Double, label: String, m
                     setTileSource(TileSourceFactory.MAPNIK)
                     setMultiTouchControls(false)
                     setBuiltInZoomControls(false)
+                    minZoomLevel = 3.0
+                    isVerticalMapRepetitionEnabled = false
                     isClickable = false
                     isFocusable = false
                     controller.setZoom(8.0)
