@@ -57,6 +57,7 @@ internal fun OsmMapPreview(latitude: Double, longitude: Double, label: String, m
                     setBuiltInZoomControls(false)
                     minZoomLevel = 3.0
                     isVerticalMapRepetitionEnabled = false
+                    setScrollableAreaLimitDouble(org.osmdroid.util.BoundingBox(85.0, 180.0, -85.0, -180.0))
                     isClickable = false
                     isFocusable = false
                     controller.setZoom(8.0)
