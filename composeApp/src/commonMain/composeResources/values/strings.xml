@@ -75,6 +75,6 @@
 
     <string name="section_map_provider">Map Provider</string>
     <string name="text_map_provider_hint">Choose the map tiles used throughout the app.</string>
-    <string name="map_provider_native">Default</string>
+    <string name="map_provider_native">Google Maps</string>
     <string name="map_provider_osm">OpenStreetMap</string>
 </resources>

@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -207,14 +208,15 @@ fun MagnetDetailScreen(
                     }
 
                     if (m.latitude != 0.0 || m.longitude != 0.0) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
                         PlatformMapPreview(
                             latitude = m.latitude,
                             longitude = m.longitude,
                             label = m.name,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(200.dp)
+                                .height(150.dp)
+                                .clipToBounds()
                         )
                     }
                 }

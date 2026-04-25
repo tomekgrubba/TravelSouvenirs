@@ -99,7 +99,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         }
     }
 
-    var zoomLevel by remember { mutableStateOf(3) }
+    var zoomLevel by remember { mutableStateOf(viewModel.osmZoom?.toInt() ?: 3) }
     val showIndividual = zoomLevel >= OSM_CLUSTER_ZOOM_THRESHOLD
     // Always reflects the latest filtered magnets inside the map listener closure
     val latestMagnets = rememberUpdatedState(magnets)
