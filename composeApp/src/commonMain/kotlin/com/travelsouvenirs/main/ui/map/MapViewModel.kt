@@ -32,6 +32,11 @@ class MapViewModel(repository: MagnetRepository) : ViewModel() {
     /** Called from onCleared() to release platform-specific native view resources. */
     var onClearNativeView: (() -> Unit)? = null
 
+    // Android osmdroid state (avoids holding MapView which leaks Activity context)
+    var osmZoom: Double? = null
+    var osmCenterLat: Double? = null
+    var osmCenterLng: Double? = null
+
     override fun onCleared() {
         super.onCleared()
         onClearNativeView?.invoke()

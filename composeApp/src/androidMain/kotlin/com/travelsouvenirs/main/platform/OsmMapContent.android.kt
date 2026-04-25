@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,8 +83,9 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
     // Reset camera state when switching to this provider
     if (viewModel.lastProvider != MapProviderType.OPEN_STREET_MAP.name) {
         viewModel.lastProvider = MapProviderType.OPEN_STREET_MAP.name
-        viewModel.initialCameraSet = false
-        viewModel.nativeMapView = null
+        viewModel.osmZoom = null
+        viewModel.osmCenterLat = null
+        viewModel.osmCenterLng = null
     }
 
     val magnets = remember(allMagnets, selectedCategories) {
@@ -119,19 +121,27 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
     val clusterIconCache = remember { mutableMapOf<Pair<Long, Int>, BitmapDrawable>() }
 
     val mapView = remember {
-        (viewModel.nativeMapView as? MapView) ?: MapView(context).also { mv ->
-            mv.setTileSource(TileSourceFactory.MAPNIK)
-            mv.setMultiTouchControls(true)
-            mv.controller.setZoom(3.0)
-            viewModel.nativeMapView = mv
-            viewModel.onClearNativeView = { mv.onDetach() }
+        MapView(context).apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            setBuiltInZoomControls(false)
+            val savedZoom = viewModel.osmZoom
+            val savedLat = viewModel.osmCenterLat
+            val savedLng = viewModel.osmCenterLng
+            if (savedZoom != null && savedLat != null && savedLng != null) {
+                controller.setZoom(savedZoom)
+                controller.setCenter(GeoPoint(savedLat, savedLng))
+            } else {
+                controller.setZoom(3.0)
+            }
         }
     }
 
     // Initial camera
+    var initialZoomDone by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        if (!viewModel.initialCameraSet) {
-            viewModel.initialCameraSet = true
+        if (!initialZoomDone && viewModel.osmZoom == null) {
+            initialZoomDone = true
             try {
                 val loc = if (hasLocationPermission) locationService.getCurrentLocation() else null
                 if (loc != null) {
@@ -142,6 +152,21 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
                     mapView.post { mapView.zoomToBoundingBox(bb, false, 120) }
                 }
             } catch (_: Exception) { }
+        }
+    }
+
+    // Save map state to ViewModel on dispose
+    DisposableEffect(mapView) {
+        onDispose {
+            try {
+                viewModel.osmZoom = mapView.zoomLevelDouble
+                val center = mapView.mapCenter
+                if (center != null) {
+                    viewModel.osmCenterLat = center.latitude
+                    viewModel.osmCenterLng = center.longitude
+                }
+            } catch (_: Exception) { }
+            mapView.onDetach()
         }
     }
 
@@ -164,7 +189,13 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
     DisposableEffect(mapView) {
         val listener = object : MapListener {
             override fun onZoom(event: ZoomEvent?): Boolean {
-                zoomLevel = mapView.zoomLevelDouble.toInt()
+                event?.zoomLevel?.let { zoomLevel = it.toInt() }
+                val bb = mapView.boundingBox
+                if (bb != null) {
+                    offScreen = computeEdgeCounts(
+                        latestMagnets.value, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast
+                    )
+                }
                 return false
             }
             override fun onScroll(event: ScrollEvent?): Boolean {
@@ -191,18 +222,25 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
             }
         }
 
-        mapView.overlays.clear()
+        // Guard against a MapView that left composition during the IO suspension above
+        if (!mapView.isAttachedToWindow) return@LaunchedEffect
+        mapView.getRepository() ?: return@LaunchedEffect
+
+        val newOverlays = mutableListOf<org.osmdroid.views.overlay.Overlay>()
+        newOverlays.addAll(mapView.overlays.filter { it !is Marker })
 
         if (showIndividual) {
             magnetPins.forEach { pin ->
-                val marker = Marker(mapView)
+                // Pass explicit null InfoWindow to skip getDefaultMarkerInfoWindow(); we
+                // call setInfoWindow(null) below anyway to suppress the tap popup.
+                val marker = Marker(mapView, null)
                 marker.position = GeoPoint(pin.position.lat, pin.position.lng)
                 marker.title = pin.magnet.name
                 marker.snippet = pin.magnet.placeName
                 iconCache[pin.magnet.id]?.let { marker.icon = it }
                 marker.setOnMarkerClickListener { _, _ -> onPinClick(pin.magnet.id); true }
                 marker.setInfoWindow(null)
-                mapView.overlays.add(marker)
+                newOverlays.add(marker)
             }
         } else {
             val groups = MapViewModel.groupByZoom(magnets, zoomLevel.toFloat())
@@ -214,7 +252,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
                     val bmp = buildCircularBitmap(context, group.magnets.first().photoPath, count, 120)
                     if (bmp != null) clusterIconCache[cacheKey] = BitmapDrawable(context.resources, bmp)
                 }
-                val marker = Marker(mapView)
+                val marker = Marker(mapView, null)
                 marker.position = GeoPoint(group.centerLat, group.centerLng)
                 marker.title = group.magnets.first().name
                 clusterIconCache[cacheKey]?.let { marker.icon = it }
@@ -223,14 +261,26 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
                     marker.setOnMarkerClickListener { _, _ -> onPinClick(group.magnets.first().id); true }
                 } else {
                     marker.setOnMarkerClickListener { _, _ ->
-                        val bb = BoundingBox.fromGeoPoints(group.magnets.map { GeoPoint(it.latitude, it.longitude) })
-                        mapView.post { mapView.zoomToBoundingBox(bb, true, 120) }
+                        val groupIds = group.magnets.map { it.id }.toSet()
+                        // Use spread positions from magnetPins instead of raw coordinates:
+                        // same-location items produce a zero-area BoundingBox from raw coords,
+                        // which zooms to maximum level. Spread positions guarantee non-zero area.
+                        val groupPins = magnetPins.filter { it.magnet.id in groupIds }
+                        if (groupPins.size > 1) {
+                            val bb = BoundingBox.fromGeoPoints(groupPins.map { GeoPoint(it.position.lat, it.position.lng) })
+                            mapView.post { mapView.zoomToBoundingBox(bb, true, 200) }
+                        } else {
+                            mapView.controller.animateTo(GeoPoint(group.centerLat, group.centerLng), 16.0, 600L)
+                        }
                         true
                     }
                 }
-                mapView.overlays.add(marker)
+                newOverlays.add(marker)
             }
         }
+
+        mapView.overlays.clear()
+        mapView.overlays.addAll(newOverlays)
 
         val bb = mapView.boundingBox
         if (bb != null) {
