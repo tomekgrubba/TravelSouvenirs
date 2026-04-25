@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.compose.rememberNavController
 import com.russhwolf.settings.SharedPreferencesSettings
-import com.travelsouvenirs.main.data.AppContext
 import com.travelsouvenirs.main.data.MagnetRepository
 import com.travelsouvenirs.main.data.buildMagnetDatabase
 import com.travelsouvenirs.main.di.LocalImageStorage
@@ -24,8 +23,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
-        AppContext.application = application
 
         val db = buildMagnetDatabase()
         val repository = MagnetRepository(db.magnetDao())

@@ -23,6 +23,11 @@ data class MagnetGroup(val magnets: List<Magnet>, val centerLat: Double, val cen
 /** Supplies the map screen with pre-computed pin positions, groups, and raw item list. */
 class MapViewModel(repository: MagnetRepository) : ViewModel() {
 
+    /** Cached native map view (iOS: MKMapView); retains region across navigation pops. */
+    var nativeMapView: Any? = null
+    /** True once the map has been given its initial camera position; prevents re-zoom on back-nav. */
+    var initialCameraSet: Boolean = false
+
     /** Individual pin positions with overlapping items spread in a small circle. */
     val magnetPins: StateFlow<List<MagnetPin>> = repository.allMagnets
         .map(::spreadOverlapping)

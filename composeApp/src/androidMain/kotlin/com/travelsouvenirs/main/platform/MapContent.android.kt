@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,7 +98,7 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
     val zoom = cameraPositionState.position.zoom
     val showIndividual = zoom >= CLUSTER_ZOOM_THRESHOLD
 
-    val visibleBounds = remember(cameraPositionState.position) {
+    val visibleBounds = remember(cameraPositionState.position, cameraPositionState.projection) {
         cameraPositionState.projection?.visibleRegion?.latLngBounds
     }
     val offScreen = remember(magnets, visibleBounds) {
@@ -176,7 +177,7 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
         }
     }
 
-    var initialZoomDone by remember { mutableStateOf(false) }
+    var initialZoomDone by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         if (!initialZoomDone) {
             initialZoomDone = true

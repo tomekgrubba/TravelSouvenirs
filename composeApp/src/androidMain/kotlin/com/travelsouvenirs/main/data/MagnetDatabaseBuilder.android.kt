@@ -1,16 +1,11 @@
 package com.travelsouvenirs.main.data
 
-import android.app.Application
 import androidx.room.Room
 import androidx.room.RoomDatabase
-
-/** Holds the application context; must be initialized in [MainActivity.onCreate] before the database is built. */
-object AppContext {
-    lateinit var application: Application
-}
+import com.travelsouvenirs.main.TravelSouvenirsApp
 
 actual fun createMagnetDatabaseBuilder(): RoomDatabase.Builder<MagnetDatabase> =
     Room.databaseBuilder<MagnetDatabase>(
-        context = AppContext.application,
+        context = TravelSouvenirsApp.instance,
         name = "magnets_db"
     )

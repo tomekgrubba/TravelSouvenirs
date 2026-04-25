@@ -27,14 +27,19 @@ actual fun PlatformMapContent(onPinClick: (Long) -> Unit) {
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
     val magnets by viewModel.magnets.collectAsState()
 
-    val mapView = remember { MKMapView() }
+    val mapView = remember {
+        (viewModel.nativeMapView as? MKMapView) ?: MKMapView().also { viewModel.nativeMapView = it }
+    }
 
     LaunchedEffect(Unit) {
-        val loc = locationService.getCurrentLocation()
-        if (loc != null) {
-            val coord = CLLocationCoordinate2DMake(loc.lat, loc.lng)
-            val region = MKCoordinateRegionMakeWithDistance(coord, 5_000_000.0, 5_000_000.0)
-            mapView.setRegion(region, animated = false)
+        if (!viewModel.initialCameraSet) {
+            viewModel.initialCameraSet = true
+            val loc = locationService.getCurrentLocation()
+            if (loc != null) {
+                val coord = CLLocationCoordinate2DMake(loc.lat, loc.lng)
+                val region = MKCoordinateRegionMakeWithDistance(coord, 5_000_000.0, 5_000_000.0)
+                mapView.setRegion(region, animated = false)
+            }
         }
     }
 

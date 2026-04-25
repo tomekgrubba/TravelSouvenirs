@@ -9,8 +9,11 @@ import com.travelsouvenirs.main.domain.Magnet
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.location.PlaceResult
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,6 +87,7 @@ class AddMagnetViewModel(
     val category: StateFlow<String> = _category.asStateFlow()
 
     private var searchJob: Job? = null
+    private val cleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     // Tracks all image files copied during this session so orphans can be cleaned up.
     private val copiedPhotoPaths = mutableSetOf<String>()
@@ -230,14 +234,15 @@ class AddMagnetViewModel(
     override fun onCleared() {
         super.onCleared()
         if (!_isSaved.value && copiedPhotoPaths.isNotEmpty()) {
-            // User abandoned the form — clean up all copies we made.
-            // viewModelScope is cancelled by now, so use a standalone scope.
             val paths = copiedPhotoPaths.toList()
-            kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch {
+            cleanupScope.launch {
                 paths.forEach { path ->
                     try { imageStorage.deleteImage(path) } catch (_: Exception) { }
                 }
+                cleanupScope.cancel()
             }
+        } else {
+            cleanupScope.cancel()
         }
     }
 }

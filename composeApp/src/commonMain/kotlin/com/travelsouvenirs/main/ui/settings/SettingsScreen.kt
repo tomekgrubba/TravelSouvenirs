@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalMagnetRepository
-import com.travelsouvenirs.main.di.LocalMagnetRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*

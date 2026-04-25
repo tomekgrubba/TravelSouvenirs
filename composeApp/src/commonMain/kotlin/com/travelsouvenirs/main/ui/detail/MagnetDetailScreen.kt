@@ -19,12 +19,13 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -137,15 +138,43 @@ fun MagnetDetailScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState())
             ) {
-                AsyncImage(
-                    model = m.photoPath,
-                    contentDescription = stringResource(Res.string.cd_item_photo),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(280.dp)
-                        .clickable { showFullscreenPhoto = true },
-                    contentScale = ContentScale.Crop
-                )
+                Box(modifier = Modifier.fillMaxWidth().height(280.dp)) {
+                    AsyncImage(
+                        model = m.photoPath,
+                        contentDescription = stringResource(Res.string.cd_item_photo),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { showFullscreenPhoto = true },
+                        contentScale = ContentScale.Crop
+                    )
+                    if (m.category.isNotBlank()) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp),
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Label,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Text(
+                                    m.category,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -171,19 +200,6 @@ fun MagnetDetailScreen(
                             "${m.dateAcquired.year}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    SuggestionChip(
-                        onClick = {},
-                        label = { Text(m.category) },
-                        icon = {
-                            Icon(Icons.Default.Label, contentDescription = null)
-                        },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
                     )
 
                     if (m.notes.isNotBlank()) {
