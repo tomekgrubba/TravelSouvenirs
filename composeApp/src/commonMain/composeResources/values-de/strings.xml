@@ -72,4 +72,9 @@
     <string name="btn_delete_all">Alle löschen</string>
     <string name="section_about">Über</string>
     <string name="app_version">Version 1.0.0</string>
+
+    <string name="section_map_provider">Kartenanbieter</string>
+    <string name="text_map_provider_hint">Wähle die Kartenkacheln für die gesamte App.</string>
+    <string name="map_provider_native">Standard</string>
+    <string name="map_provider_osm">OpenStreetMap</string>
 </resources>

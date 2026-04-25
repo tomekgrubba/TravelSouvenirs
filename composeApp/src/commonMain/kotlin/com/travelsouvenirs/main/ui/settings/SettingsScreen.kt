@@ -1,6 +1,7 @@
 package com.travelsouvenirs.main.ui.settings
 
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,6 +26,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.travelsouvenirs.main.platform.MapProviderType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +51,7 @@ fun SettingsScreen() {
 
     val notes by vm.notes.collectAsState()
     val customCategories by vm.customCategories.collectAsState()
+    val mapProvider by vm.mapProvider.collectAsState()
     val allMagnets by repository.allMagnets.collectAsState(initial = emptyList())
 
     var newCategoryInput by remember { mutableStateOf("") }
@@ -87,6 +91,33 @@ fun SettingsScreen() {
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
+        // ── Map Provider ────────────────────────────────────────────────────
+        Text(
+            stringResource(Res.string.section_map_provider),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+        )
+        Text(
+            stringResource(Res.string.text_map_provider_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            MapProviderType.entries.forEach { provider ->
+                FilterChip(
+                    selected = provider == mapProvider,
+                    onClick = { vm.setMapProvider(provider) },
+                    label = { Text(mapProviderLabel(provider)) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
+
         // ── Categories ──────────────────────────────────────────────────────
         Column(
             modifier = Modifier
@@ -191,6 +222,12 @@ fun SettingsScreen() {
             )
         }
     }
+}
+
+@Composable
+private fun mapProviderLabel(provider: MapProviderType): String = when (provider) {
+    MapProviderType.NATIVE -> stringResource(Res.string.map_provider_native)
+    MapProviderType.OPEN_STREET_MAP -> stringResource(Res.string.map_provider_osm)
 }
 
 @Composable

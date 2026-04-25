@@ -44,6 +44,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.material.icons.extended)
             implementation(libs.androidx.sqlite.bundled)
+            implementation(libs.osmdroid.android)
             implementation("com.github.yalantis:ucrop:2.2.9")
             implementation("com.google.maps.android:maps-compose-utils:6.5.3")
             implementation("androidx.appcompat:appcompat:1.7.0")

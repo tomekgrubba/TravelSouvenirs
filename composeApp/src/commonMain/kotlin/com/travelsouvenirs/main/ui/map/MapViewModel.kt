@@ -23,10 +23,20 @@ data class MagnetGroup(val magnets: List<Magnet>, val centerLat: Double, val cen
 /** Supplies the map screen with pre-computed pin positions, groups, and raw item list. */
 class MapViewModel(repository: MagnetRepository) : ViewModel() {
 
-    /** Cached native map view (iOS: MKMapView); retains region across navigation pops. */
+    /** Cached native map view (MKMapView / WKWebView on iOS, MapView on Android OSM); survives nav pops. */
     var nativeMapView: Any? = null
     /** True once the map has been given its initial camera position; prevents re-zoom on back-nav. */
     var initialCameraSet: Boolean = false
+    /** Tracks the last-active provider key; triggers camera reset when the provider changes. */
+    var lastProvider: String? = null
+    /** Called from onCleared() to release platform-specific native view resources. */
+    var onClearNativeView: (() -> Unit)? = null
+
+    override fun onCleared() {
+        super.onCleared()
+        onClearNativeView?.invoke()
+        nativeMapView = null
+    }
 
     /** Individual pin positions with overlapping items spread in a small circle. */
     val magnetPins: StateFlow<List<MagnetPin>> = repository.allMagnets

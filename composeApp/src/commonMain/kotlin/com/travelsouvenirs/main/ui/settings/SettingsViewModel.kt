@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.data.MagnetRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
+import com.travelsouvenirs.main.platform.MapProviderType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +20,16 @@ class SettingsViewModel(
     private val settings: Settings,
     private val repository: MagnetRepository
 ) : ViewModel() {
+
+    private val _mapProvider = MutableStateFlow(
+        MapProviderType.fromString(settings.getStringOrNull(MapProviderType.SETTINGS_KEY))
+    )
+    val mapProvider: StateFlow<MapProviderType> = _mapProvider.asStateFlow()
+
+    fun setMapProvider(provider: MapProviderType) {
+        _mapProvider.value = provider
+        settings.putString(MapProviderType.SETTINGS_KEY, provider.name)
+    }
 
     private val _notes = MutableStateFlow(settings.getStringOrNull(KEY_NOTES) ?: "")
     val notes: StateFlow<String> = _notes.asStateFlow()

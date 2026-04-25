@@ -32,8 +32,8 @@ fun rememberIndividualIcons(pins: List<MagnetPin>, sizePx: Int = 120): Map<Long,
         pins.forEach { pin ->
             if (!icons.containsKey(pin.magnet.id)) {
                 launch {
-                    val d = buildMarkerBitmap(context, pin.magnet.photoPath, 0, sizePx)
-                    if (d != null) icons[pin.magnet.id] = d
+                    val bmp = buildCircularBitmap(context, pin.magnet.photoPath, 0, sizePx)
+                    if (bmp != null) icons[pin.magnet.id] = BitmapDescriptorFactory.fromBitmap(bmp)
                 }
             }
         }
@@ -51,20 +51,21 @@ fun rememberGroupIcons(groups: List<MagnetGroup>, sizePx: Int = 120): Map<Int, B
         groups.forEachIndexed { idx, group ->
             launch {
                 val count = if (group.magnets.size > 1) group.magnets.size else 0
-                val d = buildMarkerBitmap(context, group.magnets.first().photoPath, count, sizePx)
-                if (d != null) icons[idx] = d
+                val bmp = buildCircularBitmap(context, group.magnets.first().photoPath, count, sizePx)
+                if (bmp != null) icons[idx] = BitmapDescriptorFactory.fromBitmap(bmp)
             }
         }
     }
     return icons
 }
 
-private suspend fun buildMarkerBitmap(
+/** Produces a circular photo Bitmap suitable for any map SDK. Returns null on failure. */
+internal suspend fun buildCircularBitmap(
     context: Context,
     photoPath: String,
     count: Int,
     sizePx: Int
-): BitmapDescriptor? = withContext(Dispatchers.IO) {
+): Bitmap? = withContext(Dispatchers.IO) {
     try {
         val request = ImageRequest.Builder(context)
             .data(photoPath)
@@ -73,7 +74,6 @@ private suspend fun buildMarkerBitmap(
         val result = SingletonImageLoader.get(context).execute(request) as? SuccessResult
             ?: return@withContext null
         val decoded = try { result.image.toBitmap() } catch (_: Exception) { return@withContext null }
-        // BitmapShader requires a software bitmap; copy from hardware if needed
         val source = if (decoded.config == Bitmap.Config.HARDWARE) {
             decoded.copy(Bitmap.Config.ARGB_8888, false)
         } else decoded
@@ -82,7 +82,6 @@ private suspend fun buildMarkerBitmap(
         val canvas = Canvas(out)
         val r = sizePx / 2f
 
-        // Circular photo
         val photoPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = BitmapShader(
                 Bitmap.createScaledBitmap(source, sizePx, sizePx, true),
@@ -91,7 +90,6 @@ private suspend fun buildMarkerBitmap(
         }
         canvas.drawCircle(r, r, r, photoPaint)
 
-        // White border
         val borderWidth = (sizePx * 0.055f).coerceAtLeast(3f)
         canvas.drawCircle(r, r, r - borderWidth / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
@@ -99,7 +97,6 @@ private suspend fun buildMarkerBitmap(
             strokeWidth = borderWidth
         })
 
-        // Count badge
         if (count > 1) {
             val br = sizePx * 0.27f
             val bx = sizePx - br + 2f
@@ -121,8 +118,8 @@ private suspend fun buildMarkerBitmap(
             canvas.drawText(count.toString(), bx, by - (tp.descent() + tp.ascent()) / 2, tp)
         }
 
-        BitmapDescriptorFactory.fromBitmap(out)
-    } catch (e: Exception) {
+        out
+    } catch (_: Exception) {
         null
     }
 }
