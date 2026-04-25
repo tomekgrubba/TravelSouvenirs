@@ -113,8 +113,10 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         )
     }
 
-    // Icon cache: magnetId -> BitmapDrawable
+    // Individual icon cache: magnetId -> BitmapDrawable (no badge)
     val iconCache = remember { mutableMapOf<Long, BitmapDrawable>() }
+    // Cluster icon cache: (firstMagnetId, count) -> BitmapDrawable (with count badge)
+    val clusterIconCache = remember { mutableMapOf<Pair<Long, Int>, BitmapDrawable>() }
 
     val mapView = remember {
         (viewModel.nativeMapView as? MapView) ?: MapView(context).also { mv ->
@@ -205,17 +207,17 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         } else {
             val groups = MapViewModel.groupByZoom(magnets, zoomLevel.toFloat())
             groups.forEach { group ->
-                // Pre-load cluster icon if missing
                 val firstId = group.magnets.first().id
-                if (!iconCache.containsKey(firstId)) {
-                    val bmp = buildCircularBitmap(context, group.magnets.first().photoPath,
-                        if (group.magnets.size > 1) group.magnets.size else 0, 120)
-                    if (bmp != null) iconCache[firstId] = BitmapDrawable(context.resources, bmp)
+                val count = group.magnets.size
+                val cacheKey = firstId to count
+                if (!clusterIconCache.containsKey(cacheKey)) {
+                    val bmp = buildCircularBitmap(context, group.magnets.first().photoPath, count, 120)
+                    if (bmp != null) clusterIconCache[cacheKey] = BitmapDrawable(context.resources, bmp)
                 }
                 val marker = Marker(mapView)
                 marker.position = GeoPoint(group.centerLat, group.centerLng)
                 marker.title = group.magnets.first().name
-                iconCache[firstId]?.let { marker.icon = it }
+                clusterIconCache[cacheKey]?.let { marker.icon = it }
                 marker.setInfoWindow(null)
                 if (group.magnets.size == 1) {
                     marker.setOnMarkerClickListener { _, _ -> onPinClick(group.magnets.first().id); true }
