@@ -99,6 +99,8 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         }
     }
 
+    // Initialize zoomLevel with the restored zoom from the ViewModel to ensure 
+    // marker cluster logic computes correctly immediately when returning from the detail screen.
     var zoomLevel by remember { mutableStateOf(viewModel.osmZoom?.toInt() ?: 3) }
     val showIndividual = zoomLevel >= OSM_CLUSTER_ZOOM_THRESHOLD
     // Always reflects the latest filtered magnets inside the map listener closure
@@ -125,6 +127,9 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
             setBuiltInZoomControls(false)
+            
+            // Restore primitive zoom and center state from ViewModel to prevent memory leaks 
+            // caused by holding the Activity Context inside the ViewModel.
             val savedZoom = viewModel.osmZoom
             val savedLat = viewModel.osmCenterLat
             val savedLng = viewModel.osmCenterLng
@@ -137,7 +142,8 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         }
     }
 
-    // Initial camera
+    // Use rememberSaveable so that the initial camera is only set once per lifecycle,
+    // allowing the user to navigate away and back without the map resetting to the default bounds.
     var initialZoomDone by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         if (!initialZoomDone && viewModel.osmZoom == null) {
@@ -226,6 +232,9 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         if (!mapView.isAttachedToWindow) return@LaunchedEffect
         mapView.getRepository() ?: return@LaunchedEffect
 
+        // Atomically update overlays on the UI thread to minimize the window for a ConcurrentModificationException
+        // when osmdroid's background render thread iterates over the overlays list. We build a temporary list first, 
+        // retaining system overlays like the copyright logo, and then swap it.
         val newOverlays = mutableListOf<org.osmdroid.views.overlay.Overlay>()
         newOverlays.addAll(mapView.overlays.filter { it !is Marker })
 
@@ -268,6 +277,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
                         val groupPins = magnetPins.filter { it.magnet.id in groupIds }
                         if (groupPins.size > 1) {
                             val bb = BoundingBox.fromGeoPoints(groupPins.map { GeoPoint(it.position.lat, it.position.lng) })
+                            // Matched Google Maps behavior: use 200px padding when zooming to a cluster bounds
                             mapView.post { mapView.zoomToBoundingBox(bb, true, 200) }
                         } else {
                             mapView.controller.animateTo(GeoPoint(group.centerLat, group.centerLng), 16.0, 600L)

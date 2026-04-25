@@ -28,6 +28,8 @@ internal fun OsmMapPreview(latitude: Double, longitude: Double, label: String, m
     val lifecycleOwner = LocalLifecycleOwner.current
     val mapView = remember { mutableStateOf<MapView?>(null) }
 
+    // Properly handle the MapView lifecycle (pause/resume/detach) to prevent 
+    // the map from continuing to fetch tiles and leak memory in the background.
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {

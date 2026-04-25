@@ -208,6 +208,7 @@ fun MagnetDetailScreen(
                     }
 
                     if (m.latitude != 0.0 || m.longitude != 0.0) {
+                        // Increased spacing so the map doesn't crowd the text above it
                         Spacer(modifier = Modifier.height(24.dp))
                         PlatformMapPreview(
                             latitude = m.latitude,
@@ -216,6 +217,8 @@ fun MagnetDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(150.dp)
+                                // Clip to bounds prevents AndroidView from drawing outside its allocated layout box
+                                // and overlapping other scrollable content.
                                 .clipToBounds()
                         )
                     }

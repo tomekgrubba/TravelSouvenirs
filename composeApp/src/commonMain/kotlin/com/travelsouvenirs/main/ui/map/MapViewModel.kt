@@ -32,7 +32,9 @@ class MapViewModel(repository: MagnetRepository) : ViewModel() {
     /** Called from onCleared() to release platform-specific native view resources. */
     var onClearNativeView: (() -> Unit)? = null
 
-    // Android osmdroid state (avoids holding MapView which leaks Activity context)
+    // Android osmdroid state. Instead of caching the MapView instance (which holds a reference to the Activity 
+    // and causes a memory leak when the screen rotates or navigates), we store these primitive state 
+    // values and restore them on the newly created MapView.
     var osmZoom: Double? = null
     var osmCenterLat: Double? = null
     var osmCenterLng: Double? = null
