@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +52,9 @@ import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.map.buildCircularBitmap
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
@@ -95,6 +99,8 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
 
     var zoomLevel by remember { mutableStateOf(3) }
     val showIndividual = zoomLevel >= OSM_CLUSTER_ZOOM_THRESHOLD
+    // Always reflects the latest filtered magnets inside the map listener closure
+    val latestMagnets = rememberUpdatedState(magnets)
     var offScreen by remember { mutableStateOf(EdgeCounts(0, 0, 0, 0)) }
     var showFilterMenu by remember { mutableStateOf(false) }
     val isFilterActive = selectedCategories != categoryFilter.allCategoriesSet
@@ -152,8 +158,29 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         }
     }
 
-    // Rebuild markers when pins/zoom/icons change
-    LaunchedEffect(magnetPins, zoomLevel) {
+    // Update zoomLevel and edge counts reactively from actual map events
+    DisposableEffect(mapView) {
+        val listener = object : MapListener {
+            override fun onZoom(event: ZoomEvent?): Boolean {
+                zoomLevel = mapView.zoomLevelDouble.toInt()
+                return false
+            }
+            override fun onScroll(event: ScrollEvent?): Boolean {
+                val bb = mapView.boundingBox
+                if (bb != null) {
+                    offScreen = computeEdgeCounts(
+                        latestMagnets.value, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast
+                    )
+                }
+                return false
+            }
+        }
+        mapView.addMapListener(listener)
+        onDispose { mapView.removeMapListener(listener) }
+    }
+
+    // Rebuild markers when pins, filter, or zoom level changes
+    LaunchedEffect(magnetPins, magnets, zoomLevel) {
         // Pre-load missing icons
         magnetPins.forEach { pin ->
             if (!iconCache.containsKey(pin.magnet.id)) {
@@ -226,14 +253,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = { mapView },
-            modifier = Modifier.fillMaxSize(),
-            update = { mv ->
-                zoomLevel = mv.zoomLevelDouble.toInt()
-                val bb = mv.boundingBox
-                if (bb != null) {
-                    offScreen = computeEdgeCounts(magnets, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast)
-                }
-            }
+            modifier = Modifier.fillMaxSize()
         )
 
         Column(
