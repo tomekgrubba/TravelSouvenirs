@@ -10,5 +10,13 @@
 	<string>Choose a photo from your library for your souvenir</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to tag where you acquired your souvenir</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 </dict>
 </plist>
