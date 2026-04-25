@@ -131,6 +131,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
             // Limit zoom out and prevent vertical map repetition
             minZoomLevel = 3.0
             isVerticalMapRepetitionEnabled = false
+            // Explicitly set the maximum map boundaries to prevent the user from panning into empty gray space
             setScrollableAreaLimitDouble(BoundingBox(85.0, 180.0, -85.0, -180.0))
             
             // Restore primitive zoom and center state from ViewModel to prevent memory leaks 

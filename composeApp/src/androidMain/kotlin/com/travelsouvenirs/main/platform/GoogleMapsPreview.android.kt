@@ -19,6 +19,7 @@ internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: Strin
         modifier = modifier,
         cameraPositionState = cameraPositionState,
         properties = com.google.maps.android.compose.MapProperties(
+            // Restrict zoom out slightly (matches OSM zoom-out feel but allows continuous panning across the dateline)
             minZoomPreference = 2f
         ),
         uiSettings = MapUiSettings(

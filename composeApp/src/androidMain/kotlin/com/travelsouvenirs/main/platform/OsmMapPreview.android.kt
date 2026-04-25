@@ -55,8 +55,10 @@ internal fun OsmMapPreview(latitude: Double, longitude: Double, label: String, m
                     setTileSource(TileSourceFactory.MAPNIK)
                     setMultiTouchControls(false)
                     setBuiltInZoomControls(false)
+                    // Limit zoom out and prevent vertical map repetition, just like the main map
                     minZoomLevel = 3.0
                     isVerticalMapRepetitionEnabled = false
+                    // Prevent panning outside of valid world bounds
                     setScrollableAreaLimitDouble(org.osmdroid.util.BoundingBox(85.0, 180.0, -85.0, -180.0))
                     isClickable = false
                     isFocusable = false

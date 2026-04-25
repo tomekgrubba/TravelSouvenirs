@@ -185,6 +185,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit) {
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission,
+                // Restrict zoom out slightly (matches OSM zoom-out feel but allows continuous panning across the dateline)
                 minZoomPreference = 2f
             ),
             uiSettings = MapUiSettings(
