@@ -24,7 +24,7 @@
     <string name="sort_date">Erwerbsdatum</string>
     <string name="sort_location">Ortsname</string>
     <string name="filter_by_category">Nach Kategorie filtern</string>
-    <string name="empty_state_no_items">Noch keine Elemente.\nTippe hier oder auf +, um dein erstes hinzuzufügen!</string>
+    <string name="empty_state_no_items">Noch keine Elemente.\nTippe hier, um dein erstes hinzuzufügen!</string>
     <string name="empty_state_no_results">Keine Ergebnisse.</string>
     <string name="empty_state_no_match">Keine Elemente entsprechen\nden ausgewählten Kategorien.</string>
     <string name="no_location">Kein Ort</string>
