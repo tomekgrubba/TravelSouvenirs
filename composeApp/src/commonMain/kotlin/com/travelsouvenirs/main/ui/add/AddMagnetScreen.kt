@@ -20,9 +20,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -56,18 +57,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalImageStorage
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalMagnetRepository
 import com.travelsouvenirs.main.di.LocalSettings
-import com.travelsouvenirs.main.location.PlaceResult
+import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
 import com.travelsouvenirs.main.platform.rememberCameraCapture
 import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
@@ -160,27 +161,35 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (photoPath != null) {
-                AsyncImage(
-                    model = photoPath,
-                    contentDescription = stringResource(Res.string.cd_item_photo),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentScale = ContentScale.Crop
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    stringResource(Res.string.label_photo),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp)
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        stringResource(Res.string.no_photo_selected),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                if (photoPath != null) {
+                    AsyncImage(
+                        model = photoPath,
+                        contentDescription = stringResource(Res.string.cd_item_photo),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            stringResource(Res.string.no_photo_selected),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -194,6 +203,22 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                     onClick = { launchPhotoPicker() },
                     modifier = Modifier.weight(1f)
                 ) { Text(stringResource(Res.string.btn_gallery)) }
+            }
+
+            OutlinedButton(
+                onClick = { viewModel.openLocationDialog() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    Icons.Default.Place,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text(
+                    if (placeName.isBlank()) stringResource(Res.string.label_set_location) else placeName,
+                    maxLines = 1
+                )
             }
 
             OutlinedTextField(
@@ -259,22 +284,6 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                 }
             )
 
-            OutlinedButton(
-                onClick = { viewModel.openLocationDialog() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    Icons.Default.Place,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.size(8.dp))
-                Text(
-                    if (placeName.isBlank()) stringResource(Res.string.label_set_location) else placeName,
-                    maxLines = 1
-                )
-            }
-
             Button(
                 onClick = viewModel::saveMagnet,
                 enabled = isFormValid,
@@ -296,120 +305,154 @@ private fun LocationPickerDialog(
     val isSearching by viewModel.isSearching.collectAsState()
     val isLocating by viewModel.isLocating.collectAsState()
     val locationError by viewModel.locationError.collectAsState()
+    val pendingLat by viewModel.pendingLat.collectAsState()
+    val pendingLng by viewModel.pendingLng.collectAsState()
+    val cameraMoveId by viewModel.cameraMoveId.collectAsState()
 
-    Dialog(onDismissRequest = { viewModel.closeLocationDialog() }) {
+    Dialog(
+        onDismissRequest = { viewModel.closeLocationDialog() },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
+            modifier = Modifier.fillMaxWidth(0.95f),
             shape = MaterialTheme.shapes.large,
             tonalElevation = 6.dp
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
-                Text(stringResource(Res.string.dialog_set_location), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    stringResource(Res.string.dialog_set_location),
+                    style = MaterialTheme.typography.titleLarge
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = onRequestGps,
+                // Search field + my-location icon button inline
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLocating
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    if (isLocating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(stringResource(Res.string.getting_location))
-                    } else {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(stringResource(Res.string.btn_use_current_location))
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = viewModel::onSearchQueryChange,
+                        label = { Text(stringResource(Res.string.label_city_or_place)) },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    IconButton(
+                        onClick = onRequestGps,
+                        enabled = !isLocating
+                    ) {
+                        if (isLocating && pendingLat == null) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(
+                                Icons.Default.MyLocation,
+                                contentDescription = stringResource(Res.string.cd_my_location)
+                            )
+                        }
                     }
                 }
 
                 locationError?.let {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f))
-                    Text(
-                        stringResource(Res.string.text_or_search),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    HorizontalDivider(modifier = Modifier.weight(1f))
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = viewModel::onSearchQueryChange,
-                    label = { Text(stringResource(Res.string.label_city_or_place)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Map with floating search results overlay
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp, max = 240.dp)
+                        .height(260.dp)
                 ) {
-                    when {
-                        isSearching -> {
-                            CircularProgressIndicator(
+                    PlatformMapLocationPicker(
+                        selectedLat = pendingLat,
+                        selectedLng = pendingLng,
+                        cameraMoveId = cameraMoveId,
+                        onLocationPicked = viewModel::onPendingLocationChanged,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // Search results float above the map
+                    val showSearchOverlay = isSearching || searchResults.isNotEmpty() || searchQuery.length >= 2
+                    if (showSearchOverlay) {
+                        Card(
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        ) {
+                            Box(
                                 modifier = Modifier
-                                    .size(24.dp)
-                                    .align(Alignment.Center)
-                            )
-                        }
-                        searchResults.isNotEmpty() -> {
-                            LazyColumn {
-                                items(searchResults) { place ->
-                                    ListItem(
-                                        headlineContent = { Text(place.name) },
-                                        modifier = Modifier.clickable {
-                                            viewModel.onPlaceSelected(place)
-                                        }
+                                    .fillMaxWidth()
+                                    .heightIn(min = 40.dp, max = 150.dp)
+                            ) {
+                                when {
+                                    isSearching -> CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp).align(Alignment.Center)
                                     )
-                                    HorizontalDivider()
+                                    searchResults.isNotEmpty() -> LazyColumn {
+                                        items(searchResults) { place ->
+                                            ListItem(
+                                                headlineContent = { Text(place.name) },
+                                                modifier = Modifier.clickable { viewModel.onPlaceSelected(place) }
+                                            )
+                                            HorizontalDivider()
+                                        }
+                                    }
+                                    else -> Text(
+                                        stringResource(Res.string.no_results_found),
+                                        modifier = Modifier.align(Alignment.Center).padding(8.dp),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
-                        searchQuery.length >= 2 -> {
+                    }
+
+                    // Hint when no pin has been placed yet
+                    if (pendingLat == null && !isSearching && searchResults.isEmpty()) {
+                        Card(modifier = Modifier.align(Alignment.Center).padding(16.dp)) {
                             Text(
-                                stringResource(Res.string.no_results_found),
-                                modifier = Modifier.align(Alignment.Center),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                stringResource(Res.string.map_picker_hint),
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                TextButton(
-                    onClick = { viewModel.closeLocationDialog() },
-                    modifier = Modifier.align(Alignment.End)
-                ) { Text(stringResource(Res.string.btn_cancel)) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.closeLocationDialog() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(Res.string.btn_cancel))
+                    }
+                    Button(
+                        onClick = { viewModel.confirmLocation() },
+                        enabled = pendingLat != null && !isLocating,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        if (isLocating && pendingLat != null) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                        }
+                        Text(stringResource(Res.string.btn_confirm))
+                    }
+                }
             }
         }
     }

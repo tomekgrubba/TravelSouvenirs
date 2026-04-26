@@ -5,7 +5,9 @@ import com.travelsouvenirs.main.data.FakeMagnetDao
 import com.travelsouvenirs.main.data.MagnetRepository
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings {
 
@@ -98,6 +100,45 @@ class SettingsViewModelTest {
         vm.onNotesChange("Third")
         assertEquals("Third", vm.notes.value)
         assertEquals("Third", settings.getStringOrNull("notes"))
+    }
+
+    @Test
+    fun `addCategory returns true and adds category`() {
+        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+        assertTrue(vm.addCategory("Souvenir"))
+        assertEquals(listOf("Souvenir"), vm.customCategories.value)
+    }
+
+    @Test
+    fun `addCategory returns false for exact duplicate`() {
+        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+        vm.addCategory("Souvenir")
+        assertFalse(vm.addCategory("Souvenir"))
+        assertEquals(1, vm.customCategories.value.size)
+    }
+
+    @Test
+    fun `addCategory returns false for case-insensitive duplicate`() {
+        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+        vm.addCategory("Souvenir")
+        assertFalse(vm.addCategory("souvenir"))
+        assertFalse(vm.addCategory("SOUVENIR"))
+        assertEquals(1, vm.customCategories.value.size)
+    }
+
+    @Test
+    fun `addCategory returns false when name matches default category`() {
+        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+        assertFalse(vm.addCategory("Default"))
+        assertFalse(vm.addCategory("default"))
+        assertTrue(vm.customCategories.value.isEmpty())
+    }
+
+    @Test
+    fun `addCategory returns false for blank input`() {
+        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+        assertFalse(vm.addCategory("   "))
+        assertTrue(vm.customCategories.value.isEmpty())
     }
 
     @Test

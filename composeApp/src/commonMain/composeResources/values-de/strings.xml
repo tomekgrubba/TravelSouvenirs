@@ -75,6 +75,5 @@
 
     <string name="section_map_provider">Kartenanbieter</string>
     <string name="text_map_provider_hint">Wähle die Kartenkacheln für die gesamte App.</string>
-    <string name="map_provider_native">Google Maps</string>
     <string name="map_provider_osm">OpenStreetMap</string>
 </resources>

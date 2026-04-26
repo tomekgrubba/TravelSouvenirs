@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import com.travelsouvenirs.main.platform.MapProviderType
+import com.travelsouvenirs.main.platform.nativeMapProviderName
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalMagnetRepository
@@ -55,6 +57,7 @@ fun SettingsScreen() {
     val allMagnets by repository.allMagnets.collectAsState(initial = emptyList())
 
     var newCategoryInput by remember { mutableStateOf("") }
+    var duplicateCategoryError by remember { mutableStateOf(false) }
     var pendingDeleteCategory by remember { mutableStateOf<String?>(null) }
 
     // Confirmation dialog
@@ -111,7 +114,7 @@ fun SettingsScreen() {
                 FilterChip(
                     selected = provider == mapProvider,
                     onClick = { vm.setMapProvider(provider) },
-                    label = { Text(mapProviderLabel(provider)) },
+                    label = { Text(mapProviderLabel(provider), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -167,15 +170,27 @@ fun SettingsScreen() {
                         ) {
                             OutlinedTextField(
                                 value = newCategoryInput,
-                                onValueChange = { newCategoryInput = it },
+                                onValueChange = {
+                                    newCategoryInput = it
+                                    duplicateCategoryError = false
+                                },
                                 placeholder = { Text(stringResource(Res.string.label_new_category)) },
                                 singleLine = true,
+                                isError = duplicateCategoryError,
+                                supportingText = if (duplicateCategoryError) {
+                                    { Text(stringResource(Res.string.error_category_already_exists)) }
+                                } else null,
                                 modifier = Modifier.weight(1f)
                             )
                             IconButton(
                                 onClick = {
-                                    vm.addCategory(newCategoryInput)
-                                    newCategoryInput = ""
+                                    val added = vm.addCategory(newCategoryInput)
+                                    if (added) {
+                                        newCategoryInput = ""
+                                        duplicateCategoryError = false
+                                    } else {
+                                        duplicateCategoryError = true
+                                    }
                                 },
                                 enabled = newCategoryInput.isNotBlank()
                             ) {
@@ -226,7 +241,7 @@ fun SettingsScreen() {
 
 @Composable
 private fun mapProviderLabel(provider: MapProviderType): String = when (provider) {
-    MapProviderType.NATIVE -> stringResource(Res.string.map_provider_native)
+    MapProviderType.NATIVE -> nativeMapProviderName()
     MapProviderType.OPEN_STREET_MAP -> stringResource(Res.string.map_provider_osm)
 }
 

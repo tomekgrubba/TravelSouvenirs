@@ -60,6 +60,18 @@ class AddMagnetViewModel(
     private val _showLocationDialog = MutableStateFlow(false)
     val showLocationDialog: StateFlow<Boolean> = _showLocationDialog.asStateFlow()
 
+    // Staged pin coordinates inside the location dialog — committed only on Confirm.
+    private val _pendingLat = MutableStateFlow<Double?>(null)
+    val pendingLat: StateFlow<Double?> = _pendingLat.asStateFlow()
+
+    private val _pendingLng = MutableStateFlow<Double?>(null)
+    val pendingLng: StateFlow<Double?> = _pendingLng.asStateFlow()
+
+    // Incremented on GPS fetch or search selection to trigger a camera animation in the map.
+    // NOT incremented on drag or tap — so the camera never snaps back mid-drag.
+    private val _cameraMoveId = MutableStateFlow(0)
+    val cameraMoveId: StateFlow<Int> = _cameraMoveId.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
@@ -132,11 +144,39 @@ class AddMagnetViewModel(
     /** Updates the selected category. */
     fun onCategoryChange(value: String) { _category.value = value }
 
-    /** Resets search state and opens the location picker dialog. */
+    /**
+     * Opens the unified location dialog. Pre-populates the pending pin from the committed
+     * location if one exists; otherwise tries GPS silently (no error shown on failure).
+     */
     fun openLocationDialog() {
         _searchQuery.value = ""
         _searchResults.value = emptyList()
         _locationError.value = null
+        val lat = _latitude.value
+        val lng = _longitude.value
+        if (lat != 0.0 && lng != 0.0) {
+            _pendingLat.value = lat
+            _pendingLng.value = lng
+            _cameraMoveId.value++
+        } else {
+            _pendingLat.value = null
+            _pendingLng.value = null
+            viewModelScope.launch {
+                _isLocating.value = true
+                try {
+                    val loc = locationService.getCurrentLocation()
+                    if (loc != null) {
+                        _pendingLat.value = loc.lat
+                        _pendingLng.value = loc.lng
+                        _cameraMoveId.value++
+                    }
+                } catch (_: Exception) {
+                    // Silently ignored — user can tap the map or search instead
+                } finally {
+                    _isLocating.value = false
+                }
+            }
+        }
         _showLocationDialog.value = true
     }
 
@@ -162,15 +202,24 @@ class AddMagnetViewModel(
         }
     }
 
-    /** Stores the chosen [place] coordinates and name, then closes the dialog. */
+    /**
+     * Places the pending pin at the selected [place] and animates the camera there.
+     * Does not close the dialog — the user must tap Confirm.
+     */
     fun onPlaceSelected(place: PlaceResult) {
-        _latitude.value = place.latitude
-        _longitude.value = place.longitude
-        _placeName.value = place.name
-        closeLocationDialog()
+        _pendingLat.value = place.latitude
+        _pendingLng.value = place.longitude
+        _searchQuery.value = ""
+        _searchResults.value = emptyList()
+        _cameraMoveId.value++
+        if (_name.value.isBlank()) _name.value = place.name.split(", ").first()
     }
 
-    /** Requests the device's current location, reverse-geocodes it, and closes the dialog. */
+    /**
+     * Fetches the device's current GPS location and places the pending pin there.
+     * Animates the camera to the new position. Shows an error if location is unavailable.
+     * Does not close the dialog — the user must tap Confirm.
+     */
     fun fetchCurrentLocation() {
         viewModelScope.launch {
             _isLocating.value = true
@@ -178,10 +227,9 @@ class AddMagnetViewModel(
             try {
                 val location = locationService.getCurrentLocation()
                 if (location != null) {
-                    _latitude.value = location.lat
-                    _longitude.value = location.lng
-                    _placeName.value = locationService.reverseGeocode(location.lat, location.lng)
-                    closeLocationDialog()
+                    _pendingLat.value = location.lat
+                    _pendingLng.value = location.lng
+                    _cameraMoveId.value++
                 } else {
                     _locationError.value = "Could not get location. Try again."
                 }
@@ -190,6 +238,36 @@ class AddMagnetViewModel(
             } finally {
                 _isLocating.value = false
             }
+        }
+    }
+
+    /**
+     * Updates the pending pin position from a map tap or drag.
+     * Does NOT increment [_cameraMoveId] so the camera does not snap back.
+     */
+    fun onPendingLocationChanged(lat: Double, lng: Double) {
+        _pendingLat.value = lat
+        _pendingLng.value = lng
+    }
+
+    /**
+     * Reverse-geocodes the pending pin, commits it to the form, and closes the dialog.
+     */
+    fun confirmLocation() {
+        val lat = _pendingLat.value ?: return
+        val lng = _pendingLng.value ?: return
+        viewModelScope.launch {
+            _isLocating.value = true
+            try {
+                val resolved = locationService.reverseGeocode(lat, lng)
+                _latitude.value = lat
+                _longitude.value = lng
+                _placeName.value = resolved
+                if (_name.value.isBlank()) _name.value = resolved.split(", ").first()
+            } finally {
+                _isLocating.value = false
+            }
+            closeLocationDialog()
         }
     }
 

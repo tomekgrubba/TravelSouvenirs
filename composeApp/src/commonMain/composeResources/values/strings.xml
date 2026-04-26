@@ -32,6 +32,7 @@
 
     <string name="title_edit_item">Edit Item</string>
     <string name="title_add_item">Add Item</string>
+    <string name="label_photo">Photo *</string>
     <string name="no_photo_selected">No photo selected</string>
     <string name="btn_take_photo">Take Photo</string>
     <string name="btn_gallery">Gallery</string>
@@ -48,6 +49,9 @@
     <string name="text_or_search">or search</string>
     <string name="label_city_or_place">City or place name</string>
     <string name="no_results_found">No results found</string>
+    <string name="btn_pick_from_map">Pick from map</string>
+    <string name="map_picker_hint">Tap anywhere on the map to set location</string>
+    <string name="btn_confirm">Confirm</string>
 
     <string name="dialog_delete_item_title">Delete item?</string>
     <string name="dialog_delete_item_text">This will permanently delete this item.</string>
@@ -61,6 +65,7 @@
     <string name="dialog_delete_category_title">Delete \"%1$s\"?</string>
     <string name="label_new_category">New category name</string>
     <string name="max_categories_reached">Maximum of 5 custom categories reached.</string>
+    <string name="error_category_already_exists">A category with this name already exists.</string>
     <string name="cd_builtin_category">Built-in category</string>
     <string name="cd_delete_item">Delete %1$s</string>
     <string name="section_notes">Notes</string>
@@ -75,6 +80,5 @@
 
     <string name="section_map_provider">Map Provider</string>
     <string name="text_map_provider_hint">Choose the map tiles used throughout the app.</string>
-    <string name="map_provider_native">Google Maps</string>
     <string name="map_provider_osm">OpenStreetMap</string>
 </resources>

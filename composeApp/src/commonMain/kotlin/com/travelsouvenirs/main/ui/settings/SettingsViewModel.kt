@@ -53,16 +53,19 @@ class SettingsViewModel(
         settings.putString(KEY_NOTES, value)
     }
 
-    fun addCategory(name: String) {
+    /** Returns true if the category was added, false if a category with that name already exists. */
+    fun addCategory(name: String): Boolean {
         val trimmed = name.trim()
-        if (trimmed.isBlank()) return
-        if (trimmed.equals(DEFAULT_CATEGORY, ignoreCase = true)) return
+        if (trimmed.isBlank()) return false
         val current = _customCategories.value
-        if (current.size >= MAX_CUSTOM_CATEGORIES) return
-        if (current.any { it.equals(trimmed, ignoreCase = true) }) return
+        if (current.size >= MAX_CUSTOM_CATEGORIES) return false
+        val isDuplicate = trimmed.equals(DEFAULT_CATEGORY, ignoreCase = true) ||
+                current.any { it.equals(trimmed, ignoreCase = true) }
+        if (isDuplicate) return false
         val updated = current + trimmed
         _customCategories.value = updated
         persistCategories(updated)
+        return true
     }
 
     /**

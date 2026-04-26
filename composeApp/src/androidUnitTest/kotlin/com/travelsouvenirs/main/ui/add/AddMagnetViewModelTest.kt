@@ -147,10 +147,13 @@ class AddMagnetViewModelTest {
     }
 
     @Test
-    fun `onPlaceSelected updates placeName and coordinates`() {
+    fun `onPlaceSelected sets pending coords, clears search, and auto-fills blank name`() {
         val vm = viewModel()
         vm.onPlaceSelected(PlaceResult("Rome", 41.9, 12.5))
-        assertEquals("Rome", vm.placeName.value)
+        assertEquals(41.9, vm.pendingLat.value)
+        assertEquals(12.5, vm.pendingLng.value)
+        assertTrue(vm.searchResults.value.isEmpty())
+        assertEquals("Rome", vm.name.value)
     }
 
     @Test
@@ -181,7 +184,6 @@ class AddMagnetViewModelTest {
     fun `saveMagnet does nothing when name is blank`() = runTest {
         val vm = viewModel()
         setPhotoPath(vm, "/photo.jpg")
-        vm.onPlaceSelected(PlaceResult("Rome", 41.9, 12.5))
         vm.saveMagnet()
         assertFalse(vm.isSaved.value)
     }
@@ -212,19 +214,22 @@ class AddMagnetViewModelTest {
 
     @Test
     fun `saveMagnet with valid photo and name persists item and sets isSaved`() = runTest {
-        val vm = viewModel()
+        val vm = viewModel(locationService = FakeLocationService(geocodedPlace = "Paris"))
         setPhotoPath(vm, "/photo.jpg")
         vm.onNameChange("Eiffel Tower")
         vm.onCategoryChange("Souvenir")
-        vm.onPlaceSelected(PlaceResult("Paris", 48.85, 2.35))
+        vm.openLocationDialog()
+        vm.onPendingLocationChanged(48.85, 2.35)
+        vm.confirmLocation()
         advanceUntilIdle()
         vm.saveMagnet()
         advanceUntilIdle()
         assertTrue(vm.isSaved.value)
-        
+
         val savedMagnet = (dao.getAllMagnets() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.MagnetEntity>>).value.first()
         assertEquals("Eiffel Tower", savedMagnet.name)
         assertEquals("Souvenir", savedMagnet.category)
+        assertEquals("Paris", savedMagnet.placeName)
     }
 
     @Test
@@ -252,18 +257,20 @@ class AddMagnetViewModelTest {
     }
 
     @Test
-    fun `fetchCurrentLocation success updates placeName and closes dialog`() = runTest {
+    fun `fetchCurrentLocation success places pending pin and keeps dialog open`() = runTest {
         val location = LatLon(51.51, -0.12)
-        val vm = viewModel(locationService = FakeLocationService(location = location, geocodedPlace = "London"))
+        val vm = viewModel(locationService = FakeLocationService(location = location))
         vm.openLocationDialog()
         assertTrue(vm.showLocationDialog.value)
 
         vm.fetchCurrentLocation()
         advanceUntilIdle()
 
-        assertEquals("London", vm.placeName.value)
-        assertFalse(vm.showLocationDialog.value)
+        assertEquals(51.51, vm.pendingLat.value)
+        assertEquals(-0.12, vm.pendingLng.value)
+        assertTrue(vm.showLocationDialog.value)
         assertFalse(vm.isLocating.value)
+        assertEquals("", vm.placeName.value) // not committed until confirmLocation
     }
 
     @Test
@@ -329,6 +336,48 @@ class AddMagnetViewModelTest {
         advanceUntilIdle()
 
         assertTrue(vm.searchResults.value.isEmpty(), "Search cancelled by closing dialog should yield no results")
+    }
+
+    @Test
+    fun `onPendingLocationChanged sets pending coords without incrementing cameraMoveId`() {
+        val vm = viewModel()
+        val initialCameraId = vm.cameraMoveId.value
+        vm.onPendingLocationChanged(48.85, 2.35)
+        assertEquals(48.85, vm.pendingLat.value)
+        assertEquals(2.35, vm.pendingLng.value)
+        assertEquals(initialCameraId, vm.cameraMoveId.value)
+    }
+
+    @Test
+    fun `confirmLocation commits pending coords, reverseGeocodes, and closes dialog`() = runTest {
+        val vm = viewModel(locationService = FakeLocationService(geocodedPlace = "Paris"))
+        vm.openLocationDialog()
+        vm.onPendingLocationChanged(48.85, 2.35)
+
+        vm.confirmLocation()
+        advanceUntilIdle()
+
+        assertEquals("Paris", vm.placeName.value)
+        assertEquals(48.85, vm.pendingLat.value)
+        assertFalse(vm.showLocationDialog.value)
+        assertFalse(vm.isLocating.value)
+    }
+
+    @Test
+    fun `openLocationDialog with existing location pre-populates pending pin`() = runTest {
+        val vm = viewModel(locationService = FakeLocationService(geocodedPlace = "Rome"))
+        vm.openLocationDialog()
+        vm.onPendingLocationChanged(41.9, 12.5)
+        vm.confirmLocation()
+        advanceUntilIdle()
+
+        val cameraIdBefore = vm.cameraMoveId.value
+        vm.openLocationDialog()
+
+        assertEquals(41.9, vm.pendingLat.value)
+        assertEquals(12.5, vm.pendingLng.value)
+        assertTrue(vm.cameraMoveId.value > cameraIdBefore)
+        assertTrue(vm.showLocationDialog.value)
     }
 
     private fun setPhotoPath(vm: AddMagnetViewModel, path: String) {
