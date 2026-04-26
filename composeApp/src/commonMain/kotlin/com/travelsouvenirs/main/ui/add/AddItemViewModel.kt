@@ -141,6 +141,22 @@ class AddItemViewModel(
         }
     }
 
+    /**
+     * Pre-fills location from EXIF GPS coordinates if no location has been set yet.
+     * Performs reverse geocoding in the background; silently ignored on failure.
+     */
+    fun prefillLocationFromExif(lat: Double, lng: Double) {
+        if (_latitude.value != 0.0 || _longitude.value != 0.0 || _placeName.value.isNotBlank()) return
+        viewModelScope.launch {
+            try {
+                val resolved = locationService.reverseGeocode(lat, lng)
+                _latitude.value = lat
+                _longitude.value = lng
+                _placeName.value = resolved
+            } catch (_: Exception) { }
+        }
+    }
+
     /** Updates the item name field. */
     fun onNameChange(value: String) { _name.value = value }
     /** Updates the notes field. */

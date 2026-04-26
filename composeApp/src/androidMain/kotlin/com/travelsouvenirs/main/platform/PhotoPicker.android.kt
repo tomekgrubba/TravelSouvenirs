@@ -1,6 +1,7 @@
 package com.travelsouvenirs.main.platform
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -14,14 +15,29 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.exifinterface.media.ExifInterface
 import com.travelsouvenirs.main.image.ImageStorageHelper
 import com.travelsouvenirs.main.ui.add.CropActivity
 import com.yalantis.ucrop.UCrop
 
+private fun readExifGps(context: Context, uri: Uri): Pair<Double?, Double?> {
+    return try {
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            val exif = ExifInterface(stream)
+            val latLng = exif.latLong
+            if (latLng != null) Pair(latLng[0], latLng[1]) else Pair(null, null)
+        } ?: Pair(null, null)
+    } catch (_: Exception) {
+        Pair(null, null)
+    }
+}
+
 @Composable
-actual fun rememberPhotoPicker(onResult: (String?) -> Unit): () -> Unit {
+actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifLng: Double?) -> Unit): () -> Unit {
     val context = LocalContext.current
     val currentOnResult = rememberUpdatedState(onResult)
+    var pendingExifLat by remember { mutableStateOf<Double?>(null) }
+    var pendingExifLng by remember { mutableStateOf<Double?>(null) }
 
     val cropLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -29,10 +45,12 @@ actual fun rememberPhotoPicker(onResult: (String?) -> Unit): () -> Unit {
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             result.data?.let { data ->
                 UCrop.getOutput(data)?.let { uri ->
-                    currentOnResult.value(uri.toString())
+                    currentOnResult.value(uri.toString(), pendingExifLat, pendingExifLng)
                 }
-            } ?: currentOnResult.value(null)
-        } else currentOnResult.value(null)
+            } ?: currentOnResult.value(null, null, null)
+        } else currentOnResult.value(null, null, null)
+        pendingExifLat = null
+        pendingExifLng = null
     }
 
     fun launchCrop(sourceUri: Uri) {
@@ -54,7 +72,16 @@ actual fun rememberPhotoPicker(onResult: (String?) -> Unit): () -> Unit {
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
-    ) { uri -> uri?.let { launchCrop(it) } ?: currentOnResult.value(null) }
+    ) { uri ->
+        if (uri != null) {
+            val (lat, lng) = readExifGps(context, uri)
+            pendingExifLat = lat
+            pendingExifLng = lng
+            launchCrop(uri)
+        } else {
+            currentOnResult.value(null, null, null)
+        }
+    }
 
     return remember {
         {
