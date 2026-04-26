@@ -1,28 +1,28 @@
 package com.travelsouvenirs.main.data
 
-import com.travelsouvenirs.main.domain.Magnet
+import com.travelsouvenirs.main.domain.Item
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /** Mediates between the DAO and the rest of the app, mapping entities to domain objects. */
-class MagnetRepository(private val dao: MagnetDao) {
+class ItemRepository(private val dao: ItemDao) {
 
     /** Live stream of all items; emits whenever the database changes. */
-    val allMagnets: Flow<List<Magnet>> = dao.getAllMagnets().map { list ->
+    val allItems: Flow<List<Item>> = dao.getAllItems().map { list ->
         list.map { it.toDomain() }
     }
 
     /** Returns a single item by [id], or null if not found. */
-    suspend fun getMagnetById(id: Long): Magnet? = dao.getMagnetById(id)?.toDomain()
+    suspend fun getItemById(id: Long): Item? = dao.getItemById(id)?.toDomain()
 
     /** Returns a live Flow for a single item, re-emitting whenever it is updated. */
-    fun getMagnetByIdFlow(id: Long): Flow<Magnet?> = dao.getMagnetByIdFlow(id).map { it?.toDomain() }
+    fun getItemByIdFlow(id: Long): Flow<Item?> = dao.getItemByIdFlow(id).map { it?.toDomain() }
 
     /** Inserts a new item or replaces an existing one (upsert); returns the row id. */
-    suspend fun insertMagnet(magnet: Magnet): Long = dao.insertMagnet(magnet.toEntity())
+    suspend fun insertItem(item: Item): Long = dao.insertItem(item.toEntity())
 
-    /** Permanently removes [magnet] from the database. */
-    suspend fun deleteMagnet(magnet: Magnet) = dao.deleteMagnet(magnet.toEntity())
+    /** Permanently removes [item] from the database. */
+    suspend fun deleteItem(item: Item) = dao.deleteItem(item.toEntity())
 
     /** Moves all items assigned to [fromCategory] to [toCategory]. */
     suspend fun reassignCategory(fromCategory: String, toCategory: String) =

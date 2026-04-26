@@ -49,7 +49,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalImageStorage
-import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.platform.PlatformMapPreview
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -57,22 +57,22 @@ import travelsouvenirs.composeapp.generated.resources.*
 /** Shows a single item's photo, metadata, and map preview; supports fullscreen photo, edit, and delete. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MagnetDetailScreen(
-    magnetId: Long,
+fun ItemDetailScreen(
+    itemId: Long,
     onBack: () -> Unit,
     onEdit: () -> Unit = {}
 ) {
-    val repository = LocalMagnetRepository.current
+    val repository = LocalItemRepository.current
     val imageStorage = LocalImageStorage.current
-    val viewModel: MagnetDetailViewModel = viewModel(key = magnetId.toString()) {
-        MagnetDetailViewModel(repository, magnetId, imageStorage)
+    val viewModel: ItemDetailViewModel = viewModel(key = itemId.toString()) {
+        ItemDetailViewModel(repository, itemId, imageStorage)
     }
-    val magnet by viewModel.magnet.collectAsState()
+    val item by viewModel.item.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showFullscreenPhoto by remember { mutableStateOf(false) }
 
     if (showFullscreenPhoto) {
-        magnet?.let { m ->
+        item?.let { m ->
             Dialog(
                 onDismissRequest = { showFullscreenPhoto = false },
                 properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -103,7 +103,7 @@ fun MagnetDetailScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
-                    viewModel.deleteMagnet(onBack)
+                    viewModel.deleteItem(onBack)
                 }) { Text(stringResource(Res.string.btn_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
@@ -115,7 +115,7 @@ fun MagnetDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(magnet?.name ?: "") },
+                title = { Text(item?.name ?: "") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.cd_back))
@@ -132,7 +132,7 @@ fun MagnetDetailScreen(
             )
         }
     ) { padding ->
-        magnet?.let { m ->
+        item?.let { m ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()

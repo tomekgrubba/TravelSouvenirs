@@ -3,15 +3,15 @@ package com.travelsouvenirs.main.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
-import com.travelsouvenirs.main.domain.Magnet
+import com.travelsouvenirs.main.domain.Item
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 
-/** Room entity that maps to the `magnets` table; dates stored as epoch milliseconds. */
-@Entity(tableName = "magnets")
-data class MagnetEntity(
+/** Room entity that maps to the `items` table; dates stored as epoch milliseconds. */
+@Entity(tableName = "items")
+data class ItemEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
@@ -24,8 +24,8 @@ data class MagnetEntity(
     val category: String = DEFAULT_CATEGORY
 )
 
-/** Maps this Room entity to the domain [Magnet] model. */
-fun MagnetEntity.toDomain(): Magnet = Magnet(
+/** Maps this Room entity to the domain [Item] model. */
+fun ItemEntity.toDomain(): Item = Item(
     id = id,
     name = name,
     notes = notes,
@@ -38,8 +38,8 @@ fun MagnetEntity.toDomain(): Magnet = Magnet(
     category = category
 )
 
-/** Maps this domain [Magnet] to a Room entity for persistence. */
-fun Magnet.toEntity(): MagnetEntity = MagnetEntity(
+/** Maps this domain [Item] to a Room entity for persistence. */
+fun Item.toEntity(): ItemEntity = ItemEntity(
     id = id,
     name = name,
     notes = notes,

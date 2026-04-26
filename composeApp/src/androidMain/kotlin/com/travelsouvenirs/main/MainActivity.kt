@@ -7,11 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.compose.rememberNavController
 import com.russhwolf.settings.SharedPreferencesSettings
-import com.travelsouvenirs.main.data.MagnetRepository
-import com.travelsouvenirs.main.data.buildMagnetDatabase
+import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.data.buildItemDatabase
 import com.travelsouvenirs.main.di.LocalImageStorage
 import com.travelsouvenirs.main.di.LocalLocationService
-import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.image.AndroidImageStorage
 import com.travelsouvenirs.main.location.AndroidLocationService
@@ -24,8 +24,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val db = buildMagnetDatabase()
-        val repository = MagnetRepository(db.magnetDao())
+        val db = buildItemDatabase()
+        val repository = ItemRepository(db.itemDao())
         val locationService = AndroidLocationService(applicationContext)
         val imageStorage = AndroidImageStorage(applicationContext)
         val settings = SharedPreferencesSettings(
@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 CompositionLocalProvider(
-                    LocalMagnetRepository provides repository,
+                    LocalItemRepository provides repository,
                     LocalLocationService provides locationService,
                     LocalImageStorage provides imageStorage,
                     LocalSettings provides settings

@@ -7,8 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.savedstate.read
-import com.travelsouvenirs.main.ui.add.AddMagnetScreen
-import com.travelsouvenirs.main.ui.detail.MagnetDetailScreen
+import com.travelsouvenirs.main.ui.add.AddItemScreen
+import com.travelsouvenirs.main.ui.detail.ItemDetailScreen
 import com.travelsouvenirs.main.ui.main.MainScreen
 
 /** Sealed hierarchy of all top-level navigation destinations. */
@@ -16,16 +16,16 @@ sealed class Screen(val route: String) {
     /** Two-tab home screen (Map + List). */
     object Main : Screen("main")
     /** Add new item form. */
-    object AddMagnet : Screen("add_magnet")
-    /** Detail view for an existing item; requires a `magnetId` path argument. */
-    object MagnetDetail : Screen("magnet_detail/{magnetId}") {
-        /** Builds the concrete route string for the given [magnetId]. */
-        fun createRoute(magnetId: Long) = "magnet_detail/$magnetId"
+    object AddItem : Screen("add_item")
+    /** Detail view for an existing item; requires a `itemId` path argument. */
+    object ItemDetail : Screen("item_detail/{itemId}") {
+        /** Builds the concrete route string for the given [itemId]. */
+        fun createRoute(itemId: Long) = "item_detail/$itemId"
     }
-    /** Edit form for an existing item; requires a `magnetId` path argument. */
-    object EditItem : Screen("edit_item/{magnetId}") {
-        /** Builds the concrete route string for the given [magnetId]. */
-        fun createRoute(magnetId: Long) = "edit_item/$magnetId"
+    /** Edit form for an existing item; requires a `itemId` path argument. */
+    object EditItem : Screen("edit_item/{itemId}") {
+        /** Builds the concrete route string for the given [itemId]. */
+        fun createRoute(itemId: Long) = "edit_item/$itemId"
     }
 }
 
@@ -35,34 +35,34 @@ fun AppNavGraph(navController: NavHostController) {
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
             MainScreen(
-                onAddClick = { navController.navigate(Screen.AddMagnet.route) },
-                onItemClick = { magnetId ->
-                    navController.navigate(Screen.MagnetDetail.createRoute(magnetId))
+                onAddClick = { navController.navigate(Screen.AddItem.route) },
+                onItemClick = { itemId ->
+                    navController.navigate(Screen.ItemDetail.createRoute(itemId))
                 }
             )
         }
-        composable(Screen.AddMagnet.route) {
-            AddMagnetScreen(onSaved = { navController.popBackStack() })
+        composable(Screen.AddItem.route) {
+            AddItemScreen(onSaved = { navController.popBackStack() })
         }
         composable(
-            route = Screen.MagnetDetail.route,
-            arguments = listOf(navArgument("magnetId") { type = NavType.LongType })
+            route = Screen.ItemDetail.route,
+            arguments = listOf(navArgument("itemId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val magnetId = backStackEntry.arguments?.read { getLong("magnetId") } ?: 0L
-            MagnetDetailScreen(
-                magnetId = magnetId,
+            val itemId = backStackEntry.arguments?.read { getLong("itemId") } ?: 0L
+            ItemDetailScreen(
+                itemId = itemId,
                 onBack = { navController.popBackStack() },
-                onEdit = { navController.navigate(Screen.EditItem.createRoute(magnetId)) }
+                onEdit = { navController.navigate(Screen.EditItem.createRoute(itemId)) }
             )
         }
         composable(
             route = Screen.EditItem.route,
-            arguments = listOf(navArgument("magnetId") { type = NavType.LongType })
+            arguments = listOf(navArgument("itemId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val magnetId = backStackEntry.arguments?.read { getLong("magnetId") } ?: 0L
-            AddMagnetScreen(
+            val itemId = backStackEntry.arguments?.read { getLong("itemId") } ?: 0L
+            AddItemScreen(
                 onSaved = { navController.popBackStack() },
-                magnetId = magnetId
+                itemId = itemId
             )
         }
     }

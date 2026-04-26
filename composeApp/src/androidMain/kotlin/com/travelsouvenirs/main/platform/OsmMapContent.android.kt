@@ -49,7 +49,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalLocationService
-import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.map.buildCircularBitmap
 import kotlinx.coroutines.launch
@@ -70,14 +70,14 @@ private const val OSM_LOCATION_ZOOM = 4.0
 @Composable
 internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val context = LocalContext.current
-    val repository = LocalMagnetRepository.current
+    val repository = LocalItemRepository.current
     val locationService = LocalLocationService.current
     val categoryFilter = LocalCategoryFilter.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
-    val allMagnets by viewModel.magnets.collectAsState()
-    val allPins by viewModel.magnetPins.collectAsState()
+    val allItems by viewModel.items.collectAsState()
+    val allPins by viewModel.itemPins.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
 
@@ -89,14 +89,14 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
         viewModel.osmCenterLng = null
     }
 
-    val magnets = remember(allMagnets, selectedCategories) {
-        allMagnets.filter { m ->
+    val items = remember(allItems, selectedCategories) {
+        allItems.filter { m ->
             m.category in selectedCategories || m.category !in categoryFilter.allCategoriesSet
         }
     }
-    val magnetPins = remember(allPins, selectedCategories) {
+    val itemPins = remember(allPins, selectedCategories) {
         allPins.filter { pin ->
-            pin.magnet.category in selectedCategories || pin.magnet.category !in categoryFilter.allCategoriesSet
+            pin.item.category in selectedCategories || pin.item.category !in categoryFilter.allCategoriesSet
         }
     }
 
@@ -104,8 +104,8 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     // marker cluster logic computes correctly immediately when returning from the detail screen.
     var zoomLevel by remember { mutableStateOf(viewModel.osmZoom?.toInt() ?: 3) }
     val showIndividual = zoomLevel >= OSM_CLUSTER_ZOOM_THRESHOLD
-    // Always reflects the latest filtered magnets inside the map listener closure
-    val latestMagnets = rememberUpdatedState(magnets)
+    // Always reflects the latest filtered items inside the map listener closure
+    val latestItems = rememberUpdatedState(items)
     var offScreen by remember { mutableStateOf(EdgeCounts(0, 0, 0, 0)) }
     var showFilterMenu by remember { mutableStateOf(false) }
     val isFilterActive = selectedCategories != categoryFilter.allCategoriesSet
@@ -118,9 +118,9 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
         )
     }
 
-    // Individual icon cache: magnetId -> BitmapDrawable (no badge)
+    // Individual icon cache: itemId -> BitmapDrawable (no badge)
     val iconCache = remember { mutableMapOf<Long, BitmapDrawable>() }
-    // Cluster icon cache: (firstMagnetId, count) -> BitmapDrawable (with count badge)
+    // Cluster icon cache: (firstItemId, count) -> BitmapDrawable (with count badge)
     val clusterIconCache = remember { mutableMapOf<Pair<Long, Int>, BitmapDrawable>() }
 
     val mapView = remember {
@@ -160,8 +160,8 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 if (loc != null) {
                     mapView.controller.setZoom(OSM_LOCATION_ZOOM)
                     mapView.controller.setCenter(GeoPoint(loc.lat, loc.lng))
-                } else if (allMagnets.isNotEmpty()) {
-                    val bb = BoundingBox.fromGeoPoints(allMagnets.map { GeoPoint(it.latitude, it.longitude) })
+                } else if (allItems.isNotEmpty()) {
+                    val bb = BoundingBox.fromGeoPoints(allItems.map { GeoPoint(it.latitude, it.longitude) })
                     mapView.post { mapView.zoomToBoundingBox(bb, false, 120) }
                 }
             } catch (_: Exception) { }
@@ -206,7 +206,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 val bb = mapView.boundingBox
                 if (bb != null) {
                     offScreen = computeEdgeCounts(
-                        latestMagnets.value, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast
+                        latestItems.value, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast
                     )
                 }
                 return false
@@ -215,7 +215,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 val bb = mapView.boundingBox
                 if (bb != null) {
                     offScreen = computeEdgeCounts(
-                        latestMagnets.value, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast
+                        latestItems.value, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast
                     )
                 }
                 return false
@@ -226,12 +226,12 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     }
 
     // Rebuild markers when pins, filter, or zoom level changes
-    LaunchedEffect(magnetPins, magnets, zoomLevel) {
+    LaunchedEffect(itemPins, items, zoomLevel) {
         // Pre-load missing icons
-        magnetPins.forEach { pin ->
-            if (!iconCache.containsKey(pin.magnet.id)) {
-                val bmp = buildCircularBitmap(context, pin.magnet.photoPath, 0, 120)
-                if (bmp != null) iconCache[pin.magnet.id] = BitmapDrawable(context.resources, bmp)
+        itemPins.forEach { pin ->
+            if (!iconCache.containsKey(pin.item.id)) {
+                val bmp = buildCircularBitmap(context, pin.item.photoPath, 0, 120)
+                if (bmp != null) iconCache[pin.item.id] = BitmapDrawable(context.resources, bmp)
             }
         }
 
@@ -246,42 +246,42 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
         newOverlays.addAll(mapView.overlays.filter { it !is Marker })
 
         if (showIndividual) {
-            magnetPins.forEach { pin ->
+            itemPins.forEach { pin ->
                 // Pass explicit null InfoWindow to skip getDefaultMarkerInfoWindow(); we
                 // call setInfoWindow(null) below anyway to suppress the tap popup.
                 val marker = Marker(mapView, null)
                 marker.position = GeoPoint(pin.position.lat, pin.position.lng)
-                marker.title = pin.magnet.name
-                marker.snippet = pin.magnet.placeName
-                iconCache[pin.magnet.id]?.let { marker.icon = it }
-                marker.setOnMarkerClickListener { _, _ -> onPinClick(pin.magnet.id); true }
+                marker.title = pin.item.name
+                marker.snippet = pin.item.placeName
+                iconCache[pin.item.id]?.let { marker.icon = it }
+                marker.setOnMarkerClickListener { _, _ -> onPinClick(pin.item.id); true }
                 marker.setInfoWindow(null)
                 newOverlays.add(marker)
             }
         } else {
-            val groups = MapViewModel.groupByZoom(magnets, zoomLevel.toFloat())
+            val groups = MapViewModel.groupByZoom(items, zoomLevel.toFloat())
             groups.forEach { group ->
-                val firstId = group.magnets.first().id
-                val count = group.magnets.size
+                val firstId = group.items.first().id
+                val count = group.items.size
                 val cacheKey = firstId to count
                 if (!clusterIconCache.containsKey(cacheKey)) {
-                    val bmp = buildCircularBitmap(context, group.magnets.first().photoPath, count, 120)
+                    val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, 120)
                     if (bmp != null) clusterIconCache[cacheKey] = BitmapDrawable(context.resources, bmp)
                 }
                 val marker = Marker(mapView, null)
                 marker.position = GeoPoint(group.centerLat, group.centerLng)
-                marker.title = group.magnets.first().name
+                marker.title = group.items.first().name
                 clusterIconCache[cacheKey]?.let { marker.icon = it }
                 marker.setInfoWindow(null)
-                if (group.magnets.size == 1) {
-                    marker.setOnMarkerClickListener { _, _ -> onPinClick(group.magnets.first().id); true }
+                if (group.items.size == 1) {
+                    marker.setOnMarkerClickListener { _, _ -> onPinClick(group.items.first().id); true }
                 } else {
                     marker.setOnMarkerClickListener { _, _ ->
-                        val groupIds = group.magnets.map { it.id }.toSet()
-                        // Use spread positions from magnetPins instead of raw coordinates:
+                        val groupIds = group.items.map { it.id }.toSet()
+                        // Use spread positions from itemPins instead of raw coordinates:
                         // same-location items produce a zero-area BoundingBox from raw coords,
                         // which zooms to maximum level. Spread positions guarantee non-zero area.
-                        val groupPins = magnetPins.filter { it.magnet.id in groupIds }
+                        val groupPins = itemPins.filter { it.item.id in groupIds }
                         if (groupPins.size > 1) {
                             val bb = BoundingBox.fromGeoPoints(groupPins.map { GeoPoint(it.position.lat, it.position.lng) })
                             // Matched Google Maps behavior: use 200px padding when zooming to a cluster bounds
@@ -301,7 +301,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
 
         val bb = mapView.boundingBox
         if (bb != null) {
-            offScreen = computeEdgeCounts(magnets, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast)
+            offScreen = computeEdgeCounts(items, bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast)
         }
         mapView.invalidate()
     }
@@ -393,7 +393,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
             }
         }
 
-        if (magnets.isEmpty()) {
+        if (items.isEmpty()) {
             // Empty state card shown when no items exist or match the filter
             // Added clickable modifier so tapping the overlay opens the add item screen
             Card(
@@ -403,7 +403,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     .clickable { onAddClick() }
             ) {
                 Text(
-                    if (allMagnets.isEmpty())
+                    if (allItems.isEmpty())
                         stringResource(Res.string.empty_state_no_items)
                     else
                         stringResource(Res.string.empty_state_no_match),

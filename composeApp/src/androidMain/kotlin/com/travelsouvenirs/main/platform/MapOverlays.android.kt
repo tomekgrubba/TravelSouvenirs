@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.travelsouvenirs.main.domain.Magnet
+import com.travelsouvenirs.main.domain.Item
 import kotlin.math.abs
 
 internal data class EdgeCounts(val top: Int, val bottom: Int, val left: Int, val right: Int)
@@ -30,7 +30,7 @@ internal fun EdgeIndicator(arrow: String, count: Int, modifier: Modifier = Modif
 }
 
 internal fun computeEdgeCounts(
-    magnets: List<Magnet>,
+    items: List<Item>,
     south: Double,
     west: Double,
     north: Double,
@@ -42,7 +42,7 @@ internal fun computeEdgeCounts(
     val halfLng = (east - west) / 2.0
     if (halfLat <= 0 || halfLng <= 0) return EdgeCounts(0, 0, 0, 0)
     var top = 0; var bottom = 0; var left = 0; var right = 0
-    magnets.filter { (it.latitude != 0.0 || it.longitude != 0.0) &&
+    items.filter { (it.latitude != 0.0 || it.longitude != 0.0) &&
         (it.latitude > north || it.latitude < south ||
          it.longitude > east || it.longitude < west)
     }.forEach { m ->

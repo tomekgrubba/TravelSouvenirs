@@ -3,10 +3,10 @@ package com.travelsouvenirs.main.ui.add
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.russhwolf.settings.Settings
-import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
-import com.travelsouvenirs.main.domain.Magnet
+import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.location.PlaceResult
@@ -29,8 +29,8 @@ private const val KEY_CATEGORIES = "categories"
  * Drives both the Add and Edit screens.
  * When [editId] is non-null, pre-populates fields from the existing item and upserts on save.
  */
-class AddMagnetViewModel(
-    private val repository: MagnetRepository,
+class AddItemViewModel(
+    private val repository: ItemRepository,
     private val locationService: LocationService,
     private val imageStorage: ImageStorage,
     private val editId: Long? = null,
@@ -115,7 +115,7 @@ class AddMagnetViewModel(
     init {
         if (editId != null) {
             viewModelScope.launch {
-                repository.getMagnetById(editId)?.let { m ->
+                repository.getItemById(editId)?.let { m ->
                     _photoPath.value = m.photoPath
                     originalPhotoPath = m.photoPath
                     _name.value = m.name
@@ -299,7 +299,7 @@ class AddMagnetViewModel(
     }
 
     /** Persists the item; no-ops if photo or name is missing. Sets [isSaved] to true on success. */
-    fun saveMagnet() {
+    fun saveItem() {
         val path = _photoPath.value ?: return
         if (_name.value.isBlank()) return
         viewModelScope.launch {
@@ -315,8 +315,8 @@ class AddMagnetViewModel(
                 imageStorage.deleteImage(orig)
             }
 
-            repository.insertMagnet(
-                Magnet(
+            repository.insertItem(
+                Item(
                     id = editId ?: 0,
                     name = _name.value,
                     notes = _notes.value,

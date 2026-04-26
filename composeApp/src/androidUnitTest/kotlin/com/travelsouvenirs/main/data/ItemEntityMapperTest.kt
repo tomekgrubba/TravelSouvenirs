@@ -1,18 +1,18 @@
 package com.travelsouvenirs.main.data
 
-import com.travelsouvenirs.main.domain.Magnet
+import com.travelsouvenirs.main.domain.Item
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class MagnetEntityMapperTest {
+class ItemEntityMapperTest {
 
     @Test
     fun `toDomain preserves all fields`() {
         val date = LocalDate(2023, 6, 15)
-        val entity = MagnetEntity(
+        val entity = ItemEntity(
             id = 42,
             name = "Berlin Wall",
             notes = "Iconic piece",
@@ -39,7 +39,7 @@ class MagnetEntityMapperTest {
 
     @Test
     fun `toEntity then toDomain round-trips all fields`() {
-        val original = Magnet(
+        val original = Item(
             id = 7,
             name = "Eiffel Tower",
             notes = "Bought at the shop",
@@ -66,12 +66,12 @@ class MagnetEntityMapperTest {
 
     @Test
     fun `toEntity stores zero-latitude and zero-longitude accurately`() {
-        val magnet = Magnet(
+        val item = Item(
             id = 1, name = "X", notes = "", photoPath = "/p.jpg",
             latitude = 0.0, longitude = 0.0,
             placeName = "Null Island", dateAcquired = LocalDate(2020, 1, 1)
         )
-        val entity = magnet.toEntity()
+        val entity = item.toEntity()
         assertEquals(0.0, entity.latitude)
         assertEquals(0.0, entity.longitude)
     }

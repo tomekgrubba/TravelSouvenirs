@@ -2,13 +2,13 @@ package com.travelsouvenirs.main.di
 
 import androidx.compose.runtime.compositionLocalOf
 import com.russhwolf.settings.Settings
-import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.ui.shared.CategoryFilterViewModel
 
-val LocalMagnetRepository = compositionLocalOf<MagnetRepository> {
-    error("LocalMagnetRepository not provided")
+val LocalItemRepository = compositionLocalOf<ItemRepository> {
+    error("LocalItemRepository not provided")
 }
 val LocalLocationService = compositionLocalOf<LocationService> {
     error("LocalLocationService not provided")

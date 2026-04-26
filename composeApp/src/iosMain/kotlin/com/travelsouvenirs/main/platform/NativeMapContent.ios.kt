@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalLocationService
-import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalItemRepository
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,7 +31,7 @@ import platform.MapKit.MKPointAnnotation
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
-    val repository = LocalMagnetRepository.current
+    val repository = LocalItemRepository.current
     val locationService = LocalLocationService.current
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
 
@@ -41,7 +41,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         viewModel.nativeMapView = null
     }
 
-    val magnets by viewModel.magnets.collectAsState()
+    val items by viewModel.items.collectAsState()
 
     val mapView = remember {
         (viewModel.nativeMapView as? MKMapView) ?: MKMapView().also { viewModel.nativeMapView = it }
@@ -59,13 +59,13 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         }
     }
 
-    LaunchedEffect(magnets) {
+    LaunchedEffect(items) {
         mapView.removeAnnotations(mapView.annotations)
-        magnets.forEach { magnet ->
+        items.forEach { item ->
             val pin = MKPointAnnotation()
-            pin.setCoordinate(CLLocationCoordinate2DMake(magnet.latitude, magnet.longitude))
-            pin.setTitle(magnet.name)
-            pin.setSubtitle(magnet.placeName)
+            pin.setCoordinate(CLLocationCoordinate2DMake(item.latitude, item.longitude))
+            pin.setTitle(item.name)
+            pin.setSubtitle(item.placeName)
             mapView.addAnnotation(pin as MKAnnotationProtocol)
         }
     }
@@ -73,7 +73,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     Box(modifier = Modifier.fillMaxSize()) {
         UIKitView(factory = { mapView }, modifier = Modifier.fillMaxSize())
 
-        if (magnets.isEmpty()) {
+        if (items.isEmpty()) {
             // Empty state card shown when no items exist
             // Added clickable modifier so tapping the overlay opens the add item screen
             Card(

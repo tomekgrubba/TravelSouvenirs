@@ -63,7 +63,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalImageStorage
 import com.travelsouvenirs.main.di.LocalLocationService
-import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
 import com.travelsouvenirs.main.platform.rememberCameraCapture
@@ -73,16 +73,16 @@ import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
-/** Form for creating or editing an item; shows "Edit Item" title when [magnetId] is non-null. */
+/** Form for creating or editing an item; shows "Edit Item" title when [itemId] is non-null. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
-    val repository = LocalMagnetRepository.current
+fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
+    val repository = LocalItemRepository.current
     val locationService = LocalLocationService.current
     val imageStorage = LocalImageStorage.current
     val settings = LocalSettings.current
-    val viewModel: AddMagnetViewModel = viewModel(key = magnetId?.toString() ?: "add") {
-        AddMagnetViewModel(repository, locationService, imageStorage, magnetId, settings)
+    val viewModel: AddItemViewModel = viewModel(key = itemId?.toString() ?: "add") {
+        AddItemViewModel(repository, locationService, imageStorage, itemId, settings)
     }
 
     val photoPath by viewModel.photoPath.collectAsState()
@@ -197,7 +197,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (magnetId != null) Res.string.title_edit_item else Res.string.title_add_item)) },
+                title = { Text(stringResource(if (itemId != null) Res.string.title_edit_item else Res.string.title_add_item)) },
                 navigationIcon = {
                     IconButton(onClick = onSaved) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.cd_back))
@@ -354,7 +354,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
             )
 
             Button(
-                onClick = viewModel::saveMagnet,
+                onClick = viewModel::saveItem,
                 enabled = isFormValid,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -366,7 +366,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
 
 @Composable
 private fun LocationPickerDialog(
-    viewModel: AddMagnetViewModel,
+    viewModel: AddItemViewModel,
     onRequestGps: () -> Unit
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()

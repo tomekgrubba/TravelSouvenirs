@@ -4,8 +4,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.travelsouvenirs.main.TravelSouvenirsApp
 
-actual fun createMagnetDatabaseBuilder(): RoomDatabase.Builder<MagnetDatabase> =
-    Room.databaseBuilder<MagnetDatabase>(
+actual fun createItemDatabaseBuilder(): RoomDatabase.Builder<ItemDatabase> =
+    Room.databaseBuilder<ItemDatabase>(
         context = TravelSouvenirsApp.instance,
-        name = "magnets_db"
+        name = "items_db"
     )

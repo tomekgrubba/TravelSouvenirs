@@ -7,8 +7,8 @@ import platform.Foundation.NSHomeDirectory
 class IosImageStorage : ImageStorage {
     /** Copies the file at [sourcePath] to the app's private photo directory and returns the new path. */
     override suspend fun copyToInternalStorage(sourcePath: String): String {
-        val filename = "magnet_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
-        val dir = "${NSHomeDirectory()}/Documents/magnet_photos"
+        val filename = "item_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
+        val dir = "${NSHomeDirectory()}/Documents/item_photos"
         val destPath = "$dir/$filename"
         val fm = NSFileManager.defaultManager
         fm.createDirectoryAtPath(dir, withIntermediateDirectories = true, attributes = null, error = null)

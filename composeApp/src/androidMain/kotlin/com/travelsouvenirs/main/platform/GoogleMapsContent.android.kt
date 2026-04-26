@@ -52,7 +52,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalLocationService
-import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.map.rememberGroupIcons
 import com.travelsouvenirs.main.ui.map.rememberIndividualIcons
@@ -66,24 +66,24 @@ private const val LOCATION_ZOOM = 4f
 @Composable
 internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val context = LocalContext.current
-    val repository = LocalMagnetRepository.current
+    val repository = LocalItemRepository.current
     val locationService = LocalLocationService.current
     val categoryFilter = LocalCategoryFilter.current
 
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
-    val allMagnets by viewModel.magnets.collectAsState()
-    val allPins by viewModel.magnetPins.collectAsState()
+    val allItems by viewModel.items.collectAsState()
+    val allPins by viewModel.itemPins.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
 
-    val magnets = remember(allMagnets, selectedCategories) {
-        allMagnets.filter { m ->
+    val items = remember(allItems, selectedCategories) {
+        allItems.filter { m ->
             m.category in selectedCategories || m.category !in categoryFilter.allCategoriesSet
         }
     }
-    val magnetPins = remember(allPins, selectedCategories) {
+    val itemPins = remember(allPins, selectedCategories) {
         allPins.filter { pin ->
-            pin.magnet.category in selectedCategories || pin.magnet.category !in categoryFilter.allCategoriesSet
+            pin.item.category in selectedCategories || pin.item.category !in categoryFilter.allCategoriesSet
         }
     }
 
@@ -96,10 +96,10 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val visibleBounds = remember(cameraPositionState.position, cameraPositionState.projection) {
         cameraPositionState.projection?.visibleRegion?.latLngBounds
     }
-    val offScreen = remember(magnets, visibleBounds) {
+    val offScreen = remember(items, visibleBounds) {
         val bounds = visibleBounds ?: return@remember EdgeCounts(0, 0, 0, 0)
         computeEdgeCounts(
-            magnets,
+            items,
             south = bounds.southwest.latitude,
             west = bounds.southwest.longitude,
             north = bounds.northeast.latitude,
@@ -107,13 +107,13 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         )
     }
 
-    val magnetGroups = remember(magnets, zoom) {
+    val itemGroups = remember(items, zoom) {
         if (showIndividual) emptyList()
-        else MapViewModel.groupByZoom(magnets, zoom)
+        else MapViewModel.groupByZoom(items, zoom)
     }
 
-    val individualIcons = rememberIndividualIcons(magnetPins)
-    val groupIcons = rememberGroupIcons(magnetGroups)
+    val individualIcons = rememberIndividualIcons(itemPins)
+    val groupIcons = rememberGroupIcons(itemGroups)
 
     val scope = rememberCoroutineScope()
 
@@ -165,9 +165,9 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                 val location = if (hasLocationPermission) locationService.getCurrentLocation() else null
                 val update = if (location != null) {
                     CameraUpdateFactory.newLatLngZoom(LatLng(location.lat, location.lng), LOCATION_ZOOM)
-                } else if (allMagnets.isNotEmpty()) {
+                } else if (allItems.isNotEmpty()) {
                     val bounds = LatLngBounds.Builder().apply {
-                        allMagnets.forEach { include(LatLng(it.latitude, it.longitude)) }
+                        allItems.forEach { include(LatLng(it.latitude, it.longitude)) }
                     }.build()
                     CameraUpdateFactory.newLatLngBounds(bounds, 120)
                 } else null
@@ -195,32 +195,32 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             )
         ) {
             if (showIndividual) {
-                magnetPins.forEach { pin ->
+                itemPins.forEach { pin ->
                     Marker(
                         state = rememberUpdatedMarkerState(
                             position = LatLng(pin.position.lat, pin.position.lng)
                         ),
-                        title = pin.magnet.name,
-                        snippet = pin.magnet.placeName,
-                        icon = individualIcons[pin.magnet.id],
-                        onClick = { onPinClick(pin.magnet.id); true }
+                        title = pin.item.name,
+                        snippet = pin.item.placeName,
+                        icon = individualIcons[pin.item.id],
+                        onClick = { onPinClick(pin.item.id); true }
                     )
                 }
             } else {
-                magnetGroups.forEachIndexed { idx, group ->
+                itemGroups.forEachIndexed { idx, group ->
                     val center = LatLng(group.centerLat, group.centerLng)
                     Marker(
                         state = rememberUpdatedMarkerState(position = center),
-                        title = group.magnets.first().name,
-                        snippet = if (group.magnets.size > 1)
-                            stringResource(Res.string.items_here, group.magnets.size) else group.magnets.first().placeName,
+                        title = group.items.first().name,
+                        snippet = if (group.items.size > 1)
+                            stringResource(Res.string.items_here, group.items.size) else group.items.first().placeName,
                         icon = groupIcons[idx],
                         onClick = {
-                            if (group.magnets.size == 1) {
-                                onPinClick(group.magnets.first().id)
+                            if (group.items.size == 1) {
+                                onPinClick(group.items.first().id)
                             } else {
-                                val groupIds = group.magnets.map { it.id }.toSet()
-                                val groupPins = magnetPins.filter { it.magnet.id in groupIds }
+                                val groupIds = group.items.map { it.id }.toSet()
+                                val groupPins = itemPins.filter { it.item.id in groupIds }
                                 scope.launch {
                                     val boundsBuilder = LatLngBounds.Builder()
                                     groupPins.forEach { boundsBuilder.include(LatLng(it.position.lat, it.position.lng)) }
@@ -292,7 +292,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             }
         }
 
-        if (magnets.isEmpty()) {
+        if (items.isEmpty()) {
             // Empty state card shown when no items exist or match the filter
             // Added clickable modifier so tapping the overlay opens the add item screen
             Card(
@@ -302,7 +302,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                     .clickable { onAddClick() }
             ) {
                 Text(
-                    if (allMagnets.isEmpty())
+                    if (allItems.isEmpty())
                         stringResource(Res.string.empty_state_no_items)
                     else
                         stringResource(Res.string.empty_state_no_match),

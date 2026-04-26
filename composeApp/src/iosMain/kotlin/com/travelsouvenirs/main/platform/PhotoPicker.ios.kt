@@ -83,8 +83,8 @@ actual fun rememberPhotoPicker(onResult: (String?) -> Unit): () -> Unit {
                             val image = obj as? platform.UIKit.UIImage
                             val data = image?.let { UIImageJPEGRepresentation(resizeUIImage(it), IMAGE_JPEG_QUALITY / 100.0) }
                             if (data != null) {
-                                val filename = "magnet_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
-                                val dir = "${NSHomeDirectory()}/Documents/magnet_photos"
+                                val filename = "item_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
+                                val dir = "${NSHomeDirectory()}/Documents/item_photos"
                                 val destPath = "$dir/$filename"
                                 platform.Foundation.NSFileManager.defaultManager.let { fm ->
                                     fm.createDirectoryAtPath(dir, withIntermediateDirectories = true, attributes = null, error = null)
@@ -132,8 +132,8 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
                             as? platform.UIKit.UIImage
                     val data = image?.let { UIImageJPEGRepresentation(it, 0.85) }
                     if (data != null) {
-                        val filename = "magnet_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
-                        val dir = "${NSHomeDirectory()}/Documents/magnet_photos"
+                        val filename = "item_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
+                        val dir = "${NSHomeDirectory()}/Documents/item_photos"
                         val destPath = "$dir/$filename"
                         platform.Foundation.NSFileManager.defaultManager.let { fm ->
                             fm.createDirectoryAtPath(dir, withIntermediateDirectories = true, attributes = null, error = null)

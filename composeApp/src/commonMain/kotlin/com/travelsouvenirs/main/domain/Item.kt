@@ -7,7 +7,7 @@ const val DEFAULT_CATEGORY = "Default"
 const val MAX_CUSTOM_CATEGORIES = 5
 
 /** Domain model representing a single travel souvenir item. */
-data class Magnet(
+data class Item(
     val id: Long,
     val name: String,
     val notes: String,

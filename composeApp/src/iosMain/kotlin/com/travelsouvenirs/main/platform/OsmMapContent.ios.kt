@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalLocationService
-import com.travelsouvenirs.main.di.LocalMagnetRepository
-import com.travelsouvenirs.main.domain.Magnet
+import com.travelsouvenirs.main.di.LocalItemRepository
+import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.ui.map.MapViewModel
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
@@ -50,12 +50,12 @@ import travelsouvenirs.composeapp.generated.resources.*
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
-    val repository = LocalMagnetRepository.current
+    val repository = LocalItemRepository.current
     val locationService = LocalLocationService.current
     val categoryFilter = LocalCategoryFilter.current
 
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
-    val allMagnets by viewModel.magnets.collectAsState()
+    val allItems by viewModel.items.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
 
@@ -67,8 +67,8 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         viewModel.nativeMapView = null
     }
 
-    val filteredMagnets = remember(allMagnets, selectedCategories) {
-        allMagnets.filter { m ->
+    val filteredItems = remember(allItems, selectedCategories) {
+        allItems.filter { m ->
             m.category in selectedCategories || m.category !in categoryFilter.allCategoriesSet
         }
     }
@@ -118,11 +118,11 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
                 val loc = locationService.getCurrentLocation()
                 if (loc != null) {
                     webView.evaluateJavaScript("moveTo(${loc.lat}, ${loc.lng}, 4);", completionHandler = null)
-                } else if (allMagnets.isNotEmpty()) {
-                    val s = allMagnets.minOf { it.latitude }
-                    val n = allMagnets.maxOf { it.latitude }
-                    val w = allMagnets.minOf { it.longitude }
-                    val e = allMagnets.maxOf { it.longitude }
+                } else if (allItems.isNotEmpty()) {
+                    val s = allItems.minOf { it.latitude }
+                    val n = allItems.maxOf { it.latitude }
+                    val w = allItems.minOf { it.longitude }
+                    val e = allItems.maxOf { it.longitude }
                     webView.evaluateJavaScript("fitBounds($s,$w,$n,$e);", completionHandler = null)
                 }
             } catch (_: Exception) { }
@@ -130,9 +130,9 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
     }
 
     // Inject/refresh markers when data or filter changes (only after page ready)
-    LaunchedEffect(filteredMagnets, pageReady) {
+    LaunchedEffect(filteredItems, pageReady) {
         if (!pageReady) return@LaunchedEffect
-        injectMarkers(webView, filteredMagnets)
+        injectMarkers(webView, filteredItems)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -185,14 +185,14 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
             }
         }
 
-        if (filteredMagnets.isEmpty()) {
+        if (filteredItems.isEmpty()) {
             Card(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp)
             ) {
                 Text(
-                    if (allMagnets.isEmpty())
+                    if (allItems.isEmpty())
                         stringResource(Res.string.empty_state_no_items)
                     else
                         stringResource(Res.string.empty_state_no_match),
@@ -205,9 +205,9 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun injectMarkers(webView: WKWebView, magnets: List<Magnet>) {
+private fun injectMarkers(webView: WKWebView, items: List<Item>) {
     webView.evaluateJavaScript("clearPins();", completionHandler = null)
-    magnets.forEach { m ->
+    items.forEach { m ->
         val title = m.name.replace("\\", "\\\\").replace("'", "\\'")
         webView.evaluateJavaScript(
             "addPin(${m.id}, ${m.latitude}, ${m.longitude}, '$title');",

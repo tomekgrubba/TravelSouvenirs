@@ -1,9 +1,9 @@
 package com.travelsouvenirs.main.ui.add
 
 import com.russhwolf.settings.Settings
-import com.travelsouvenirs.main.data.FakeMagnetDao
-import com.travelsouvenirs.main.data.MagnetEntity
-import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.data.FakeItemDao
+import com.travelsouvenirs.main.data.ItemEntity
+import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.LatLon
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
@@ -70,11 +70,11 @@ private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AddMagnetViewModelTest {
+class AddItemViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
-    private lateinit var dao: FakeMagnetDao
-    private lateinit var repository: MagnetRepository
+    private lateinit var dao: FakeItemDao
+    private lateinit var repository: ItemRepository
     private val fakeLocationService = FakeLocationService()
     private val fakeImageStorage = FakeImageStorage()
     private val fakeSettings = FakeSettings()
@@ -82,8 +82,8 @@ class AddMagnetViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        dao = FakeMagnetDao()
-        repository = MagnetRepository(dao)
+        dao = FakeItemDao()
+        repository = ItemRepository(dao)
     }
 
     @After
@@ -95,7 +95,7 @@ class AddMagnetViewModelTest {
         editId: Long? = null,
         locationService: LocationService = fakeLocationService,
         settings: Settings = fakeSettings
-    ) = AddMagnetViewModel(repository, locationService, fakeImageStorage, editId, settings)
+    ) = AddItemViewModel(repository, locationService, fakeImageStorage, editId, settings)
 
     @Test
     fun `initial state has blank name and notes and parses available categories`() {
@@ -172,26 +172,26 @@ class AddMagnetViewModelTest {
     }
 
     @Test
-    fun `saveMagnet does nothing when photoPath is null`() = runTest {
+    fun `saveItem does nothing when photoPath is null`() = runTest {
         val vm = viewModel()
         vm.onNameChange("Test")
         vm.onPlaceSelected(PlaceResult("Rome", 41.9, 12.5))
-        vm.saveMagnet()
+        vm.saveItem()
         assertFalse(vm.isSaved.value)
     }
 
     @Test
-    fun `saveMagnet does nothing when name is blank`() = runTest {
+    fun `saveItem does nothing when name is blank`() = runTest {
         val vm = viewModel()
         setPhotoPath(vm, "/photo.jpg")
-        vm.saveMagnet()
+        vm.saveItem()
         assertFalse(vm.isSaved.value)
     }
 
     @Test
-    fun `edit mode loads existing magnet data`() = runTest {
-        dao.insertMagnet(
-            MagnetEntity(
+    fun `edit mode loads existing item data`() = runTest {
+        dao.insertItem(
+            ItemEntity(
                 id = 5,
                 name = "Louvre",
                 notes = "Nice museum",
@@ -213,7 +213,7 @@ class AddMagnetViewModelTest {
     }
 
     @Test
-    fun `saveMagnet with valid photo and name persists item and sets isSaved`() = runTest {
+    fun `saveItem with valid photo and name persists item and sets isSaved`() = runTest {
         val vm = viewModel(locationService = FakeLocationService(geocodedPlace = "Paris"))
         setPhotoPath(vm, "/photo.jpg")
         vm.onNameChange("Eiffel Tower")
@@ -222,20 +222,20 @@ class AddMagnetViewModelTest {
         vm.onPendingLocationChanged(48.85, 2.35)
         vm.confirmLocation()
         advanceUntilIdle()
-        vm.saveMagnet()
+        vm.saveItem()
         advanceUntilIdle()
         assertTrue(vm.isSaved.value)
 
-        val savedMagnet = (dao.getAllMagnets() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.MagnetEntity>>).value.first()
-        assertEquals("Eiffel Tower", savedMagnet.name)
-        assertEquals("Souvenir", savedMagnet.category)
-        assertEquals("Paris", savedMagnet.placeName)
+        val savedItem = (dao.getAllItems() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.ItemEntity>>).value.first()
+        assertEquals("Eiffel Tower", savedItem.name)
+        assertEquals("Souvenir", savedItem.category)
+        assertEquals("Paris", savedItem.placeName)
     }
 
     @Test
-    fun `saveMagnet in edit mode upserts existing item`() = runTest {
-        dao.insertMagnet(
-            MagnetEntity(
+    fun `saveItem in edit mode upserts existing item`() = runTest {
+        dao.insertItem(
+            ItemEntity(
                 id = 7,
                 name = "Old Name",
                 notes = "",
@@ -250,10 +250,10 @@ class AddMagnetViewModelTest {
         advanceUntilIdle()
         vm.onNameChange("New Name")
         setPhotoPath(vm, "/old.jpg")
-        vm.saveMagnet()
+        vm.saveItem()
         advanceUntilIdle()
         assertTrue(vm.isSaved.value)
-        assertEquals("New Name", dao.getMagnetById(7)?.name)
+        assertEquals("New Name", dao.getItemById(7)?.name)
     }
 
     @Test
@@ -437,8 +437,8 @@ class AddMagnetViewModelTest {
         assertEquals("Alpha,Beta", settings.getStringOrNull("categories"))
     }
 
-    private fun setPhotoPath(vm: AddMagnetViewModel, path: String) {
-        val field = AddMagnetViewModel::class.java.getDeclaredField("_photoPath")
+    private fun setPhotoPath(vm: AddItemViewModel, path: String) {
+        val field = AddItemViewModel::class.java.getDeclaredField("_photoPath")
         field.isAccessible = true
         @Suppress("UNCHECKED_CAST")
         (field.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<String?>).value = path

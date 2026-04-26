@@ -9,28 +9,28 @@ import kotlinx.coroutines.flow.Flow
 
 /** Room DAO for all souvenir item persistence operations. */
 @Dao
-interface MagnetDao {
+interface ItemDao {
     /** Returns a live Flow of all items ordered by acquisition date descending. */
-    @Query("SELECT * FROM magnets ORDER BY dateAcquiredMillis DESC")
-    fun getAllMagnets(): Flow<List<MagnetEntity>>
+    @Query("SELECT * FROM items ORDER BY dateAcquiredMillis DESC")
+    fun getAllItems(): Flow<List<ItemEntity>>
 
     /** Returns a single item by [id], or null if it does not exist. */
-    @Query("SELECT * FROM magnets WHERE id = :id")
-    suspend fun getMagnetById(id: Long): MagnetEntity?
+    @Query("SELECT * FROM items WHERE id = :id")
+    suspend fun getItemById(id: Long): ItemEntity?
 
     /** Returns a live Flow for a single item by [id], emitting on every update. */
-    @Query("SELECT * FROM magnets WHERE id = :id")
-    fun getMagnetByIdFlow(id: Long): Flow<MagnetEntity?>
+    @Query("SELECT * FROM items WHERE id = :id")
+    fun getItemByIdFlow(id: Long): Flow<ItemEntity?>
 
     /** Inserts or replaces an item; returns the row id. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertMagnet(magnet: MagnetEntity): Long
+    suspend fun insertItem(item: ItemEntity): Long
 
     /** Permanently removes an item from the database. */
     @Delete
-    suspend fun deleteMagnet(magnet: MagnetEntity)
+    suspend fun deleteItem(item: ItemEntity)
 
     /** Moves all items assigned to [fromCategory] to [toCategory]. */
-    @Query("UPDATE magnets SET category = :toCategory WHERE category = :fromCategory")
+    @Query("UPDATE items SET category = :toCategory WHERE category = :fromCategory")
     suspend fun reassignCategory(fromCategory: String, toCategory: String)
 }

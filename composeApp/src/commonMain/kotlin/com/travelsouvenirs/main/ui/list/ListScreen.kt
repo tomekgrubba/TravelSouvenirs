@@ -41,14 +41,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalCategoryFilter
-import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalItemRepository
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
 /** Displays all items in a searchable, filterable list; tapping a row navigates to its detail screen. */
 @Composable
 fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
-    val repository = LocalMagnetRepository.current
+    val repository = LocalItemRepository.current
     val categoryFilter = LocalCategoryFilter.current
     val viewModel: ListViewModel = viewModel { ListViewModel(repository) }
 
@@ -56,18 +56,18 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val sortOption by viewModel.sortOption.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
-    val sortedMagnets by viewModel.sortedMagnets.collectAsState()
+    val sortedItems by viewModel.sortedItems.collectAsState()
 
     // Apply category filter at screen level so it stays in sync with the map
-    val magnets = remember(sortedMagnets, selectedCategories) {
-        sortedMagnets.filter { m ->
+    val items = remember(sortedItems, selectedCategories) {
+        sortedItems.filter { m ->
             m.category in selectedCategories || m.category !in categoryFilter.allCategoriesSet
         }
     }
 
     val isIconHighlighted = sortOption != SortOption.NAME || selectedCategories != categoryFilter.allCategoriesSet
     val hasActiveFilter = searchQuery.isNotBlank() || selectedCategories != categoryFilter.allCategoriesSet
-    val allEmpty = !hasActiveFilter && magnets.isEmpty()
+    val allEmpty = !hasActiveFilter && items.isEmpty()
 
     var showMenu by remember { mutableStateOf(false) }
 
@@ -174,35 +174,35 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     Text(stringResource(Res.string.empty_state_no_items))
                 }
             }
-            magnets.isEmpty() -> {
+            items.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(Res.string.empty_state_no_results))
                 }
             }
             else -> {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(magnets, key = { it.id }) { magnet ->
+                    items(items, key = { it.id }) { item ->
                         ListItem(
-                            headlineContent = { Text(magnet.name) },
+                            headlineContent = { Text(item.name) },
                             supportingContent = {
-                                val place = magnet.placeName.ifBlank { stringResource(Res.string.no_location) }
-                                val date = "${magnet.dateAcquired.dayOfMonth} " +
-                                    magnet.dateAcquired.month.name.lowercase()
+                                val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
+                                val date = "${item.dateAcquired.dayOfMonth} " +
+                                    item.dateAcquired.month.name.lowercase()
                                         .replaceFirstChar { it.uppercase() } +
-                                    " ${magnet.dateAcquired.year}"
+                                    " ${item.dateAcquired.year}"
                                 Text("$place · $date")
                             },
                             leadingContent = {
                                 AsyncImage(
-                                    model = magnet.photoPath,
-                                    contentDescription = magnet.name,
+                                    model = item.photoPath,
+                                    contentDescription = item.name,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .size(56.dp)
                                         .clip(CircleShape)
                                 )
                             },
-                            modifier = Modifier.clickable { onItemClick(magnet.id) }
+                            modifier = Modifier.clickable { onItemClick(item.id) }
                         )
                         HorizontalDivider()
                     }

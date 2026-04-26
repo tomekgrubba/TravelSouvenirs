@@ -1,8 +1,8 @@
 package com.travelsouvenirs.main.ui.settings
 
 import com.russhwolf.settings.Settings
-import com.travelsouvenirs.main.data.FakeMagnetDao
-import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.data.FakeItemDao
+import com.travelsouvenirs.main.data.ItemRepository
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -46,7 +46,7 @@ private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings
 
 class SettingsViewModelTest {
 
-    private val fakeRepo = MagnetRepository(FakeMagnetDao())
+    private val fakeRepo = ItemRepository(FakeItemDao())
 
     @Test
     fun `initial notes is empty string when no key stored`() {
@@ -147,7 +147,7 @@ class SettingsViewModelTest {
         val vm = SettingsViewModel(settings, fakeRepo)
         assertEquals(emptyList(), vm.customCategories.value)
 
-        // Simulate AddMagnetViewModel writing a new category directly to Settings
+        // Simulate AddItemViewModel writing a new category directly to Settings
         settings.putString("categories", "Souvenir")
         assertEquals(emptyList(), vm.customCategories.value) // stale until refresh
 

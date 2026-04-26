@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <files-path name="magnet_photos" path="magnet_photos/" />
+    <files-path name="item_photos" path="item_photos/" />
     <cache-path name="temp_photos" path="temp_photos/" />
 </paths>

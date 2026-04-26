@@ -40,7 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.travelsouvenirs.main.di.LocalMagnetRepository
+import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -49,7 +49,7 @@ import travelsouvenirs.composeapp.generated.resources.*
 @Composable
 fun SettingsScreen() {
     val settings = LocalSettings.current
-    val repository = LocalMagnetRepository.current
+    val repository = LocalItemRepository.current
     val vm: SettingsViewModel = viewModel { SettingsViewModel(settings, repository) }
 
     // Re-read categories from Settings each time this panel enters composition, so that
@@ -59,7 +59,7 @@ fun SettingsScreen() {
     val notes by vm.notes.collectAsState()
     val customCategories by vm.customCategories.collectAsState()
     val mapProvider by vm.mapProvider.collectAsState()
-    val allMagnets by repository.allMagnets.collectAsState(initial = emptyList())
+    val allItems by repository.allItems.collectAsState(initial = emptyList())
 
     var newCategoryInput by remember { mutableStateOf("") }
     var duplicateCategoryError by remember { mutableStateOf(false) }
@@ -67,7 +67,7 @@ fun SettingsScreen() {
 
     // Confirmation dialog
     pendingDeleteCategory?.let { categoryToDelete ->
-        val affectedCount = allMagnets.count { it.category == categoryToDelete }
+        val affectedCount = allItems.count { it.category == categoryToDelete }
         val bodyText = when (affectedCount) {
             0 -> "No items are currently using \"$categoryToDelete\"."
             1 -> "1 item is currently assigned to \"$categoryToDelete\" and will be moved to Default."

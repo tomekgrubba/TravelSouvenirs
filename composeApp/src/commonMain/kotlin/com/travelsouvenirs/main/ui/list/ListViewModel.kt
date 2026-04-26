@@ -2,8 +2,8 @@ package com.travelsouvenirs.main.ui.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.travelsouvenirs.main.data.MagnetRepository
-import com.travelsouvenirs.main.domain.Magnet
+import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.domain.Item
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 enum class SortOption { NAME, DATE, LOCATION }
 
 /** Drives the list screen — applies search query and sort order to the repository stream. */
-class ListViewModel(repository: MagnetRepository) : ViewModel() {
+class ListViewModel(repository: ItemRepository) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -23,13 +23,13 @@ class ListViewModel(repository: MagnetRepository) : ViewModel() {
     val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
 
     /** Items matching the search query, sorted by the current sort option. Category filtering is applied at the screen level using the shared CategoryFilterViewModel. */
-    val sortedMagnets: StateFlow<List<Magnet>> = combine(
-        repository.allMagnets,
+    val sortedItems: StateFlow<List<Item>> = combine(
+        repository.allItems,
         _searchQuery,
         _sortOption
-    ) { magnets, query, sort ->
-        val filtered = if (query.isBlank()) magnets
-        else magnets.filter { m ->
+    ) { items, query, sort ->
+        val filtered = if (query.isBlank()) items
+        else items.filter { m ->
             m.name.contains(query, ignoreCase = true) ||
                 m.placeName.contains(query, ignoreCase = true) ||
                 m.notes.contains(query, ignoreCase = true)

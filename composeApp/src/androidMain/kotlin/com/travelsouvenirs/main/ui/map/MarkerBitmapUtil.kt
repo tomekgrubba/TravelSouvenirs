@@ -25,15 +25,15 @@ import kotlinx.coroutines.withContext
 
 /** Builds and caches circular photo map markers for individual items, keyed by item id. */
 @Composable
-fun rememberIndividualIcons(pins: List<MagnetPin>, sizePx: Int = 120): Map<Long, BitmapDescriptor> {
+fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, BitmapDescriptor> {
     val context = LocalContext.current
     val icons = remember { mutableStateMapOf<Long, BitmapDescriptor>() }
     LaunchedEffect(pins) {
         pins.forEach { pin ->
-            if (!icons.containsKey(pin.magnet.id)) {
+            if (!icons.containsKey(pin.item.id)) {
                 launch {
-                    val bmp = buildCircularBitmap(context, pin.magnet.photoPath, 0, sizePx)
-                    if (bmp != null) icons[pin.magnet.id] = BitmapDescriptorFactory.fromBitmap(bmp)
+                    val bmp = buildCircularBitmap(context, pin.item.photoPath, 0, sizePx)
+                    if (bmp != null) icons[pin.item.id] = BitmapDescriptorFactory.fromBitmap(bmp)
                 }
             }
         }
@@ -43,15 +43,15 @@ fun rememberIndividualIcons(pins: List<MagnetPin>, sizePx: Int = 120): Map<Long,
 
 /** Builds and caches circular photo map markers for clusters; shows a count badge when group size > 1. */
 @Composable
-fun rememberGroupIcons(groups: List<MagnetGroup>, sizePx: Int = 120): Map<Int, BitmapDescriptor> {
+fun rememberGroupIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<Int, BitmapDescriptor> {
     val context = LocalContext.current
     val icons = remember { mutableStateMapOf<Int, BitmapDescriptor>() }
     LaunchedEffect(groups) {
         icons.clear()
         groups.forEachIndexed { idx, group ->
             launch {
-                val count = if (group.magnets.size > 1) group.magnets.size else 0
-                val bmp = buildCircularBitmap(context, group.magnets.first().photoPath, count, sizePx)
+                val count = if (group.items.size > 1) group.items.size else 0
+                val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, sizePx)
                 if (bmp != null) icons[idx] = BitmapDescriptorFactory.fromBitmap(bmp)
             }
         }

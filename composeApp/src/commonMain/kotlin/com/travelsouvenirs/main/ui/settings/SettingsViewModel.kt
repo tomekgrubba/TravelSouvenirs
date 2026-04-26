@@ -3,7 +3,7 @@ package com.travelsouvenirs.main.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.russhwolf.settings.Settings
-import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.platform.MapProviderType
@@ -18,7 +18,7 @@ private const val KEY_CATEGORIES = "categories"
 /** Persists notes and custom categories; reassigns item categories on deletion. */
 class SettingsViewModel(
     private val settings: Settings,
-    private val repository: MagnetRepository
+    private val repository: ItemRepository
 ) : ViewModel() {
 
     private val _mapProvider = MutableStateFlow(

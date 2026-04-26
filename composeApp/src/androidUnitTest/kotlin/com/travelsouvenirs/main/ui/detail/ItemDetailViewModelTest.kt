@@ -1,8 +1,8 @@
 package com.travelsouvenirs.main.ui.detail
 
-import com.travelsouvenirs.main.data.FakeMagnetDao
-import com.travelsouvenirs.main.data.MagnetEntity
-import com.travelsouvenirs.main.data.MagnetRepository
+import com.travelsouvenirs.main.data.FakeItemDao
+import com.travelsouvenirs.main.data.ItemEntity
+import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.image.ImageStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,17 +23,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MagnetDetailViewModelTest {
+class ItemDetailViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
-    private lateinit var dao: FakeMagnetDao
-    private lateinit var repository: MagnetRepository
+    private lateinit var dao: FakeItemDao
+    private lateinit var repository: ItemRepository
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        dao = FakeMagnetDao()
-        repository = MagnetRepository(dao)
+        dao = FakeItemDao()
+        repository = ItemRepository(dao)
     }
 
     @After
@@ -47,12 +47,12 @@ class MagnetDetailViewModelTest {
         override suspend fun deleteImage(path: String) { deletedPaths.add(path) }
     }
 
-    private fun viewModel(id: Long) = MagnetDetailViewModel(repository, id, fakeImageStorage)
+    private fun viewModel(id: Long) = ItemDetailViewModel(repository, id, fakeImageStorage)
 
-    private fun TestScope.activate(vm: MagnetDetailViewModel) =
-        backgroundScope.launch(testDispatcher) { vm.magnet.collect {} }
+    private fun TestScope.activate(vm: ItemDetailViewModel) =
+        backgroundScope.launch(testDispatcher) { vm.item.collect {} }
 
-    private fun entity(id: Long, name: String, notes: String = "") = MagnetEntity(
+    private fun entity(id: Long, name: String, notes: String = "") = ItemEntity(
         id = id,
         name = name,
         notes = notes,
@@ -64,83 +64,83 @@ class MagnetDetailViewModelTest {
     )
 
     @Test
-    fun `magnet starts null before any subscriber`() {
+    fun `item starts null before any subscriber`() {
         val vm = viewModel(1)
-        assertNull(vm.magnet.value)
+        assertNull(vm.item.value)
     }
 
     @Test
-    fun `magnet emits item when found in database`() = runTest {
-        dao.insertMagnet(entity(1, "Colosseum"))
+    fun `item emits value when found in database`() = runTest {
+        dao.insertItem(entity(1, "Colosseum"))
         val vm = viewModel(1)
         activate(vm)
         advanceUntilIdle()
 
-        assertNotNull(vm.magnet.value)
-        assertEquals("Colosseum", vm.magnet.value?.name)
+        assertNotNull(vm.item.value)
+        assertEquals("Colosseum", vm.item.value?.name)
     }
 
     @Test
-    fun `magnet stays null when id does not exist`() = runTest {
+    fun `item stays null when id does not exist`() = runTest {
         val vm = viewModel(99)
         activate(vm)
         advanceUntilIdle()
 
-        assertNull(vm.magnet.value)
+        assertNull(vm.item.value)
     }
 
     @Test
-    fun `magnet preserves notes and place name`() = runTest {
-        dao.insertMagnet(entity(1, "Eiffel", notes = "Bought at level 2"))
+    fun `item preserves notes and place name`() = runTest {
+        dao.insertItem(entity(1, "Eiffel", notes = "Bought at level 2"))
         val vm = viewModel(1)
         activate(vm)
         advanceUntilIdle()
 
-        assertEquals("Eiffel", vm.magnet.value?.name)
-        assertEquals("Bought at level 2", vm.magnet.value?.notes)
-        assertEquals("Paris", vm.magnet.value?.placeName)
+        assertEquals("Eiffel", vm.item.value?.name)
+        assertEquals("Bought at level 2", vm.item.value?.notes)
+        assertEquals("Paris", vm.item.value?.placeName)
     }
 
     @Test
-    fun `deleteMagnet removes item and invokes callback`() = runTest {
-        dao.insertMagnet(entity(1, "Colosseum"))
+    fun `deleteItem removes item and invokes callback`() = runTest {
+        dao.insertItem(entity(1, "Colosseum"))
         val vm = viewModel(1)
         activate(vm)
         advanceUntilIdle()
-        assertNotNull(vm.magnet.value)
+        assertNotNull(vm.item.value)
 
         var callbackInvoked = false
-        vm.deleteMagnet { callbackInvoked = true }
+        vm.deleteItem { callbackInvoked = true }
         advanceUntilIdle()
 
         assertTrue(callbackInvoked)
-        assertNull(vm.magnet.value)
-        assertNull(dao.getMagnetById(1))
+        assertNull(vm.item.value)
+        assertNull(dao.getItemById(1))
     }
 
     @Test
-    fun `deleteMagnet is no-op when magnet not yet loaded`() = runTest {
+    fun `deleteItem is no-op when item not yet loaded`() = runTest {
         val vm = viewModel(99)
         activate(vm)
 
         var callbackInvoked = false
-        vm.deleteMagnet { callbackInvoked = true }
+        vm.deleteItem { callbackInvoked = true }
         advanceUntilIdle()
 
         assertFalse(callbackInvoked)
     }
 
     @Test
-    fun `magnet flow re-emits when item is updated`() = runTest {
-        dao.insertMagnet(entity(1, "Original"))
+    fun `item flow re-emits when item is updated`() = runTest {
+        dao.insertItem(entity(1, "Original"))
         val vm = viewModel(1)
         activate(vm)
         advanceUntilIdle()
-        assertEquals("Original", vm.magnet.value?.name)
+        assertEquals("Original", vm.item.value?.name)
 
-        dao.insertMagnet(entity(1, "Updated"))
+        dao.insertItem(entity(1, "Updated"))
         advanceUntilIdle()
 
-        assertEquals("Updated", vm.magnet.value?.name)
+        assertEquals("Updated", vm.item.value?.name)
     }
 }

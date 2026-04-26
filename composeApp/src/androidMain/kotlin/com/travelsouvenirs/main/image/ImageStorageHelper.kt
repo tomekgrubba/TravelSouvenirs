@@ -13,8 +13,8 @@ object ImageStorageHelper {
 
     /** Decodes, resizes to ≤[IMAGE_MAX_SIDE_PX]px on the longest side, and saves as [IMAGE_JPEG_QUALITY]% JPEG. */
     fun copyToInternalStorage(context: Context, sourceUri: Uri): String? {
-        val filename = "magnet_${UUID.randomUUID()}.jpg"
-        val dir = File(context.filesDir, "magnet_photos")
+        val filename = "item_${UUID.randomUUID()}.jpg"
+        val dir = File(context.filesDir, "item_photos")
         dir.mkdirs()
         val destFile = File(dir, filename)
         return try {
