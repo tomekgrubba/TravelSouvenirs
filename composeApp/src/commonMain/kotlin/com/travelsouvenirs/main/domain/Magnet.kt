@@ -3,6 +3,8 @@ package com.travelsouvenirs.main.domain
 import kotlinx.datetime.LocalDate
 
 const val DEFAULT_CATEGORY = "Default"
+/** Maximum number of user-defined custom categories (excluding Default). */
+const val MAX_CUSTOM_CATEGORIES = 5
 
 /** Domain model representing a single travel souvenir item. */
 data class Magnet(

@@ -104,7 +104,7 @@ class AddMagnetViewModelTest {
         assertEquals("", vm.name.value)
         assertEquals("", vm.notes.value)
         assertEquals("", vm.placeName.value)
-        assertEquals(listOf("Default", "Trip", "Gifts"), vm.availableCategories)
+        assertEquals(listOf("Default", "Trip", "Gifts"), vm.availableCategories.value)
         assertEquals("Default", vm.category.value)
     }
 
@@ -378,6 +378,63 @@ class AddMagnetViewModelTest {
         assertEquals(12.5, vm.pendingLng.value)
         assertTrue(vm.cameraMoveId.value > cameraIdBefore)
         assertTrue(vm.showLocationDialog.value)
+    }
+
+    @Test
+    fun `addCategoryOnTheFly returns true, adds to availableCategories, and auto-selects`() {
+        val vm = viewModel()
+        assertTrue(vm.addCategoryOnTheFly("Souvenir"))
+        assertTrue(vm.availableCategories.value.contains("Souvenir"))
+        assertEquals("Souvenir", vm.category.value)
+    }
+
+    @Test
+    fun `addCategoryOnTheFly returns false for exact duplicate`() {
+        val vm = viewModel()
+        vm.addCategoryOnTheFly("Souvenir")
+        assertFalse(vm.addCategoryOnTheFly("Souvenir"))
+        assertEquals(2, vm.availableCategories.value.size) // Default + Souvenir
+    }
+
+    @Test
+    fun `addCategoryOnTheFly returns false for case-insensitive duplicate`() {
+        val vm = viewModel()
+        vm.addCategoryOnTheFly("Souvenir")
+        assertFalse(vm.addCategoryOnTheFly("souvenir"))
+        assertFalse(vm.addCategoryOnTheFly("SOUVENIR"))
+        assertEquals(2, vm.availableCategories.value.size)
+    }
+
+    @Test
+    fun `addCategoryOnTheFly returns false when name matches Default`() {
+        val vm = viewModel()
+        assertFalse(vm.addCategoryOnTheFly("Default"))
+        assertFalse(vm.addCategoryOnTheFly("default"))
+    }
+
+    @Test
+    fun `addCategoryOnTheFly returns false when max categories reached`() {
+        val vm = viewModel()
+        repeat(5) { i -> vm.addCategoryOnTheFly("Cat$i") }
+        assertFalse(vm.addCategoryOnTheFly("OneMore"))
+        assertEquals(6, vm.availableCategories.value.size) // Default + 5 custom
+    }
+
+    @Test
+    fun `addCategoryOnTheFly persists new category to settings`() {
+        val settings = FakeSettings()
+        val vm = viewModel(settings = settings)
+        vm.addCategoryOnTheFly("Souvenir")
+        assertEquals("Souvenir", settings.getStringOrNull("categories"))
+    }
+
+    @Test
+    fun `addCategoryOnTheFly persists multiple categories correctly`() {
+        val settings = FakeSettings()
+        val vm = viewModel(settings = settings)
+        vm.addCategoryOnTheFly("Alpha")
+        vm.addCategoryOnTheFly("Beta")
+        assertEquals("Alpha,Beta", settings.getStringOrNull("categories"))
     }
 
     private fun setPhotoPath(vm: AddMagnetViewModel, path: String) {

@@ -29,6 +29,7 @@ import androidx.compose.material3.TextButton
 import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.nativeMapProviderName
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,10 @@ fun SettingsScreen() {
     val settings = LocalSettings.current
     val repository = LocalMagnetRepository.current
     val vm: SettingsViewModel = viewModel { SettingsViewModel(settings, repository) }
+
+    // Re-read categories from Settings each time this panel enters composition, so that
+    // categories created on the Add Item screen are visible without an app restart.
+    LaunchedEffect(Unit) { vm.refreshCategories() }
 
     val notes by vm.notes.collectAsState()
     val customCategories by vm.customCategories.collectAsState()

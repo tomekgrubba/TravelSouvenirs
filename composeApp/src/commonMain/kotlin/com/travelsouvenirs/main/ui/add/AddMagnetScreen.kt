@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -90,6 +91,7 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
     val dateAcquired by viewModel.dateAcquired.collectAsState()
     val placeName by viewModel.placeName.collectAsState()
     val category by viewModel.category.collectAsState()
+    val availableCategories by viewModel.availableCategories.collectAsState()
     val isSaved by viewModel.isSaved.collectAsState()
     val showLocationDialog by viewModel.showLocationDialog.collectAsState()
 
@@ -109,6 +111,9 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategoryDropdown by remember { mutableStateOf(false) }
+    var showAddCategoryDialog by remember { mutableStateOf(false) }
+    var newCategoryInput by remember { mutableStateOf("") }
+    var duplicateCategoryError by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = kotlin.time.Clock.System.now().toEpochMilliseconds()
     )
@@ -136,6 +141,54 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
         LocationPickerDialog(
             viewModel = viewModel,
             onRequestGps = { requestLocationPermission() }
+        )
+    }
+
+    if (showAddCategoryDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showAddCategoryDialog = false
+                newCategoryInput = ""
+                duplicateCategoryError = false
+            },
+            title = { Text(stringResource(Res.string.dialog_add_category_title)) },
+            text = {
+                OutlinedTextField(
+                    value = newCategoryInput,
+                    onValueChange = {
+                        newCategoryInput = it
+                        duplicateCategoryError = false
+                    },
+                    placeholder = { Text(stringResource(Res.string.label_new_category)) },
+                    singleLine = true,
+                    isError = duplicateCategoryError,
+                    supportingText = if (duplicateCategoryError) {
+                        { Text(stringResource(Res.string.error_category_already_exists)) }
+                    } else null
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val added = viewModel.addCategoryOnTheFly(newCategoryInput)
+                        if (added) {
+                            showAddCategoryDialog = false
+                            newCategoryInput = ""
+                            duplicateCategoryError = false
+                        } else {
+                            duplicateCategoryError = true
+                        }
+                    },
+                    enabled = newCategoryInput.isNotBlank()
+                ) { Text(stringResource(Res.string.btn_add)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAddCategoryDialog = false
+                    newCategoryInput = ""
+                    duplicateCategoryError = false
+                }) { Text(stringResource(Res.string.btn_cancel)) }
+            }
         )
     }
 
@@ -256,12 +309,28 @@ fun AddMagnetScreen(onSaved: () -> Unit, magnetId: Long? = null) {
                     expanded = showCategoryDropdown,
                     onDismissRequest = { showCategoryDropdown = false }
                 ) {
-                    viewModel.availableCategories.forEach { option ->
+                    availableCategories.forEach { option ->
                         DropdownMenuItem(
                             text = { Text(option) },
                             onClick = {
                                 viewModel.onCategoryChange(option)
                                 showCategoryDropdown = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                    if (viewModel.canAddCategory) {
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(Res.string.menu_add_category),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            onClick = {
+                                showCategoryDropdown = false
+                                showAddCategoryDialog = true
                             },
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                         )

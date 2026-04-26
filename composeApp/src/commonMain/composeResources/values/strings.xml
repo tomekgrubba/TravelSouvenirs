@@ -39,6 +39,9 @@
     <string name="label_name">Name *</string>
     <string name="label_notes">Notes</string>
     <string name="label_category">Category</string>
+    <string name="menu_add_category">New category…</string>
+    <string name="dialog_add_category_title">New Category</string>
+    <string name="btn_add">Add</string>
     <string name="label_date_acquired">Date acquired</string>
     <string name="label_set_location">Set location… *</string>
     <string name="btn_save_item">Save Item</string>

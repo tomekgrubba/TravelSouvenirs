@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.data.MagnetRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
+import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.platform.MapProviderType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +14,6 @@ import kotlinx.coroutines.launch
 
 private const val KEY_NOTES = "notes"
 private const val KEY_CATEGORIES = "categories"
-private const val MAX_CUSTOM_CATEGORIES = 5
 
 /** Persists notes and custom categories; reassigns item categories on deletion. */
 class SettingsViewModel(
@@ -38,6 +38,11 @@ class SettingsViewModel(
     val customCategories: StateFlow<List<String>> = _customCategories.asStateFlow()
 
     val canAddCategory: Boolean get() = _customCategories.value.size < MAX_CUSTOM_CATEGORIES
+
+    /** Re-reads categories from persistent storage; call whenever the settings panel becomes visible. */
+    fun refreshCategories() {
+        _customCategories.value = loadCategories()
+    }
 
     private fun loadCategories(): List<String> {
         val raw = settings.getStringOrNull(KEY_CATEGORIES) ?: return emptyList()

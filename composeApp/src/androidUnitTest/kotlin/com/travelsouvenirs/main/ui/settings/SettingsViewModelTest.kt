@@ -142,6 +142,20 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `refreshCategories picks up categories written by another component`() {
+        val settings = FakeSettings()
+        val vm = SettingsViewModel(settings, fakeRepo)
+        assertEquals(emptyList(), vm.customCategories.value)
+
+        // Simulate AddMagnetViewModel writing a new category directly to Settings
+        settings.putString("categories", "Souvenir")
+        assertEquals(emptyList(), vm.customCategories.value) // stale until refresh
+
+        vm.refreshCategories()
+        assertEquals(listOf("Souvenir"), vm.customCategories.value)
+    }
+
+    @Test
     fun `settings key used is notes`() {
         val settings = FakeSettings()
         SettingsViewModel(settings, fakeRepo).onNotesChange("value")

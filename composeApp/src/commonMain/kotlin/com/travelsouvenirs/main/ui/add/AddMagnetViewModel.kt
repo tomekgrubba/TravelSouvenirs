@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.data.MagnetRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
+import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.domain.Magnet
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
@@ -33,7 +34,7 @@ class AddMagnetViewModel(
     private val locationService: LocationService,
     private val imageStorage: ImageStorage,
     private val editId: Long? = null,
-    settings: Settings
+    private val settings: Settings
 ) : ViewModel() {
 
     private val _photoPath = MutableStateFlow<String?>(null)
@@ -87,14 +88,19 @@ class AddMagnetViewModel(
     private val _locationError = MutableStateFlow<String?>(null)
     val locationError: StateFlow<String?> = _locationError.asStateFlow()
 
-    /** All selectable categories: Default + user-defined custom categories. */
-    val availableCategories: List<String> = buildList {
+    private val _availableCategories = MutableStateFlow(buildList {
         add(DEFAULT_CATEGORY)
         val raw = settings.getStringOrNull(KEY_CATEGORIES) ?: ""
         addAll(raw.split(",").filter { it.isNotBlank() })
-    }
+    })
+    /** All selectable categories: Default + user-defined custom categories. */
+    val availableCategories: StateFlow<List<String>> = _availableCategories.asStateFlow()
 
-    private val _category = MutableStateFlow(resolveDefaultCategory(availableCategories, editId))
+    /** True while the user can still add a custom category (fewer than [MAX_CUSTOM_CATEGORIES] custom entries). */
+    val canAddCategory: Boolean get() =
+        _availableCategories.value.count { it != DEFAULT_CATEGORY } < MAX_CUSTOM_CATEGORIES
+
+    private val _category = MutableStateFlow(resolveDefaultCategory(_availableCategories.value, editId))
     /** Currently selected category for this item. */
     val category: StateFlow<String> = _category.asStateFlow()
 
@@ -143,6 +149,27 @@ class AddMagnetViewModel(
     fun onDateChange(date: LocalDate) { _dateAcquired.value = date }
     /** Updates the selected category. */
     fun onCategoryChange(value: String) { _category.value = value }
+
+    /**
+     * Creates a new custom category, persists it to settings, and auto-selects it.
+     * Applies the same validation as [com.travelsouvenirs.main.ui.settings.SettingsViewModel.addCategory]:
+     * no duplicates (case-insensitive), no match against [DEFAULT_CATEGORY], max [MAX_CUSTOM_CATEGORIES].
+     * @return true if the category was added and selected; false if validation failed.
+     */
+    fun addCategoryOnTheFly(name: String): Boolean {
+        val trimmed = name.trim()
+        if (trimmed.isBlank()) return false
+        val custom = _availableCategories.value.filter { it != DEFAULT_CATEGORY }
+        if (custom.size >= MAX_CUSTOM_CATEGORIES) return false
+        val isDuplicate = trimmed.equals(DEFAULT_CATEGORY, ignoreCase = true) ||
+            _availableCategories.value.any { it.equals(trimmed, ignoreCase = true) }
+        if (isDuplicate) return false
+        val updatedCustom = custom + trimmed
+        _availableCategories.value = listOf(DEFAULT_CATEGORY) + updatedCustom
+        settings.putString(KEY_CATEGORIES, updatedCustom.joinToString(","))
+        _category.value = trimmed
+        return true
+    }
 
     /**
      * Opens the unified location dialog. Pre-populates the pending pin from the committed
