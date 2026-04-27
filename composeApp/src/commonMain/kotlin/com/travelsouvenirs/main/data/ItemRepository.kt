@@ -1,30 +1,44 @@
 package com.travelsouvenirs.main.data
 
 import com.travelsouvenirs.main.domain.Item
+import com.travelsouvenirs.main.sync.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock
 
-/** Mediates between the DAO and the rest of the app, mapping entities to domain objects. */
 class ItemRepository(private val dao: ItemDao) {
 
-    /** Live stream of all items; emits whenever the database changes. */
-    val allItems: Flow<List<Item>> = dao.getAllItems().map { list ->
+    val allItems: Flow<List<Item>> = dao.getAllActiveItems().map { list ->
         list.map { it.toDomain() }
     }
 
-    /** Returns a single item by [id], or null if not found. */
     suspend fun getItemById(id: Long): Item? = dao.getItemById(id)?.toDomain()
 
-    /** Returns a live Flow for a single item, re-emitting whenever it is updated. */
     fun getItemByIdFlow(id: Long): Flow<Item?> = dao.getItemByIdFlow(id).map { it?.toDomain() }
 
-    /** Inserts a new item or replaces an existing one (upsert); returns the row id. */
-    suspend fun insertItem(item: Item): Long = dao.insertItem(item.toEntity())
+    suspend fun insertItem(item: Item): Long {
+        val stamped = item.copy(
+            syncStatus = SyncStatus.PENDING_UPLOAD,
+            updatedAtMillis = Clock.System.now().toEpochMilliseconds(),
+        )
+        return dao.insertItem(stamped.toEntity())
+    }
 
-    /** Permanently removes [item] from the database. */
-    suspend fun deleteItem(item: Item) = dao.deleteItem(item.toEntity())
+    /** Marks an item for deletion and lets the sync engine remove it from Firebase. */
+    suspend fun deleteItem(item: Item) {
+        if (item.firebaseId.isEmpty()) {
+            // Never synced — safe to hard-delete immediately
+            dao.deleteItem(item.toEntity())
+        } else {
+            // Mark as pending delete so SyncRepository can remove it from Firebase first
+            val stamped = item.copy(
+                syncStatus = SyncStatus.PENDING_DELETE,
+                updatedAtMillis = Clock.System.now().toEpochMilliseconds(),
+            )
+            dao.insertItem(stamped.toEntity())
+        }
+    }
 
-    /** Moves all items assigned to [fromCategory] to [toCategory]. */
     suspend fun reassignCategory(fromCategory: String, toCategory: String) =
         dao.reassignCategory(fromCategory, toCategory)
 }

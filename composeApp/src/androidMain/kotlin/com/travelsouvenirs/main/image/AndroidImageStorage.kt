@@ -18,4 +18,9 @@ class AndroidImageStorage(private val context: Context) : ImageStorage {
             file.delete()
         }
     }
+
+    override fun localPathForDownload(firebaseId: String): String {
+        val dir = File(context.filesDir, "item_photos").also { it.mkdirs() }
+        return File(dir, "item_$firebaseId.jpg").absolutePath
+    }
 }

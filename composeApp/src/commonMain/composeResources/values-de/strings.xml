@@ -76,4 +76,9 @@
     <string name="section_map_provider">Kartenanbieter</string>
     <string name="text_map_provider_hint">Wähle die Kartenkacheln für die gesamte App.</string>
     <string name="map_provider_osm">OpenStreetMap</string>
+
+    <string name="syncing_data">Daten werden synchronisiert…</string>
+    <string name="section_sync">Synchronisierung</string>
+    <string name="label_wifi_only_sync">Nur über WLAN synchronisieren</string>
+    <string name="hint_wifi_only_sync">Wenn aktiviert, werden Elemente nur über WLAN synchronisiert, um mobile Daten zu sparen.</string>
 </resources>

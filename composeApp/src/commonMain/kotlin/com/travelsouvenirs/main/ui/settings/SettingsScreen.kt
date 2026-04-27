@@ -4,9 +4,7 @@ import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -15,13 +13,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Switch
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,31 +35,37 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.travelsouvenirs.main.di.LocalAuthRepository
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
 /** Settings screen — categories management at top, persistent notes at bottom. */
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onSignInClick: () -> Unit = {}) {
     val settings = LocalSettings.current
     val repository = LocalItemRepository.current
+    val authRepository = LocalAuthRepository.current
     val vm: SettingsViewModel = viewModel { SettingsViewModel(settings, repository) }
+    val currentUser by authRepository.currentUser.collectAsState()
+    val scope = rememberCoroutineScope()
 
     // Re-read categories from Settings each time this panel enters composition, so that
     // categories created on the Add Item screen are visible without an app restart.
     LaunchedEffect(Unit) { vm.refreshCategories() }
 
-    val notes by vm.notes.collectAsState()
     val customCategories by vm.customCategories.collectAsState()
     val mapProvider by vm.mapProvider.collectAsState()
+    val wifiOnlySync by vm.wifiOnlySync.collectAsState()
     val allItems by repository.allItems.collectAsState(initial = emptyList())
 
     var newCategoryInput by remember { mutableStateOf("") }
@@ -96,14 +103,75 @@ fun SettingsScreen() {
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
     ) {
+        // ── Sync & Account ──────────────────────────────────────────────────
+        Text(
+            stringResource(Res.string.section_sync),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+        )
+        if (currentUser != null) {
+            currentUser?.email?.let { email ->
+                Text(
+                    "Signed in as $email",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(Res.string.label_wifi_only_sync),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = wifiOnlySync,
+                    onCheckedChange = vm::setWifiOnlySync
+                )
+            }
+            Text(
+                stringResource(Res.string.hint_wifi_only_sync),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            OutlinedButton(
+                onClick = { scope.launch { authRepository.signOut() } },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Sign out")
+            }
+        } else {
+            Text(
+                "Sign in to sync your items across devices.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Button(
+                onClick = onSignInClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Sign in")
+            }
+        }
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
+
         // ── Map Provider ────────────────────────────────────────────────────
         Text(
             stringResource(Res.string.section_map_provider),
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 4.dp)
         )
         Text(
             stringResource(Res.string.text_map_provider_hint),
@@ -128,10 +196,7 @@ fun SettingsScreen() {
 
         // ── Categories ──────────────────────────────────────────────────────
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(top = 16.dp)
+            modifier = Modifier.padding(top = 16.dp)
         ) {
             Text(
                 stringResource(Res.string.section_categories),
@@ -224,23 +289,6 @@ fun SettingsScreen() {
             }
         }
 
-        // ── Notes ────────────────────────────────────────────────────────────
-        Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
-            Text(
-                stringResource(Res.string.section_notes),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            OutlinedTextField(
-                value = notes,
-                onValueChange = vm::onNotesChange,
-                label = { Text(stringResource(Res.string.label_your_notes)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp),
-                maxLines = Int.MAX_VALUE
-            )
-        }
     }
 }
 

@@ -13,4 +13,7 @@ interface ImageStorage {
      * No-ops silently if the file does not exist or the path is null/blank.
      */
     suspend fun deleteImage(path: String)
+
+    /** Returns the absolute local path where an image for [firebaseId] should be stored when downloaded. */
+    fun localPathForDownload(firebaseId: String): String
 }

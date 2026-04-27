@@ -84,4 +84,9 @@
     <string name="section_map_provider">Map Provider</string>
     <string name="text_map_provider_hint">Choose the map tiles used throughout the app.</string>
     <string name="map_provider_osm">OpenStreetMap</string>
+
+    <string name="syncing_data">Syncing your data…</string>
+    <string name="section_sync">Sync</string>
+    <string name="label_wifi_only_sync">Sync on Wi-Fi only</string>
+    <string name="hint_wifi_only_sync">When enabled, items sync only over Wi-Fi to save mobile data.</string>
 </resources>

@@ -54,6 +54,7 @@ import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.map.buildCircularBitmap
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.graphics.toArgb
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
@@ -62,10 +63,32 @@ import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polygon as OsmPolygon
 import travelsouvenirs.composeapp.generated.resources.*
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 private const val OSM_CLUSTER_ZOOM_THRESHOLD = 13
 private const val OSM_LOCATION_ZOOM = 4.0
+
+
+private fun buildApproxCircle(center: GeoPoint, radiusMeters: Double, fillArgb: Int, strokeArgb: Int): OsmPolygon {
+    val steps = 64
+    val points = (0 until steps).map { i ->
+        val angle = i * 2 * PI / steps
+        val dLat = (radiusMeters / 111320.0) * cos(angle)
+        val dLng = (radiusMeters / (111320.0 * cos(Math.toRadians(center.latitude)))) * sin(angle)
+        GeoPoint(center.latitude + dLat, center.longitude + dLng)
+    }
+    return OsmPolygon().apply {
+        this.points = points
+        fillPaint.color = fillArgb
+        outlinePaint.color = strokeArgb
+        outlinePaint.strokeWidth = 3f
+        setInfoWindow(null)
+    }
+}
 
 @Composable
 internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
@@ -111,12 +134,22 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val isFilterActive = selectedCategories != categoryFilter.allCategoriesSet
     val scope = rememberCoroutineScope()
 
-    var hasLocationPermission by remember {
+    var hasFineLocation by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
         )
     }
+    var hasCoarseLocation by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val hasLocationPermission = hasFineLocation || hasCoarseLocation
+    val isApproximate = hasCoarseLocation && !hasFineLocation
+    var approxUserPos by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var approxOverlay by remember { mutableStateOf<OsmPolygon?>(null) }
 
     // Individual icon cache: itemId -> BitmapDrawable (no badge)
     val iconCache = remember { mutableMapOf<Long, BitmapDrawable>() }
@@ -158,6 +191,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
             try {
                 val loc = if (hasLocationPermission) locationService.getCurrentLocation() else null
                 if (loc != null) {
+                    approxUserPos = loc.lat to loc.lng
                     mapView.controller.setZoom(OSM_LOCATION_ZOOM)
                     mapView.controller.setCenter(GeoPoint(loc.lat, loc.lng))
                 } else if (allItems.isNotEmpty()) {
@@ -184,13 +218,15 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            hasLocationPermission = true
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasFineLocation = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        hasCoarseLocation = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (hasFineLocation || hasCoarseLocation) {
             scope.launch {
                 try {
                     locationService.getCurrentLocation()?.let { loc ->
+                        approxUserPos = loc.lat to loc.lng
                         mapView.controller.animateTo(GeoPoint(loc.lat, loc.lng), OSM_LOCATION_ZOOM, 600L)
                     }
                 } catch (_: Exception) { }
@@ -247,14 +283,16 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
 
         if (showIndividual) {
             itemPins.forEach { pin ->
-                // Pass explicit null InfoWindow to skip getDefaultMarkerInfoWindow(); we
-                // call setInfoWindow(null) below anyway to suppress the tap popup.
-                val marker = Marker(mapView, null)
+                // Ensure the MapView is still in a valid state before creating markers
+                val repo = mapView.getRepository() ?: return@forEach
+                
+                val marker = Marker(mapView)
                 marker.position = GeoPoint(pin.position.lat, pin.position.lng)
                 marker.title = pin.item.name
                 marker.snippet = pin.item.placeName
                 iconCache[pin.item.id]?.let { marker.icon = it }
                 marker.setOnMarkerClickListener { _, _ -> onPinClick(pin.item.id); true }
+                // Suppress the default info window popup
                 marker.setInfoWindow(null)
                 newOverlays.add(marker)
             }
@@ -268,10 +306,15 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, 120)
                     if (bmp != null) clusterIconCache[cacheKey] = BitmapDrawable(context.resources, bmp)
                 }
-                val marker = Marker(mapView, null)
+                
+                // Ensure the MapView is still in a valid state before creating markers
+                val repo = mapView.getRepository() ?: return@forEach
+                
+                val marker = Marker(mapView)
                 marker.position = GeoPoint(group.centerLat, group.centerLng)
                 marker.title = group.items.first().name
                 clusterIconCache[cacheKey]?.let { marker.icon = it }
+                // Suppress the default info window popup
                 marker.setInfoWindow(null)
                 if (group.items.size == 1) {
                     marker.setOnMarkerClickListener { _, _ -> onPinClick(group.items.first().id); true }
@@ -319,6 +362,24 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    val primaryColor = MaterialTheme.colorScheme.primary
+    LaunchedEffect(approxUserPos, isApproximate) {
+        approxOverlay?.let { mapView.overlays.remove(it) }
+        approxOverlay = null
+        val pos = approxUserPos
+        if (isApproximate && pos != null) {
+            val circle = buildApproxCircle(
+                center = GeoPoint(pos.first, pos.second),
+                radiusMeters = 2000.0,
+                fillArgb = primaryColor.copy(alpha = 0.15f).toArgb(),
+                strokeArgb = primaryColor.copy(alpha = 0.6f).toArgb()
+            )
+            mapView.overlays.add(0, circle)
+            approxOverlay = circle
+            mapView.invalidate()
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = { mapView },
@@ -337,12 +398,15 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                         scope.launch {
                             try {
                                 locationService.getCurrentLocation()?.let { loc ->
+                                    approxUserPos = loc.lat to loc.lng
                                     mapView.controller.animateTo(GeoPoint(loc.lat, loc.lng), OSM_LOCATION_ZOOM, 600L)
                                 }
                             } catch (_: Exception) { }
                         }
                     } else {
-                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        locationPermissionLauncher.launch(
+                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                        )
                     }
                 }
             ) {

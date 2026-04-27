@@ -1,0 +1,195 @@
+package com.travelsouvenirs.main.sync
+
+import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.auth.AuthRepository
+import com.travelsouvenirs.main.data.ItemDao
+import com.travelsouvenirs.main.data.ItemEntity
+import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
+import com.travelsouvenirs.main.image.ImageStorage
+import dev.gitlive.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.datetime.Clock
+import kotlin.random.Random
+
+private const val KEY_CATEGORIES = "categories"
+private const val KEY_CATEGORIES_UPDATED = "categories_updated_at"
+
+class SyncRepository(
+    private val dao: ItemDao,
+    private val firestore: FirebaseFirestore,
+    val imageSyncHelper: ImageSyncHelper,
+    private val authRepository: AuthRepository,
+    private val settings: Settings,
+    private val imageStorage: ImageStorage,
+) {
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    /** Runs a full bidirectional sync. No-ops if the user is not signed in. */
+    suspend fun sync() {
+        val userId = authRepository.currentUser.value?.uid ?: return
+        _isSyncing.value = true
+        try {
+            uploadPending(userId)
+            downloadRemote(userId)
+            syncCategories(userId)
+        } catch (_: Exception) {
+            // Sync failures are non-fatal; the next sync cycle will retry
+        } finally {
+            _isSyncing.value = false
+        }
+    }
+
+    private suspend fun uploadPending(userId: String) {
+        val pending = dao.getPendingItems()
+        val itemsRef = firestore.collection("users").document(userId).collection("items")
+
+        for (entity in pending) {
+            when (SyncStatus.valueOf(entity.syncStatus)) {
+                SyncStatus.PENDING_DELETE -> {
+                    if (entity.firebaseId.isNotEmpty()) {
+                        itemsRef.document(entity.firebaseId)
+                            .update(mapOf("deleted" to true, "updatedAtMillis" to entity.updatedAtMillis))
+                    }
+                    dao.hardDeleteByFirebaseId(entity.firebaseId)
+                }
+
+                SyncStatus.PENDING_UPLOAD -> {
+                    val fbId = entity.firebaseId.ifEmpty { randomId() }
+                    val now = Clock.System.now().toEpochMilliseconds()
+
+                    var storagePath = entity.photoStoragePath
+                    var storageUrl = entity.photoStorageUrl
+                    if (entity.photoPath.isNotEmpty() && storagePath.isEmpty()) {
+                        val (path, url) = imageSyncHelper.upload(userId, fbId, entity.photoPath)
+                        storagePath = path
+                        storageUrl = url
+                    }
+
+                    val firebaseItem = FirebaseItem(
+                        name = entity.name,
+                        notes = entity.notes,
+                        photoStoragePath = storagePath,
+                        photoStorageUrl = storageUrl,
+                        latitude = entity.latitude,
+                        longitude = entity.longitude,
+                        placeName = entity.placeName,
+                        dateAcquiredMillis = entity.dateAcquiredMillis,
+                        category = entity.category,
+                        updatedAtMillis = now,
+                        deleted = false,
+                    )
+                    itemsRef.document(fbId).set(firebaseItem)
+                    dao.updateSyncMeta(
+                        id = entity.id,
+                        status = SyncStatus.SYNCED.name,
+                        fbId = fbId,
+                        storagePath = storagePath,
+                        storageUrl = storageUrl,
+                        ts = now,
+                    )
+                }
+
+                SyncStatus.SYNCED -> Unit
+            }
+        }
+    }
+
+    private suspend fun downloadRemote(userId: String) {
+        val snapshot = firestore
+            .collection("users").document(userId).collection("items")
+            .get()
+
+        for (doc in snapshot.documents) {
+            val remote = doc.data<FirebaseItem>()
+            val fbId = doc.id
+            if (remote.deleted) {
+                dao.hardDeleteByFirebaseId(fbId)
+                continue
+            }
+            val local = dao.getItemByFirebaseId(fbId)
+            val photoMissing = local != null &&
+                local.photoPath.isEmpty() &&
+                remote.photoStorageUrl.isNotEmpty()
+            if (local == null || remote.updatedAtMillis > local.updatedAtMillis || photoMissing) {
+                val localPhotoPath = resolveLocalPhoto(local, fbId, remote)
+                val merged = buildEntity(fbId, remote, localPhotoPath, local?.id ?: 0)
+                dao.insertItem(merged)
+            }
+        }
+    }
+
+    private suspend fun resolveLocalPhoto(local: ItemEntity?, fbId: String, remote: FirebaseItem): String {
+        val existingPath = local?.photoPath ?: ""
+        if (existingPath.isNotEmpty() && localFileExists(existingPath)) return existingPath
+        if (remote.photoStorageUrl.isEmpty()) return ""
+        val localPath = imageStorage.localPathForDownload(fbId)
+        try {
+            downloadUrlToFile(remote.photoStorageUrl, localPath)
+            return localPath
+        } catch (_: Exception) {
+            return ""
+        }
+    }
+
+    private fun buildEntity(
+        fbId: String,
+        remote: FirebaseItem,
+        localPhotoPath: String,
+        existingId: Long,
+    ): ItemEntity = ItemEntity(
+        id = existingId,
+        name = remote.name,
+        notes = remote.notes,
+        photoPath = localPhotoPath,
+        latitude = remote.latitude,
+        longitude = remote.longitude,
+        placeName = remote.placeName,
+        dateAcquiredMillis = remote.dateAcquiredMillis,
+        category = remote.category,
+        firebaseId = fbId,
+        syncStatus = SyncStatus.SYNCED.name,
+        updatedAtMillis = remote.updatedAtMillis,
+        photoStoragePath = remote.photoStoragePath,
+        photoStorageUrl = remote.photoStorageUrl,
+    )
+
+    private suspend fun syncCategories(userId: String) {
+        val remoteRef = firestore
+            .collection("users").document(userId)
+            .collection("settings").document("categories")
+        val localUpdatedAt = settings.getLong(KEY_CATEGORIES_UPDATED, 0L)
+
+        try {
+            val snapshot = remoteRef.get()
+            if (snapshot.exists) {
+                val remoteUpdatedAt = snapshot.get<Long>("updatedAtMillis")
+                val remoteList = snapshot.get<List<String>>("list")
+                if (remoteUpdatedAt > localUpdatedAt) {
+                    val categoriesString = remoteList.filter { it != DEFAULT_CATEGORY }.joinToString(",")
+                    settings.putString(KEY_CATEGORIES, categoriesString)
+                    settings.putLong(KEY_CATEGORIES_UPDATED, remoteUpdatedAt)
+                    return
+                }
+            }
+        } catch (_: Exception) { /* document may not exist yet on first run */ }
+
+        val localCategories = (settings.getStringOrNull(KEY_CATEGORIES) ?: "")
+            .split(",").filter { it.isNotBlank() }
+        val now = Clock.System.now().toEpochMilliseconds()
+        remoteRef.set(
+            mapOf(
+                "list" to listOf(DEFAULT_CATEGORY) + localCategories,
+                "updatedAtMillis" to now,
+            )
+        )
+        settings.putLong(KEY_CATEGORIES_UPDATED, now)
+    }
+}
+
+private fun randomId(): String = buildString {
+    val chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+    repeat(28) { append(chars[Random.nextInt(chars.length)]) }
+}

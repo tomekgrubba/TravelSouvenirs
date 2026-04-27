@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "831391345201",
+    "project_id": "travel-souvenirs",
+    "storage_bucket": "travel-souvenirs.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:831391345201:android:44f3a0d93fb634957cc310",
+        "android_client_info": {
+          "package_name": "com.travelsouvenirs.main"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDs3WYA9KSFZZDGD9E7lKNbsA0KbJmJZcg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

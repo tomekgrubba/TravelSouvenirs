@@ -4,12 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -133,90 +134,106 @@ fun ItemDetailScreen(
         }
     ) { padding ->
         item?.let { m ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
+            val hasLocation = m.latitude != 0.0 || m.longitude != 0.0
+            val minMapHeight = 180.dp
+
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxSize().padding(padding)
             ) {
-                Box(modifier = Modifier.fillMaxWidth().height(280.dp)) {
-                    AsyncImage(
-                        model = m.photoPath,
-                        contentDescription = stringResource(Res.string.cd_item_photo),
+                val maxContentHeight = if (hasLocation) maxHeight - minMapHeight else maxHeight
+                val mapMaxHeight = maxWidth - 32.dp
+
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Column(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { showFullscreenPhoto = true },
-                        contentScale = ContentScale.Crop
-                    )
-                    if (m.category.isNotBlank()) {
-                        Surface(
+                            .heightIn(max = maxContentHeight)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(8.dp),
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .padding(horizontal = 16.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.Label,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Text(
-                                    m.category,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+                            AsyncImage(
+                                model = m.photoPath,
+                                contentDescription = stringResource(Res.string.cd_item_photo),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable { showFullscreenPhoto = true },
+                                contentScale = ContentScale.Crop
+                            )
+                            if (m.category.isNotBlank()) {
+                                Surface(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(8.dp),
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Label,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp),
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                        Text(
+                                            m.category,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (m.placeName.isNotBlank()) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Place,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(m.placeName, style = MaterialTheme.typography.bodyLarge)
+                                }
+                            }
+
+                            Text(
+                                "${m.dateAcquired.dayOfMonth} " +
+                                    "${m.dateAcquired.month.name.lowercase().replaceFirstChar { it.uppercase() }} " +
+                                    "${m.dateAcquired.year}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            if (m.notes.isNotBlank()) {
+                                Text(m.notes, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                     }
-                }
 
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (m.placeName.isNotBlank()) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Place,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(m.placeName, style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
-
-                    Text(
-                        "${m.dateAcquired.dayOfMonth} " +
-                            "${m.dateAcquired.month.name.lowercase().replaceFirstChar { it.uppercase() }} " +
-                            "${m.dateAcquired.year}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    if (m.notes.isNotBlank()) {
-                        Text(m.notes, style = MaterialTheme.typography.bodyMedium)
-                    }
-
-                    if (m.latitude != 0.0 || m.longitude != 0.0) {
-                        // Increased spacing so the map doesn't crowd the text above it
-                        Spacer(modifier = Modifier.height(24.dp))
+                    if (hasLocation) {
                         PlatformMapPreview(
                             latitude = m.latitude,
                             longitude = m.longitude,
                             label = m.name,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(150.dp)
+                                .weight(1f)
+                                .heightIn(min = minMapHeight, max = mapMaxHeight)
+                                .padding(horizontal = 16.dp)
                                 // Clip to bounds prevents AndroidView from drawing outside its allocated layout box
                                 // and overlapping other scrollable content.
                                 .clipToBounds()

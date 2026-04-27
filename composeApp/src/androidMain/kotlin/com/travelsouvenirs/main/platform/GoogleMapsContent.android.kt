@@ -63,6 +63,7 @@ import travelsouvenirs.composeapp.generated.resources.*
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
 private const val LOCATION_ZOOM = 4f
 
+
 @Composable
 internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val context = LocalContext.current
@@ -117,18 +118,26 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     val scope = rememberCoroutineScope()
 
-    var hasLocationPermission by remember {
+    var hasFineLocation by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
         )
     }
+    var hasCoarseLocation by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val hasLocationPermission = hasFineLocation || hasCoarseLocation
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            hasLocationPermission = true
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasFineLocation = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        hasCoarseLocation = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (hasFineLocation || hasCoarseLocation) {
             scope.launch {
                 try {
                     locationService.getCurrentLocation()?.let { loc ->
@@ -153,7 +162,9 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                 } catch (_: Exception) { }
             }
         } else {
-            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            locationPermissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
         }
     }
 
@@ -186,7 +197,6 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission,
-                // Restrict zoom out slightly (matches OSM zoom-out feel but allows continuous panning across the dateline)
                 minZoomPreference = 2f
             ),
             uiSettings = MapUiSettings(

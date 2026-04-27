@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 
 private const val KEY_NOTES = "notes"
 private const val KEY_CATEGORIES = "categories"
+private const val KEY_WIFI_ONLY_SYNC = "wifi_only_sync"
 
 /** Persists notes and custom categories; reassigns item categories on deletion. */
 class SettingsViewModel(
@@ -29,6 +30,14 @@ class SettingsViewModel(
     fun setMapProvider(provider: MapProviderType) {
         _mapProvider.value = provider
         settings.putString(MapProviderType.SETTINGS_KEY, provider.name)
+    }
+
+    private val _wifiOnlySync = MutableStateFlow(settings.getBoolean(KEY_WIFI_ONLY_SYNC, false))
+    val wifiOnlySync: StateFlow<Boolean> = _wifiOnlySync.asStateFlow()
+
+    fun setWifiOnlySync(enabled: Boolean) {
+        _wifiOnlySync.value = enabled
+        settings.putBoolean(KEY_WIFI_ONLY_SYNC, enabled)
     }
 
     private val _notes = MutableStateFlow(settings.getStringOrNull(KEY_NOTES) ?: "")

@@ -25,4 +25,12 @@ class IosImageStorage : ImageStorage {
             fm.removeItemAtPath(path, error = null)
         }
     }
+
+    override fun localPathForDownload(firebaseId: String): String {
+        val dir = "${NSHomeDirectory()}/Documents/item_photos"
+        NSFileManager.defaultManager.createDirectoryAtPath(
+            dir, withIntermediateDirectories = true, attributes = null, error = null
+        )
+        return "$dir/item_$firebaseId.jpg"
+    }
 }
