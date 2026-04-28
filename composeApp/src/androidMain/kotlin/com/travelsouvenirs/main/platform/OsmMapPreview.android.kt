@@ -15,18 +15,38 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.viewinterop.AndroidView
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 
+private fun osmPreviewDarkTileSource() = XYTileSource(
+    "CartoDB Dark Matter", 0, 19, 256, ".png",
+    arrayOf(
+        "https://a.basemaps.cartocdn.com/dark_all/",
+        "https://b.basemaps.cartocdn.com/dark_all/",
+        "https://c.basemaps.cartocdn.com/dark_all/",
+        "https://d.basemaps.cartocdn.com/dark_all/"
+    )
+)
+
 @Composable
 internal fun OsmMapPreview(latitude: Double, longitude: Double, label: String, modifier: Modifier) {
+    val mapTheme = rememberMapTheme()
     val lifecycleOwner = LocalLifecycleOwner.current
     val mapView = remember { mutableStateOf<MapView?>(null) }
+
+    LaunchedEffect(mapTheme) {
+        mapView.value?.setTileSource(
+            if (mapTheme == MapTheme.DARK) osmPreviewDarkTileSource() else TileSourceFactory.MAPNIK
+        )
+        mapView.value?.invalidate()
+    }
 
     // Properly handle the MapView lifecycle (pause/resume/detach) to prevent 
     // the map from continuing to fetch tiles and leak memory in the background.
@@ -52,7 +72,7 @@ internal fun OsmMapPreview(latitude: Double, longitude: Double, label: String, m
         AndroidView(
             factory = { ctx ->
                 MapView(ctx).apply {
-                    setTileSource(TileSourceFactory.MAPNIK)
+                    setTileSource(if (mapTheme == MapTheme.DARK) osmPreviewDarkTileSource() else TileSourceFactory.MAPNIK)
                     setMultiTouchControls(false)
                     setBuiltInZoomControls(false)
                     // Limit zoom out and prevent vertical map repetition, just like the main map

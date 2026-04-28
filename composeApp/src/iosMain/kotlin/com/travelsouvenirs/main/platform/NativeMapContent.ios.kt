@@ -27,10 +27,13 @@ import platform.MapKit.MKAnnotationProtocol
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
 import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
+import platform.UIKit.UIUserInterfaceStyleDark
+import platform.UIKit.UIUserInterfaceStyleLight
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
+    val mapTheme = rememberMapTheme()
     val repository = LocalItemRepository.current
     val locationService = LocalLocationService.current
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
@@ -45,6 +48,10 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     val mapView = remember {
         (viewModel.nativeMapView as? MKMapView) ?: MKMapView().also { viewModel.nativeMapView = it }
+    }
+
+    LaunchedEffect(mapTheme) {
+        mapView.overrideUserInterfaceStyle = if (mapTheme == MapTheme.DARK) UIUserInterfaceStyleDark else UIUserInterfaceStyleLight
     }
 
     LaunchedEffect(Unit) {

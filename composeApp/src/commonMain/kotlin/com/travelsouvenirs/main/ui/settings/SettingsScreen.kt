@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import com.travelsouvenirs.main.platform.MapProviderType
+import com.travelsouvenirs.main.platform.MapTheme
 import com.travelsouvenirs.main.platform.nativeMapProviderName
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,6 +66,7 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
 
     val customCategories by vm.customCategories.collectAsState()
     val mapProvider by vm.mapProvider.collectAsState()
+    val mapTheme by vm.mapTheme.collectAsState()
     val wifiOnlySync by vm.wifiOnlySync.collectAsState()
     val allItems by repository.allItems.collectAsState(initial = emptyList())
 
@@ -192,6 +194,24 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                 )
             }
         }
+        Text(
+            stringResource(Res.string.section_map_theme),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            MapTheme.entries.forEach { theme ->
+                FilterChip(
+                    selected = theme == mapTheme,
+                    onClick = { vm.setMapTheme(theme) },
+                    label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
         HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
 
         // ── Categories ──────────────────────────────────────────────────────
@@ -296,6 +316,12 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
 private fun mapProviderLabel(provider: MapProviderType): String = when (provider) {
     MapProviderType.NATIVE -> nativeMapProviderName()
     MapProviderType.OPEN_STREET_MAP -> stringResource(Res.string.map_provider_osm)
+}
+
+@Composable
+private fun mapThemeLabel(theme: MapTheme): String = when (theme) {
+    MapTheme.LIGHT -> stringResource(Res.string.map_theme_light)
+    MapTheme.DARK -> stringResource(Res.string.map_theme_dark)
 }
 
 @Composable

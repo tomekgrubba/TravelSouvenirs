@@ -7,6 +7,7 @@ import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.platform.MapProviderType
+import com.travelsouvenirs.main.platform.MapTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +31,16 @@ class SettingsViewModel(
     fun setMapProvider(provider: MapProviderType) {
         _mapProvider.value = provider
         settings.putString(MapProviderType.SETTINGS_KEY, provider.name)
+    }
+
+    private val _mapTheme = MutableStateFlow(
+        MapTheme.fromString(settings.getStringOrNull(MapTheme.SETTINGS_KEY))
+    )
+    val mapTheme: StateFlow<MapTheme> = _mapTheme.asStateFlow()
+
+    fun setMapTheme(theme: MapTheme) {
+        _mapTheme.value = theme
+        settings.putString(MapTheme.SETTINGS_KEY, theme.name)
     }
 
     private val _wifiOnlySync = MutableStateFlow(settings.getBoolean(KEY_WIFI_ONLY_SYNC, false))

@@ -54,6 +54,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
     val locationService = LocalLocationService.current
     val categoryFilter = LocalCategoryFilter.current
 
+    val mapTheme = rememberMapTheme()
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
     val allItems by viewModel.items.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
@@ -100,7 +101,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
             config.userContentController.addScriptMessageHandler(handler, name = "pinClick")
             WKWebView(frame = CGRectZero.readValue(), configuration = config).also { wv ->
                 wv.navigationDelegate = navigationDelegate
-                wv.loadHTMLString(osmInteractiveHtml(20.0, 0.0, 2), baseURL = null)
+                wv.loadHTMLString(osmInteractiveHtml(20.0, 0.0, 2, mapTheme == MapTheme.DARK), baseURL = null)
                 viewModel.nativeMapView = wv
                 viewModel.onClearNativeView = {
                     wv.configuration.userContentController.removeScriptMessageHandlerForName("pinClick")
@@ -127,6 +128,12 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
                 }
             } catch (_: Exception) { }
         }
+    }
+
+    LaunchedEffect(mapTheme, pageReady) {
+        if (!pageReady) return@LaunchedEffect
+        val isDark = mapTheme == MapTheme.DARK
+        webView.evaluateJavaScript("setTileLayer($isDark);", completionHandler = null)
     }
 
     // Inject/refresh markers when data or filter changes (only after page ready)
@@ -216,7 +223,7 @@ private fun injectMarkers(webView: WKWebView, items: List<Item>) {
     }
 }
 
-private fun osmInteractiveHtml(lat: Double, lng: Double, zoom: Int): String = """
+private fun osmInteractiveHtml(lat: Double, lng: Double, zoom: Int, isDark: Boolean): String = """
 <!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -226,9 +233,21 @@ private fun osmInteractiveHtml(lat: Double, lng: Double, zoom: Int): String = ""
 <div id="map"></div>
 <script>
 var map=L.map('map').setView([$lat,$lng],$zoom);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+var tileLayer=null;
+function setTileLayer(dark){
+  if(tileLayer){map.removeLayer(tileLayer);}
+  if(dark){
+    tileLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains:'abcd'
+    }).addTo(map);
+  } else {
+    tileLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+  }
+}
+setTileLayer($isDark);
 var markers={};
 function addPin(id,lat,lng,title){
   if(markers[id]){markers[id].setLatLng([lat,lng]);return;}

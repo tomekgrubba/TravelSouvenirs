@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -153,7 +153,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                                 selectedTabName = MainTab.LIST.name
                             },
                             text = { Text(stringResource(Res.string.tab_list)) },
-                            icon = { Icon(Icons.Default.Search, contentDescription = null) }
+                            icon = { Icon(Icons.Default.List, contentDescription = null) }
                         )
                     }
                 }

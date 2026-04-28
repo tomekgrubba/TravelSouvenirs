@@ -16,3 +16,12 @@ fun rememberMapProvider(): MapProviderType {
     val provider by vm.mapProvider.collectAsState()
     return provider
 }
+
+@Composable
+fun rememberMapTheme(): MapTheme {
+    val settings = LocalSettings.current
+    val repository = LocalItemRepository.current
+    val vm: SettingsViewModel = viewModel { SettingsViewModel(settings, repository) }
+    val theme by vm.mapTheme.collectAsState()
+    return theme
+}

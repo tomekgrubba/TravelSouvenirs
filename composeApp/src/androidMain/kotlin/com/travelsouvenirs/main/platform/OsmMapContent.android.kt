@@ -59,6 +59,7 @@ import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -71,6 +72,16 @@ import kotlin.math.sin
 
 private const val OSM_CLUSTER_ZOOM_THRESHOLD = 13
 private const val OSM_LOCATION_ZOOM = 4.0
+
+private fun osmDarkTileSource() = XYTileSource(
+    "CartoDB Dark Matter", 0, 19, 256, ".png",
+    arrayOf(
+        "https://a.basemaps.cartocdn.com/dark_all/",
+        "https://b.basemaps.cartocdn.com/dark_all/",
+        "https://c.basemaps.cartocdn.com/dark_all/",
+        "https://d.basemaps.cartocdn.com/dark_all/"
+    )
+)
 
 
 private fun buildApproxCircle(center: GeoPoint, radiusMeters: Double, fillArgb: Int, strokeArgb: Int): OsmPolygon {
@@ -98,6 +109,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val categoryFilter = LocalCategoryFilter.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    val mapTheme = rememberMapTheme()
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
     val allItems by viewModel.items.collectAsState()
     val allPins by viewModel.itemPins.collectAsState()
@@ -158,7 +170,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
 
     val mapView = remember {
         MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
+            setTileSource(if (mapTheme == MapTheme.DARK) osmDarkTileSource() else TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
             setBuiltInZoomControls(false)
             
@@ -180,6 +192,11 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 controller.setZoom(3.0)
             }
         }
+    }
+
+    LaunchedEffect(mapTheme) {
+        mapView.setTileSource(if (mapTheme == MapTheme.DARK) osmDarkTileSource() else TileSourceFactory.MAPNIK)
+        mapView.invalidate()
     }
 
     // Use rememberSaveable so that the initial camera is only set once per lifecycle,
