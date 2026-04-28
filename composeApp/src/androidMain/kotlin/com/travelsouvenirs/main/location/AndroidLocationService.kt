@@ -22,33 +22,41 @@ class AndroidLocationService(private val context: Context) : LocationService {
 
     @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(): LatLon? {
+        val fresh = getFreshLocation()
+        if (fresh != null) return fresh
+        return getLastLocation()
+    }
+
+    @SuppressLint("MissingPermission")
+    private suspend fun getFreshLocation(): LatLon? {
         val cts = CancellationTokenSource()
         return try {
             suspendCancellableCoroutine { cont ->
                 cont.invokeOnCancellation { cts.cancel() }
                 val request = CurrentLocationRequest.Builder()
-                    .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
-                    .setDurationMillis(10_000)
+                    .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                    .setDurationMillis(5_000)
+                    .setMaxUpdateAgeMillis(60_000)
                     .build()
                 client.getCurrentLocation(request, cts.token)
                     .addOnSuccessListener { location ->
-                        if (location != null) cont.resume(LatLon(location.latitude, location.longitude))
-                        else cont.resume(null)
+                        cont.resume(if (location != null) LatLon(location.latitude, location.longitude) else null)
                     }
-                    .addOnFailureListener { cont.resumeWithException(it) }
+                    .addOnFailureListener { cont.resume(null) }
             }
-        } catch (_: Exception) {
-            try {
-                suspendCancellableCoroutine { cont ->
-                    client.lastLocation
-                        .addOnSuccessListener { loc ->
-                            cont.resume(if (loc != null) LatLon(loc.latitude, loc.longitude) else null)
-                        }
-                        .addOnFailureListener { cont.resume(null) }
-                }
-            } catch (_: Exception) { null }
-        }
+        } catch (_: Exception) { null }
     }
+
+    @SuppressLint("MissingPermission")
+    private suspend fun getLastLocation(): LatLon? = try {
+        suspendCancellableCoroutine { cont ->
+            client.lastLocation
+                .addOnSuccessListener { loc ->
+                    cont.resume(if (loc != null) LatLon(loc.latitude, loc.longitude) else null)
+                }
+                .addOnFailureListener { cont.resume(null) }
+        }
+    } catch (_: Exception) { null }
 
     override suspend fun reverseGeocode(lat: Double, lng: Double): String {
         return try {

@@ -484,7 +484,7 @@ private fun LocationPickerDialog(
                                         items(searchResults) { place ->
                                             Card(
                                                 onClick = { viewModel.onPlaceSelected(place) },
-                                                shape = RoundedCornerShape(10.dp),
+                                                shape = RoundedCornerShape(16.dp),
                                                 colors = CardDefaults.cardColors(
                                                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                                                 ),

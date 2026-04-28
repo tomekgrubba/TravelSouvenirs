@@ -280,7 +280,7 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                             supportingText = if (duplicateCategoryError) {
                                 { Text(stringResource(Res.string.error_category_already_exists)) }
                             } else null,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                             ),

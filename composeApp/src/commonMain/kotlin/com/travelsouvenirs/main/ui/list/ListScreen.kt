@@ -89,7 +89,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 placeholder = { Text(stringResource(Res.string.search_placeholder)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true,
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
