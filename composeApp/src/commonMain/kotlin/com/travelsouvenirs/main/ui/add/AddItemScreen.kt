@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -35,17 +37,18 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -228,7 +231,8 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
                         contentDescription = stringResource(Res.string.cd_item_photo),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(16.dp)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
@@ -236,7 +240,8 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(160.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -250,17 +255,20 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = { launchCamera() },
+                    shape = RoundedCornerShape(50.dp),
                     modifier = Modifier.weight(1f)
                 ) { Text(stringResource(Res.string.btn_take_photo)) }
 
                 OutlinedButton(
                     onClick = { launchPhotoPicker() },
+                    shape = RoundedCornerShape(50.dp),
                     modifier = Modifier.weight(1f)
                 ) { Text(stringResource(Res.string.btn_gallery)) }
             }
 
             OutlinedButton(
                 onClick = { viewModel.openLocationDialog() },
+                shape = RoundedCornerShape(50.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
@@ -279,6 +287,7 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
                 value = name,
                 onValueChange = viewModel::onNameChange,
                 label = { Text(stringResource(Res.string.label_name)) },
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -287,6 +296,7 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
                 value = notes,
                 onValueChange = viewModel::onNotesChange,
                 label = { Text(stringResource(Res.string.label_notes)) },
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 maxLines = 4
@@ -302,6 +312,7 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
                     readOnly = true,
                     label = { Text(stringResource(Res.string.label_category)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryDropdown) },
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -345,6 +356,7 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
                     "${dateAcquired.year}",
                 onValueChange = {},
                 label = { Text("Date acquired") },
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 trailingIcon = {
@@ -357,6 +369,7 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
             Button(
                 onClick = viewModel::saveItem,
                 enabled = isFormValid,
+                shape = RoundedCornerShape(50.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(Res.string.btn_save_item))
@@ -406,6 +419,7 @@ private fun LocationPickerDialog(
                         value = searchQuery,
                         onValueChange = viewModel::onSearchQueryChange,
                         label = { Text(stringResource(Res.string.label_city_or_place)) },
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
@@ -463,13 +477,26 @@ private fun LocationPickerDialog(
                                     isSearching -> CircularProgressIndicator(
                                         modifier = Modifier.size(24.dp).align(Alignment.Center)
                                     )
-                                    searchResults.isNotEmpty() -> LazyColumn {
+                                    searchResults.isNotEmpty() -> LazyColumn(
+                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
+                                    ) {
                                         items(searchResults) { place ->
-                                            ListItem(
-                                                headlineContent = { Text(place.name) },
-                                                modifier = Modifier.clickable { viewModel.onPlaceSelected(place) }
-                                            )
-                                            HorizontalDivider()
+                                            Card(
+                                                onClick = { viewModel.onPlaceSelected(place) },
+                                                shape = RoundedCornerShape(10.dp),
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                                ),
+                                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(
+                                                    text = place.name,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                                                )
+                                            }
                                         }
                                     }
                                     else -> Text(
@@ -503,6 +530,7 @@ private fun LocationPickerDialog(
                 ) {
                     OutlinedButton(
                         onClick = { viewModel.closeLocationDialog() },
+                        shape = RoundedCornerShape(50.dp),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(stringResource(Res.string.btn_cancel))
@@ -510,6 +538,7 @@ private fun LocationPickerDialog(
                     Button(
                         onClick = { viewModel.confirmLocation() },
                         enabled = pendingLat != null && !isLocating,
+                        shape = RoundedCornerShape(50.dp),
                         modifier = Modifier.weight(1f)
                     ) {
                         if (isLocating && pendingLat != null) {

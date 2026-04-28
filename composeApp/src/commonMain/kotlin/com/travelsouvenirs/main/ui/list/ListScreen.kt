@@ -1,9 +1,12 @@
 package com.travelsouvenirs.main.ui.list
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,19 +15,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -75,7 +80,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
@@ -84,6 +89,12 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 placeholder = { Text(stringResource(Res.string.search_placeholder)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true,
+                shape = RoundedCornerShape(28.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                ),
                 modifier = Modifier.weight(1f)
             )
 
@@ -102,24 +113,23 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.width(240.dp)
                 ) {
-                    // — Sort group —
                     Text(
                         text = stringResource(Res.string.sort_by),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
                     )
-
                     listOf(
                         SortOption.NAME to stringResource(Res.string.sort_name),
                         SortOption.DATE to stringResource(Res.string.sort_date),
                         SortOption.LOCATION to stringResource(Res.string.sort_location)
                     ).forEach { (option, label) ->
                         DropdownMenuItem(
-                            text = { Text(label) },
+                            text = { Text(label, style = MaterialTheme.typography.bodyMedium) },
                             trailingIcon = {
                                 if (sortOption == option) {
                                     Icon(
@@ -130,6 +140,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                                     )
                                 }
                             },
+
                             onClick = {
                                 viewModel.onSortChange(option)
                                 showMenu = false
@@ -137,20 +148,17 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                         )
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    Spacer(modifier = Modifier.size(4.dp))
 
-                    // — Filter group —
                     Text(
                         text = stringResource(Res.string.filter_by_category),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
                     )
-
                     availableCategories.forEach { category ->
                         DropdownMenuItem(
-                            text = { Text(category) },
+                            text = { Text(category, style = MaterialTheme.typography.bodyMedium) },
                             leadingIcon = {
                                 Checkbox(
                                     checked = category in selectedCategories,
@@ -158,9 +166,11 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                                     modifier = Modifier.size(20.dp)
                                 )
                             },
+
                             onClick = { categoryFilter.toggleCategoryFilter(category) }
                         )
                     }
+                    Spacer(modifier = Modifier.size(4.dp))
                 }
             }
         }
@@ -168,7 +178,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
         when {
             allEmpty -> {
                 Box(
-                    modifier = Modifier.fillMaxSize().clickable { onAddClick() }, 
+                    modifier = Modifier.fillMaxSize().clickable { onAddClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(stringResource(Res.string.empty_state_no_items))
@@ -180,31 +190,53 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 }
             }
             else -> {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     items(items, key = { it.id }) { item ->
-                        ListItem(
-                            headlineContent = { Text(item.name) },
-                            supportingContent = {
-                                val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
-                                val date = "${item.dateAcquired.dayOfMonth} " +
-                                    item.dateAcquired.month.name.lowercase()
-                                        .replaceFirstChar { it.uppercase() } +
-                                    " ${item.dateAcquired.year}"
-                                Text("$place · $date")
-                            },
-                            leadingContent = {
+                        Card(
+                            onClick = { onItemClick(item.id) },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 AsyncImage(
                                     model = item.photoPath,
                                     contentDescription = item.name,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
-                                        .size(56.dp)
-                                        .clip(CircleShape)
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(12.dp))
                                 )
-                            },
-                            modifier = Modifier.clickable { onItemClick(item.id) }
-                        )
-                        HorizontalDivider()
+                                Spacer(Modifier.width(14.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = item.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
+                                    val date = "${item.dateAcquired.dayOfMonth} " +
+                                        item.dateAcquired.month.name.lowercase()
+                                            .replaceFirstChar { it.uppercase() } +
+                                        " ${item.dateAcquired.year}"
+                                    Text(
+                                        text = "$place · $date",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

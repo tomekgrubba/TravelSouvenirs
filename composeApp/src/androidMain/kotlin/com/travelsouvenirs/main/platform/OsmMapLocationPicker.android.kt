@@ -14,11 +14,22 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Overlay
+
+private fun osmPickerDarkTileSource() = XYTileSource(
+    "CartoDB Dark Matter", 0, 19, 256, ".png",
+    arrayOf(
+        "https://a.basemaps.cartocdn.com/dark_all/",
+        "https://b.basemaps.cartocdn.com/dark_all/",
+        "https://c.basemaps.cartocdn.com/dark_all/",
+        "https://d.basemaps.cartocdn.com/dark_all/"
+    )
+)
 
 /** Location picker backed by OSMDroid. Clips to its layout bounds to match the Google Maps variant. */
 @Composable
@@ -32,10 +43,11 @@ internal fun OsmMapLocationPicker(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val onLocationPickedState = rememberUpdatedState(onLocationPicked)
+    val mapTheme = rememberMapTheme()
 
     val mapView = remember {
         MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
+            setTileSource(if (mapTheme == MapTheme.DARK) osmPickerDarkTileSource() else TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
             setBuiltInZoomControls(true)
             minZoomLevel = MAP_ZOOM_MIN.toDouble()
@@ -60,6 +72,11 @@ internal fun OsmMapLocationPicker(
     DisposableEffect(mapView) {
         mapView.overlays.add(0, tapOverlay)
         onDispose { mapView.overlays.remove(tapOverlay) }
+    }
+
+    LaunchedEffect(mapTheme) {
+        mapView.setTileSource(if (mapTheme == MapTheme.DARK) osmPickerDarkTileSource() else TileSourceFactory.MAPNIK)
+        mapView.invalidate()
     }
 
     // Rebuild the draggable marker whenever the pin position changes

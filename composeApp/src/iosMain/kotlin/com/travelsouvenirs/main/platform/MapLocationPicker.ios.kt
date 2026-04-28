@@ -42,12 +42,19 @@ actual fun PlatformMapLocationPicker(
         }
     }
 
+    val mapTheme = rememberMapTheme()
+    val isDark = mapTheme == MapTheme.DARK
+
     val webView = remember {
         val config = WKWebViewConfiguration()
         config.userContentController.addScriptMessageHandler(handler, name = "locationPicker")
         WKWebView(frame = CGRectZero.readValue(), configuration = config).apply {
-            loadHTMLString(mapPickerHtml(selectedLat, selectedLng), baseURL = null)
+            loadHTMLString(mapPickerHtml(selectedLat, selectedLng, isDark), baseURL = null)
         }
+    }
+
+    LaunchedEffect(mapTheme) {
+        webView.evaluateJavaScript("setTileLayer($isDark);", completionHandler = null)
     }
 
     // Update marker position when pin moves (drag/tap/GPS/search)
@@ -65,13 +72,21 @@ actual fun PlatformMapLocationPicker(
     UIKitView(factory = { webView }, modifier = modifier)
 }
 
-private fun mapPickerHtml(initialLat: Double?, initialLng: Double?): String {
+private fun mapPickerHtml(initialLat: Double?, initialLng: Double?, isDark: Boolean): String {
     val centerLat = initialLat ?: 20.0
     val centerLng = initialLng ?: 0.0
     val zoom = if (initialLat != null) MAP_ZOOM_LOCATION else MAP_ZOOM_MIN
     val markerInit = if (initialLat != null && initialLng != null)
         "marker=L.marker([$initialLat,$initialLng],{draggable:true}).addTo(map);attachDragEnd(marker);"
     else ""
+    val tileUrl = if (isDark)
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+    else
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    val tileAttr = if (isDark)
+        "© OpenStreetMap contributors © CARTO"
+    else
+        "© OpenStreetMap contributors"
     return """
 <!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
@@ -82,8 +97,15 @@ private fun mapPickerHtml(initialLat: Double?, initialLng: Double?): String {
 <div id="map"></div>
 <script>
 var marker=null;
+var tileLayer=null;
 var map=L.map('map').setView([$centerLat,$centerLng],$zoom);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
+function setTileLayer(dark){
+  if(tileLayer){map.removeLayer(tileLayer);}
+  var url=dark?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png':'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  var attr=dark?'© OpenStreetMap contributors © CARTO':'© OpenStreetMap contributors';
+  tileLayer=L.tileLayer(url,{attribution:attr}).addTo(map);
+}
+setTileLayer($isDark);
 function attachDragEnd(m){
   m.on('dragend',function(){var ll=m.getLatLng();window.webkit.messageHandlers.locationPicker.postMessage(ll.lat+','+ll.lng);});
 }

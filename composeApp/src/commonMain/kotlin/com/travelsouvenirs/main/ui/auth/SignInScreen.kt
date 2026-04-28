@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -64,6 +64,7 @@ fun SignInScreen() {
                 onValueChange = vm::onEmailChange,
                 label = { Text("Email") },
                 singleLine = true,
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
@@ -71,6 +72,7 @@ fun SignInScreen() {
                 onValueChange = vm::onPasswordChange,
                 label = { Text("Password") },
                 singleLine = true,
+                shape = RoundedCornerShape(16.dp),
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -82,6 +84,7 @@ fun SignInScreen() {
             Button(
                 onClick = vm::onEmailPasswordSubmit,
                 enabled = !state.isLoading,
+                shape = RoundedCornerShape(50.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (state.isLoading) {
@@ -96,10 +99,11 @@ fun SignInScreen() {
             }
 
             if (isGoogleSignInAvailable) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Spacer(Modifier.height(4.dp))
                 OutlinedButton(
                     onClick = vm::onGoogleSignIn,
                     enabled = !state.isLoading,
+                    shape = RoundedCornerShape(50.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Continue with Google")

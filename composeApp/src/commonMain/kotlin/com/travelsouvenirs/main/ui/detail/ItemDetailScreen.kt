@@ -21,12 +21,14 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
-
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -41,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -160,6 +163,7 @@ fun ItemDetailScreen(
                                 contentDescription = stringResource(Res.string.cd_item_photo),
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .clip(RoundedCornerShape(16.dp))
                                     .clickable { showFullscreenPhoto = true },
                                 contentScale = ContentScale.Crop
                             )
@@ -168,11 +172,11 @@ fun ItemDetailScreen(
                                     modifier = Modifier
                                         .align(Alignment.TopEnd)
                                         .padding(8.dp),
-                                    shape = MaterialTheme.shapes.small,
+                                    shape = RoundedCornerShape(20.dp),
                                     color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
@@ -192,34 +196,43 @@ fun ItemDetailScreen(
                             }
                         }
 
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            if (m.placeName.isNotBlank()) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.Place,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(m.placeName, style = MaterialTheme.typography.bodyLarge)
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                if (m.placeName.isNotBlank()) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Place,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(m.placeName, style = MaterialTheme.typography.bodyLarge)
+                                    }
                                 }
-                            }
 
-                            Text(
-                                "${m.dateAcquired.dayOfMonth} " +
-                                    "${m.dateAcquired.month.name.lowercase().replaceFirstChar { it.uppercase() }} " +
-                                    "${m.dateAcquired.year}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                                Text(
+                                    "${m.dateAcquired.dayOfMonth} " +
+                                        "${m.dateAcquired.month.name.lowercase().replaceFirstChar { it.uppercase() }} " +
+                                        "${m.dateAcquired.year}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
 
-                            if (m.notes.isNotBlank()) {
-                                Text(m.notes, style = MaterialTheme.typography.bodyMedium)
+                                if (m.notes.isNotBlank()) {
+                                    Text(m.notes, style = MaterialTheme.typography.bodyMedium)
+                                }
                             }
                         }
                     }
@@ -233,9 +246,8 @@ fun ItemDetailScreen(
                                 .fillMaxWidth()
                                 .weight(1f)
                                 .heightIn(min = minMapHeight, max = mapMaxHeight)
-                                .padding(horizontal = 16.dp)
-                                // Clip to bounds prevents AndroidView from drawing outside its allocated layout box
-                                // and overlapping other scrollable content.
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .clip(RoundedCornerShape(16.dp))
                                 .clipToBounds()
                         )
                     }
