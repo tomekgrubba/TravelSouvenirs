@@ -170,106 +170,6 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
             }
         }
 
-        // ── Appearance ───────────────────────────────────────────────────────
-        Text(
-            "Appearance",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-        )
-        Card(
-            shape = sectionCardShape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "Theme",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    AppStyle.entries.forEach { style ->
-                        FilterChip(
-                            selected = style == appStyle,
-                            onClick = { vm.setAppStyle(style) },
-                            label = {
-                                Text(
-                                    appStyleLabel(style),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center
-                                )
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                Text(
-                    when (appStyle) {
-                        AppStyle.COSMIC -> "Cool deep-space purples and indigos."
-                        AppStyle.EMBER  -> "Warm charcoal with amber and copper accents."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        // ── Map ──────────────────────────────────────────────────────────────
-        Text(
-            stringResource(Res.string.section_map_provider),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-        )
-        Text(
-            stringResource(Res.string.text_map_provider_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Card(
-            shape = sectionCardShape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MapProviderType.entries.forEach { provider ->
-                        FilterChip(
-                            selected = provider == mapProvider,
-                            onClick = { vm.setMapProvider(provider) },
-                            label = { Text(mapProviderLabel(provider), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                Text(
-                    stringResource(Res.string.section_map_theme),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MapTheme.entries.forEach { theme ->
-                        FilterChip(
-                            selected = theme == mapTheme,
-                            onClick = { vm.setMapTheme(theme) },
-                            label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
-        }
-
         // ── Categories ──────────────────────────────────────────────────────
         Text(
             stringResource(Res.string.section_categories),
@@ -363,6 +263,115 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(12.dp)
                     )
+                }
+            }
+        }
+
+        // ── Developer Options ────────────────────────────────────────────────
+        Text(
+            stringResource(Res.string.section_developer_options),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 16.dp, bottom = 2.dp)
+        )
+
+        // Appearance
+        Text(
+            "Appearance",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+        )
+        Card(
+            shape = sectionCardShape,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Theme",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AppStyle.entries.forEach { style ->
+                        FilterChip(
+                            selected = style == appStyle,
+                            onClick = { vm.setAppStyle(style) },
+                            label = {
+                                Text(
+                                    appStyleLabel(style),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Text(
+                    when (appStyle) {
+                        AppStyle.COSMIC -> "Cool deep-space purples and indigos."
+                        AppStyle.EMBER  -> "Warm charcoal with amber and copper accents."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Map Provider
+        Text(
+            stringResource(Res.string.section_map_provider),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+        )
+        Text(
+            stringResource(Res.string.text_map_provider_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Card(
+            shape = sectionCardShape,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MapProviderType.entries.forEach { provider ->
+                        FilterChip(
+                            selected = provider == mapProvider,
+                            onClick = { vm.setMapProvider(provider) },
+                            label = { Text(mapProviderLabel(provider), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Text(
+                    stringResource(Res.string.section_map_theme),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MapTheme.entries.forEach { theme ->
+                        FilterChip(
+                            selected = theme == mapTheme,
+                            onClick = { vm.setMapTheme(theme) },
+                            label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }

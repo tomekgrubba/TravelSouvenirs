@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -15,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -45,9 +43,6 @@ import com.travelsouvenirs.main.di.LocalAuthRepository
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
-import com.travelsouvenirs.main.di.LocalSyncRepository
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.Res
 import travelsouvenirs.composeapp.generated.resources.syncing_data
@@ -76,22 +71,8 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
     val settings = LocalSettings.current
     val repository = LocalItemRepository.current
     val authRepository = LocalAuthRepository.current
-    val syncRepository = LocalSyncRepository.current
     val currentUser by authRepository.currentUser.collectAsState()
     val categoryFilterVM: CategoryFilterViewModel = viewModel { CategoryFilterViewModel(settings, repository) }
-
-    // Show loading after login until the first sync for this session completes
-    val startedSignedIn = remember { currentUser != null }
-    var initialSyncDone by remember { mutableStateOf(startedSignedIn) }
-    LaunchedEffect(currentUser?.uid) {
-        if (currentUser != null && !initialSyncDone) {
-            withTimeoutOrNull(5_000L) {
-                syncRepository.isSyncing.first { it }
-                syncRepository.isSyncing.first { !it }
-            }
-            initialSyncDone = true
-        }
-    }
 
     // Auto-close sign-in screen when the user successfully logs in
     LaunchedEffect(currentUser) {
@@ -173,21 +154,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (!initialSyncDone) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(Res.string.syncing_data),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else if (showSignIn) {
+            if (showSignIn) {
                 SignInScreen()
             } else if (showSettings) {
                 SettingsScreen(onSignInClick = { showSignIn = true })
