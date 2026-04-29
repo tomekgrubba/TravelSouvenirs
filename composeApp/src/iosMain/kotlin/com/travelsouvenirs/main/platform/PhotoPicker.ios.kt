@@ -33,6 +33,7 @@ import platform.UIKit.UIWindowScene
 import platform.darwin.NSObject
 import com.travelsouvenirs.main.image.IMAGE_JPEG_QUALITY
 import com.travelsouvenirs.main.image.IMAGE_MAX_SIDE_PX
+import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalForeignApi::class)
 private fun resizeUIImage(image: platform.UIKit.UIImage): platform.UIKit.UIImage {
@@ -61,7 +62,7 @@ private fun activeRootViewController() =
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
-actual fun rememberPhotoPicker(onResult: (String?) -> Unit): () -> Unit {
+actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifLng: Double?, exifDate: LocalDate?) -> Unit): () -> Unit {
     val currentOnResult = rememberUpdatedState(onResult)
     val imageStorage = remember { IosImageStorage() }
     // Strong references prevent ARC from collecting delegates whose picker.delegate is weak.
@@ -90,13 +91,13 @@ actual fun rememberPhotoPicker(onResult: (String?) -> Unit): () -> Unit {
                                     fm.createDirectoryAtPath(dir, withIntermediateDirectories = true, attributes = null, error = null)
                                     data.writeToFile(destPath, atomically = true)
                                 }
-                                currentOnResult.value(destPath)
+                                currentOnResult.value(destPath, null, null, null)
                             } else {
-                                currentOnResult.value(null)
+                                currentOnResult.value(null, null, null, null)
                             }
                         }
                     } else {
-                        currentOnResult.value(null)
+                        currentOnResult.value(null, null, null, null)
                     }
                 }
             }

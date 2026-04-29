@@ -53,6 +53,7 @@ import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.MapTheme
 import com.travelsouvenirs.main.platform.nativeMapProviderName
+import com.travelsouvenirs.main.theme.AppStyle
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -71,6 +72,7 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
     LaunchedEffect(Unit) { vm.refreshCategories() }
 
     val customCategories by vm.customCategories.collectAsState()
+    val appStyle by vm.appStyle.collectAsState()
     val mapProvider by vm.mapProvider.collectAsState()
     val mapTheme by vm.mapTheme.collectAsState()
     val wifiOnlySync by vm.wifiOnlySync.collectAsState()
@@ -165,6 +167,54 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Sign in") }
                 }
+            }
+        }
+
+        // ── Appearance ───────────────────────────────────────────────────────
+        Text(
+            "Appearance",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+        )
+        Card(
+            shape = sectionCardShape,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Theme",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AppStyle.entries.forEach { style ->
+                        FilterChip(
+                            selected = style == appStyle,
+                            onClick = { vm.setAppStyle(style) },
+                            label = {
+                                Text(
+                                    appStyleLabel(style),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Text(
+                    when (appStyle) {
+                        AppStyle.COSMIC -> "Cool deep-space purples and indigos."
+                        AppStyle.EMBER  -> "Warm charcoal with amber and copper accents."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -319,6 +369,12 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
 
         Spacer(modifier = Modifier.height(8.dp))
     }
+}
+
+@Composable
+private fun appStyleLabel(style: AppStyle): String = when (style) {
+    AppStyle.COSMIC -> "Cosmic"
+    AppStyle.EMBER  -> "Ember"
 }
 
 @Composable

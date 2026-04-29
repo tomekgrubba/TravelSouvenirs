@@ -8,6 +8,7 @@ import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.MapTheme
+import com.travelsouvenirs.main.theme.AppStyle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,16 @@ class SettingsViewModel(
     private val settings: Settings,
     private val repository: ItemRepository
 ) : ViewModel() {
+
+    private val _appStyle = MutableStateFlow(
+        AppStyle.fromString(settings.getStringOrNull(AppStyle.SETTINGS_KEY))
+    )
+    val appStyle: StateFlow<AppStyle> = _appStyle.asStateFlow()
+
+    fun setAppStyle(style: AppStyle) {
+        _appStyle.value = style
+        settings.putString(AppStyle.SETTINGS_KEY, style.name)
+    }
 
     private val _mapProvider = MutableStateFlow(
         MapProviderType.fromString(settings.getStringOrNull(MapProviderType.SETTINGS_KEY))

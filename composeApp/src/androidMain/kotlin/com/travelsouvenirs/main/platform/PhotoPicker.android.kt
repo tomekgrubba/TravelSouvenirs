@@ -15,29 +15,56 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import android.provider.MediaStore
 import androidx.exifinterface.media.ExifInterface
 import com.travelsouvenirs.main.image.ImageStorageHelper
 import com.travelsouvenirs.main.ui.add.CropActivity
 import com.yalantis.ucrop.UCrop
+import kotlinx.datetime.LocalDate
 
-private fun readExifGps(context: Context, uri: Uri): Pair<Double?, Double?> {
+private data class ExifData(val lat: Double?, val lng: Double?, val date: LocalDate?)
+
+private fun ExifInterface.parseData(): ExifData {
+    val latLng = latLong
+    val rawDate = getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+        ?: getAttribute(ExifInterface.TAG_DATETIME)
+    val date = rawDate?.let {
+        val parts = it.split(" ")[0].split(":")
+        if (parts.size >= 3) runCatching {
+            LocalDate(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
+        }.getOrNull() else null
+    }
+    return ExifData(latLng?.get(0), latLng?.get(1), date)
+}
+
+private fun readExif(context: Context, uri: Uri): ExifData {
+    // First pass: setRequireOriginal lifts the GPS redaction applied by the Android Photo Picker
+    // (requires ACCESS_MEDIA_LOCATION in manifest). This may throw on some providers.
+    val unredactedUri = try { MediaStore.setRequireOriginal(uri) } catch (_: Exception) { null }
+    if (unredactedUri != null) {
+        try {
+            context.contentResolver.openInputStream(unredactedUri)?.use { stream ->
+                return ExifInterface(stream).parseData()
+            }
+        } catch (_: Exception) { }
+    }
+    // Fallback: original URI — GPS may still be redacted but date will be present.
     return try {
         context.contentResolver.openInputStream(uri)?.use { stream ->
-            val exif = ExifInterface(stream)
-            val latLng = exif.latLong
-            if (latLng != null) Pair(latLng[0], latLng[1]) else Pair(null, null)
-        } ?: Pair(null, null)
+            ExifInterface(stream).parseData()
+        } ?: ExifData(null, null, null)
     } catch (_: Exception) {
-        Pair(null, null)
+        ExifData(null, null, null)
     }
 }
 
 @Composable
-actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifLng: Double?) -> Unit): () -> Unit {
+actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifLng: Double?, exifDate: LocalDate?) -> Unit): () -> Unit {
     val context = LocalContext.current
     val currentOnResult = rememberUpdatedState(onResult)
     var pendingExifLat by remember { mutableStateOf<Double?>(null) }
     var pendingExifLng by remember { mutableStateOf<Double?>(null) }
+    var pendingExifDate by remember { mutableStateOf<LocalDate?>(null) }
 
     val cropLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -45,12 +72,13 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             result.data?.let { data ->
                 UCrop.getOutput(data)?.let { uri ->
-                    currentOnResult.value(uri.toString(), pendingExifLat, pendingExifLng)
+                    currentOnResult.value(uri.toString(), pendingExifLat, pendingExifLng, pendingExifDate)
                 }
-            } ?: currentOnResult.value(null, null, null)
-        } else currentOnResult.value(null, null, null)
+            } ?: currentOnResult.value(null, null, null, null)
+        } else currentOnResult.value(null, null, null, null)
         pendingExifLat = null
         pendingExifLng = null
+        pendingExifDate = null
     }
 
     fun launchCrop(sourceUri: Uri) {
@@ -74,12 +102,13 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            val (lat, lng) = readExifGps(context, uri)
-            pendingExifLat = lat
-            pendingExifLng = lng
+            val exif = readExif(context, uri)
+            pendingExifLat = exif.lat
+            pendingExifLng = exif.lng
+            pendingExifDate = exif.date
             launchCrop(uri)
         } else {
-            currentOnResult.value(null, null, null)
+            currentOnResult.value(null, null, null, null)
         }
     }
 

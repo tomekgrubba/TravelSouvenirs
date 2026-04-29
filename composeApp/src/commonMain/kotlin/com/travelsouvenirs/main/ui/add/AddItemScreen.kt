@@ -102,9 +102,10 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
         if (isSaved) onSaved()
     }
 
-    val launchPhotoPicker = rememberPhotoPicker { path, exifLat, exifLng ->
+    val launchPhotoPicker = rememberPhotoPicker { path, exifLat, exifLng, exifDate ->
         path?.let { viewModel.onPhotoSelected(it) }
         if (exifLat != null && exifLng != null) viewModel.prefillLocationFromExif(exifLat, exifLng)
+        exifDate?.let { viewModel.prefillDateFromExif(it) }
     }
     val launchCamera = rememberCameraCapture { path ->
         path?.let { viewModel.onPhotoSelected(it) }

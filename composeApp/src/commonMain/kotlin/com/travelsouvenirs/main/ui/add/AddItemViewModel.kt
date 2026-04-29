@@ -104,6 +104,10 @@ class AddItemViewModel(
     /** Currently selected category for this item. */
     val category: StateFlow<String> = _category.asStateFlow()
 
+    // True once the user has explicitly picked a date (or in edit mode where the date is pre-loaded).
+    // Prevents EXIF prefill from overwriting a deliberate choice.
+    private var _dateSetByUser = editId != null
+
     private var searchJob: Job? = null
     private val cleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -161,10 +165,19 @@ class AddItemViewModel(
     fun onNameChange(value: String) { _name.value = value }
     /** Updates the notes field. */
     fun onNotesChange(value: String) { _notes.value = value }
-    /** Updates the acquisition date. */
-    fun onDateChange(date: LocalDate) { _dateAcquired.value = date }
+    /** Updates the acquisition date; marks the date as user-set so EXIF prefill won't overwrite it. */
+    fun onDateChange(date: LocalDate) { _dateSetByUser = true; _dateAcquired.value = date }
     /** Updates the selected category. */
     fun onCategoryChange(value: String) { _category.value = value }
+
+    /**
+     * Pre-fills the acquisition date from EXIF metadata if the user has not yet chosen a date.
+     * No-op in edit mode or after the user has opened the date picker.
+     */
+    fun prefillDateFromExif(date: LocalDate) {
+        if (_dateSetByUser) return
+        _dateAcquired.value = date
+    }
 
     /**
      * Creates a new custom category, persists it to settings, and auto-selects it.

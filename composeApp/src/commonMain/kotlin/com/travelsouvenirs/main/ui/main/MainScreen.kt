@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalAuthRepository
 import com.travelsouvenirs.main.di.LocalCategoryFilter
@@ -143,7 +144,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                                 if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
                                 selectedTabName = MainTab.MAP.name
                             },
-                            text = { Text(stringResource(Res.string.tab_map)) },
+                            text = { Text(stringResource(Res.string.tab_map), style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)) },
                             icon = { Icon(Icons.Default.LocationOn, contentDescription = null) }
                         )
                         Tab(
@@ -152,7 +153,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                                 if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
                                 selectedTabName = MainTab.LIST.name
                             },
-                            text = { Text(stringResource(Res.string.tab_list)) },
+                            text = { Text(stringResource(Res.string.tab_list), style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)) },
                             icon = { Icon(Icons.Default.List, contentDescription = null) }
                         )
                     }

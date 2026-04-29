@@ -28,6 +28,7 @@ import com.travelsouvenirs.main.navigation.AppNavGraph
 import com.travelsouvenirs.main.network.AndroidNetworkMonitor
 import com.travelsouvenirs.main.sync.ImageSyncHelper
 import com.travelsouvenirs.main.sync.SyncRepository
+import com.travelsouvenirs.main.platform.rememberAppStyle
 import com.travelsouvenirs.main.theme.AppTheme
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
@@ -64,17 +65,18 @@ class MainActivity : ComponentActivity() {
         observeAndSync(networkMonitor, syncRepository, settings)
 
         setContent {
-            AppTheme {
-                CompositionLocalProvider(
-                    LocalItemRepository provides repository,
-                    LocalLocationService provides locationService,
-                    LocalImageStorage provides imageStorage,
-                    LocalSettings provides settings,
-                    LocalAuthRepository provides authRepository,
-                    LocalSyncRepository provides syncRepository,
-                    LocalNetworkMonitor provides networkMonitor,
-                    LocalGoogleSignInHelper provides googleSignInHelper,
-                ) {
+            CompositionLocalProvider(
+                LocalItemRepository provides repository,
+                LocalLocationService provides locationService,
+                LocalImageStorage provides imageStorage,
+                LocalSettings provides settings,
+                LocalAuthRepository provides authRepository,
+                LocalSyncRepository provides syncRepository,
+                LocalNetworkMonitor provides networkMonitor,
+                LocalGoogleSignInHelper provides googleSignInHelper,
+            ) {
+                val appStyle = rememberAppStyle()
+                AppTheme(style = appStyle) {
                     AppNavGraph(rememberNavController())
                 }
             }

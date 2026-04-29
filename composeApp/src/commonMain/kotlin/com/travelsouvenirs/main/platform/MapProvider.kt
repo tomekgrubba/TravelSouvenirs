@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
+import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.ui.settings.SettingsViewModel
 
 @Composable
@@ -24,4 +25,13 @@ fun rememberMapTheme(): MapTheme {
     val vm: SettingsViewModel = viewModel { SettingsViewModel(settings, repository) }
     val theme by vm.mapTheme.collectAsState()
     return theme
+}
+
+@Composable
+fun rememberAppStyle(): AppStyle {
+    val settings = LocalSettings.current
+    val repository = LocalItemRepository.current
+    val vm: SettingsViewModel = viewModel { SettingsViewModel(settings, repository) }
+    val style by vm.appStyle.collectAsState()
+    return style
 }
