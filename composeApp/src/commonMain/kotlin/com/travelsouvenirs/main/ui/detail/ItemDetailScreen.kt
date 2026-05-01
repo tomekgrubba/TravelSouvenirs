@@ -55,6 +55,7 @@ import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalImageStorage
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.platform.PlatformMapPreview
+import com.travelsouvenirs.main.util.formatDisplay
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
@@ -218,14 +219,13 @@ fun ItemDetailScreen(
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary
                                         )
-                                        Text(m.placeName, style = MaterialTheme.typography.bodyLarge)
+                                        Text(m.placeName, style = MaterialTheme.typography.titleMedium)
                                     }
                                 }
 
                                 Text(
-                                    "${m.dateAcquired.dayOfMonth} " +
-                                        "${m.dateAcquired.month.name.lowercase().replaceFirstChar { it.uppercase() }} " +
-                                        "${m.dateAcquired.year}",
+                                    m.dateAcquired.formatDisplay(),
+                                    modifier = Modifier.padding(start = 32.dp),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
