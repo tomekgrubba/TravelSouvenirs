@@ -28,12 +28,13 @@ import kotlinx.coroutines.withContext
 @Composable
 fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, BitmapDescriptor> {
     val context = LocalContext.current
+    val borderColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
     val icons = remember { mutableStateMapOf<Long, BitmapDescriptor>() }
-    LaunchedEffect(pins) {
+    LaunchedEffect(pins, borderColor) {
         pins.forEach { pin ->
             if (!icons.containsKey(pin.item.id)) {
                 launch {
-                    val bmp = buildCircularBitmap(context, pin.item.photoPath, 0, sizePx)
+                    val bmp = buildCircularBitmap(context, pin.item.photoPath, 0, sizePx, borderColor = borderColor)
                     if (bmp != null) icons[pin.item.id] = BitmapDescriptorFactory.fromBitmap(bmp)
                 }
             }
@@ -47,13 +48,14 @@ fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, B
 fun rememberGroupIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<Int, BitmapDescriptor> {
     val context = LocalContext.current
     val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer.toArgb()
+    val borderColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
     val icons = remember { mutableStateMapOf<Int, BitmapDescriptor>() }
-    LaunchedEffect(groups, primaryColor) {
+    LaunchedEffect(groups, primaryColor, borderColor) {
         icons.clear()
         groups.forEachIndexed { idx, group ->
             launch {
                 val count = if (group.items.size > 1) group.items.size else 0
-                val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor)
+                val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor, borderColor)
                 if (bmp != null) icons[idx] = BitmapDescriptorFactory.fromBitmap(bmp)
             }
         }
@@ -67,7 +69,8 @@ internal suspend fun buildCircularBitmap(
     photoPath: String,
     count: Int,
     sizePx: Int,
-    badgeColor: Int? = null
+    badgeColor: Int? = null,
+    borderColor: Int = Color.WHITE
 ): Bitmap? = withContext(Dispatchers.IO) {
     try {
         val request = ImageRequest.Builder(context)
@@ -96,7 +99,7 @@ internal suspend fun buildCircularBitmap(
         val borderWidth = (sizePx * 0.055f).coerceAtLeast(3f)
         canvas.drawCircle(r, r, r - borderWidth / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            color = Color.WHITE
+            color = borderColor
             strokeWidth = borderWidth
         })
 

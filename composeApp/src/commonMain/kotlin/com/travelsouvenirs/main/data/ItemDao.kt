@@ -47,4 +47,8 @@ interface ItemDao {
     /** Permanently removes a soft-deleted item after Firebase confirms deletion. */
     @Query("DELETE FROM items WHERE firebaseId = :fbId")
     suspend fun hardDeleteByFirebaseId(fbId: String)
+
+    /** Items that have a remote photo URL but no local image file yet. */
+    @Query("SELECT * FROM items WHERE photoStorageUrl != '' AND photoPath = '' AND syncStatus != 'PENDING_DELETE'")
+    suspend fun getItemsWithMissingLocalPhotos(): List<ItemEntity>
 }

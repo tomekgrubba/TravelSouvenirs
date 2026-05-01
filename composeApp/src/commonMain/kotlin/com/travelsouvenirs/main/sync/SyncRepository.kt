@@ -27,18 +27,46 @@ class SyncRepository(
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
-    /** Runs a full bidirectional sync. No-ops if the user is not signed in. */
+    private val _isSyncingImages = MutableStateFlow(false)
+    val isSyncingImages: StateFlow<Boolean> = _isSyncingImages.asStateFlow()
+
+    /** Full bidirectional sync (metadata then images). Used for periodic background sync. */
     suspend fun sync() {
+        syncData()
+        syncImages()
+    }
+
+    /**
+     * Phase 1: Syncs item metadata and categories from Firestore without downloading image files.
+     * Fast; blocks the UI until complete.
+     */
+    suspend fun syncData() {
+        if (_isSyncing.value) return
         val userId = authRepository.currentUser.value?.uid ?: return
         _isSyncing.value = true
         try {
-            uploadPending(userId)
-            downloadRemote(userId)
+            downloadRemoteMetadata(userId)
             syncCategories(userId)
         } catch (_: Exception) {
-            // Sync failures are non-fatal; the next sync cycle will retry
         } finally {
             _isSyncing.value = false
+        }
+    }
+
+    /**
+     * Phase 2: Uploads pending items (with photos) and downloads missing local image files.
+     * Runs in the background; shows a small indicator in the UI.
+     */
+    suspend fun syncImages() {
+        if (_isSyncingImages.value) return
+        val userId = authRepository.currentUser.value?.uid ?: return
+        _isSyncingImages.value = true
+        try {
+            uploadPending(userId)
+            downloadMissingImages()
+        } catch (_: Exception) {
+        } finally {
+            _isSyncingImages.value = false
         }
     }
 
@@ -97,7 +125,8 @@ class SyncRepository(
         }
     }
 
-    private suspend fun downloadRemote(userId: String) {
+    /** Downloads item metadata from Firestore without fetching image files from Storage. */
+    private suspend fun downloadRemoteMetadata(userId: String) {
         val snapshot = firestore
             .collection("users").document(userId).collection("items")
             .get()
@@ -110,27 +139,24 @@ class SyncRepository(
                 continue
             }
             val local = dao.getItemByFirebaseId(fbId)
-            val photoMissing = local != null &&
-                local.photoPath.isEmpty() &&
-                remote.photoStorageUrl.isNotEmpty()
-            if (local == null || remote.updatedAtMillis > local.updatedAtMillis || photoMissing) {
-                val localPhotoPath = resolveLocalPhoto(local, fbId, remote)
+            if (local == null || remote.updatedAtMillis > local.updatedAtMillis) {
+                // Keep existing local photo path; image download happens in syncImages()
+                val localPhotoPath = local?.photoPath ?: ""
                 val merged = buildEntity(fbId, remote, localPhotoPath, local?.id ?: 0)
                 dao.insertItem(merged)
             }
         }
     }
 
-    private suspend fun resolveLocalPhoto(local: ItemEntity?, fbId: String, remote: FirebaseItem): String {
-        val existingPath = local?.photoPath ?: ""
-        if (existingPath.isNotEmpty() && localFileExists(existingPath)) return existingPath
-        if (remote.photoStorageUrl.isEmpty()) return ""
-        val localPath = imageStorage.localPathForDownload(fbId)
-        try {
-            downloadUrlToFile(remote.photoStorageUrl, localPath)
-            return localPath
-        } catch (_: Exception) {
-            return ""
+    /** Downloads image files for items that have a remote URL but no local photo file yet. */
+    private suspend fun downloadMissingImages() {
+        val items = dao.getItemsWithMissingLocalPhotos()
+        for (entity in items) {
+            try {
+                val localPath = imageStorage.localPathForDownload(entity.firebaseId)
+                downloadUrlToFile(entity.photoStorageUrl, localPath)
+                dao.insertItem(entity.copy(photoPath = localPath))
+            } catch (_: Exception) { }
         }
     }
 

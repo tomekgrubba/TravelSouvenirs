@@ -1,6 +1,7 @@
 package com.travelsouvenirs.main.ui.main
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,9 +45,9 @@ import com.travelsouvenirs.main.di.LocalAuthRepository
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
+import com.travelsouvenirs.main.di.LocalSyncRepository
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.Res
-import travelsouvenirs.composeapp.generated.resources.syncing_data
 import com.travelsouvenirs.main.platform.PlatformBackHandler
 import com.travelsouvenirs.main.ui.auth.SignInScreen
 import com.travelsouvenirs.main.platform.PlatformMapContent
@@ -71,20 +73,29 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
     val settings = LocalSettings.current
     val repository = LocalItemRepository.current
     val authRepository = LocalAuthRepository.current
+    val syncRepository = LocalSyncRepository.current
     val currentUser by authRepository.currentUser.collectAsState()
+    val isSyncing by syncRepository.isSyncing.collectAsState()
+    val isSyncingImages by syncRepository.isSyncingImages.collectAsState()
     val categoryFilterVM: CategoryFilterViewModel = viewModel { CategoryFilterViewModel(settings, repository) }
 
-    // Auto-close sign-in screen when the user successfully logs in
+    // After login: sync DB (locks screen), then sync images (small indicator)
     LaunchedEffect(currentUser) {
-        if (currentUser != null) showSignIn = false
+        if (currentUser != null && showSignIn) {
+            syncRepository.syncData()
+            showSignIn = false
+            syncRepository.syncImages()
+        } else if (currentUser != null) {
+            showSignIn = false
+        }
     }
 
-    PlatformBackHandler(enabled = showSettings || showSignIn) {
-        if (showSignIn) {
-            showSignIn = false
-        } else {
-            showSettings = false
-            categoryFilterVM.refreshCategories()
+    // Swallow back presses while sync is blocking the screen
+    PlatformBackHandler(enabled = showSettings || showSignIn || isSyncing) {
+        when {
+            isSyncing -> { /* block navigation during DB sync */ }
+            showSignIn -> showSignIn = false
+            else -> { showSettings = false; categoryFilterVM.refreshCategories() }
         }
     }
 
@@ -105,14 +116,24 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                         }
                     },
                     actions = {
-                        IconButton(onClick = {
-                            if (showSettings) {
-                                showSettings = false
-                                categoryFilterVM.refreshCategories()
-                            } else {
-                                showSettings = true
+                        if (isSyncingImages) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.padding(end = 4.dp).size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconButton(
+                            enabled = !isSyncing && !showSignIn,
+                            onClick = {
+                                if (showSettings) {
+                                    showSettings = false
+                                    categoryFilterVM.refreshCategories()
+                                } else {
+                                    showSettings = true
+                                }
                             }
-                        }) {
+                        ) {
                             Icon(Icons.Default.Settings, contentDescription = stringResource(Res.string.cd_settings))
                         }
                     }
@@ -121,6 +142,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                     PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
                         Tab(
                             selected = selectedTab == MainTab.MAP,
+                            enabled = !isSyncing,
                             onClick = {
                                 if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
                                 selectedTabName = MainTab.MAP.name
@@ -130,6 +152,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                         )
                         Tab(
                             selected = selectedTab == MainTab.LIST,
+                            enabled = !isSyncing,
                             onClick = {
                                 if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
                                 selectedTabName = MainTab.LIST.name
@@ -142,7 +165,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
             }
         },
         floatingActionButton = {
-            if (!showSettings) {
+            if (!showSettings && !isSyncing) {
                 ExtendedFloatingActionButton(onClick = onAddClick) {
                     Text(stringResource(Res.string.fab_add_item))
                 }
@@ -162,6 +185,18 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                 when (selectedTab) {
                     MainTab.MAP -> PlatformMapContent(onPinClick = onItemClick, onAddClick = onAddClick)
                     MainTab.LIST -> ListScreen(onItemClick = onItemClick, onAddClick = onAddClick)
+                }
+            }
+
+            // Full-screen lock during DB sync — prevents all interaction
+            if (isSyncing) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
                 }
             }
         }
