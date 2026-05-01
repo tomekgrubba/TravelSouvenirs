@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.Item
-import com.travelsouvenirs.main.sync.SyncStatus
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -23,7 +22,7 @@ data class ItemEntity(
     val dateAcquiredMillis: Long,
     val category: String = DEFAULT_CATEGORY,
     val firebaseId: String = "",
-    val syncStatus: String = SyncStatus.PENDING_UPLOAD.name,
+    val syncStatus: String = "PENDING_UPLOAD",
     val updatedAtMillis: Long = 0L,
     val photoStoragePath: String = "",
     val photoStorageUrl: String = "",
@@ -40,11 +39,6 @@ fun ItemEntity.toDomain(): Item = Item(
     dateAcquired = Instant.fromEpochMilliseconds(dateAcquiredMillis)
         .toLocalDateTime(TimeZone.UTC).date,
     category = category,
-    firebaseId = firebaseId,
-    syncStatus = SyncStatus.valueOf(syncStatus),
-    updatedAtMillis = updatedAtMillis,
-    photoStoragePath = photoStoragePath,
-    photoStorageUrl = photoStorageUrl,
 )
 
 fun Item.toEntity(): ItemEntity = ItemEntity(
@@ -57,9 +51,4 @@ fun Item.toEntity(): ItemEntity = ItemEntity(
     placeName = placeName,
     dateAcquiredMillis = dateAcquired.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds(),
     category = category,
-    firebaseId = firebaseId,
-    syncStatus = syncStatus.name,
-    updatedAtMillis = updatedAtMillis,
-    photoStoragePath = photoStoragePath,
-    photoStorageUrl = photoStorageUrl,
 )

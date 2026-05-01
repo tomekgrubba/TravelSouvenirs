@@ -1,5 +1,6 @@
 package com.travelsouvenirs.main.platform
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,7 +50,7 @@ import travelsouvenirs.composeapp.generated.resources.*
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
-internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
+internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val repository = LocalItemRepository.current
     val locationService = LocalLocationService.current
     val categoryFilter = LocalCategoryFilter.current
@@ -68,11 +69,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         viewModel.nativeMapView = null
     }
 
-    val filteredItems = remember(allItems, selectedCategories) {
-        allItems.filter { m ->
-            m.category in selectedCategories || m.category !in categoryFilter.allCategoriesSet
-        }
-    }
+    val filteredItems = remember(allItems, selectedCategories) { categoryFilter.filterItems(allItems) }
 
     var showFilterMenu by remember { mutableStateOf(false) }
     val isFilterActive = selectedCategories != categoryFilter.allCategoriesSet
@@ -193,13 +190,15 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit) {
         }
 
         if (filteredItems.isEmpty()) {
+            val noItems = allItems.isEmpty()
             Card(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp)
+                    .then(if (noItems) Modifier.clickable { onAddClick() } else Modifier)
             ) {
                 Text(
-                    if (allItems.isEmpty())
+                    if (noItems)
                         stringResource(Res.string.empty_state_no_items)
                     else
                         stringResource(Res.string.empty_state_no_match),

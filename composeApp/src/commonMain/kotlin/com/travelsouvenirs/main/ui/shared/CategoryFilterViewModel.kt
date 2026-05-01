@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
+import com.travelsouvenirs.main.domain.Item
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -61,4 +62,10 @@ class CategoryFilterViewModel(
 
     /** No-op: categories are now derived reactively from items. */
     fun refreshCategories() {}
+
+    /** Returns items whose category is selected or not in the known category set. */
+    fun filterItems(items: List<Item>): List<Item> =
+        items.filter { m ->
+            m.category in selectedCategories.value || m.category !in allCategoriesSet
+        }
 }

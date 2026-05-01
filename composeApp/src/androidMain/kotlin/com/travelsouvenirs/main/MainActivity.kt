@@ -33,7 +33,6 @@ import com.travelsouvenirs.main.theme.AppTheme
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.storage.storage
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -60,9 +59,10 @@ class MainActivity : ComponentActivity() {
             authRepository = authRepository,
             settings = settings,
             imageStorage = imageStorage,
+            networkMonitor = networkMonitor,
         )
 
-        observeAndSync(networkMonitor, syncRepository, settings)
+        observeAndSync(networkMonitor, syncRepository)
 
         setContent {
             CompositionLocalProvider(
@@ -86,19 +86,11 @@ class MainActivity : ComponentActivity() {
     private fun observeAndSync(
         networkMonitor: AndroidNetworkMonitor,
         syncRepository: SyncRepository,
-        settings: SharedPreferencesSettings,
     ) {
-        // Trigger sync whenever the Activity is visible AND network conditions are met.
-        // combine emits immediately with current values, so the first sync fires on foreground.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(networkMonitor.isConnected, networkMonitor.isWifi) { connected, wifi ->
-                    connected to wifi
-                }.collect { (connected, wifi) ->
-                    val wifiOnly = settings.getBoolean("wifi_only_sync", false)
-                    if (connected && (!wifiOnly || wifi)) {
-                        syncRepository.sync()
-                    }
+                networkMonitor.isConnected.collect { connected ->
+                    if (connected) syncRepository.sync()
                 }
             }
         }

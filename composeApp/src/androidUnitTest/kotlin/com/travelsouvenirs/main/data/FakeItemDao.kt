@@ -12,7 +12,7 @@ class FakeItemDao : ItemDao {
 
     private fun publish() { allFlow.value = store.values.toList() }
 
-    override fun getAllItems(): Flow<List<ItemEntity>> = allFlow
+    override fun getAllActiveItems(): Flow<List<ItemEntity>> = allFlow
 
     override suspend fun getItemById(id: Long): ItemEntity? = store[id]
 
@@ -37,4 +37,11 @@ class FakeItemDao : ItemDao {
         }
         publish()
     }
+
+    override suspend fun getPendingItems(): List<ItemEntity> = emptyList()
+    override suspend fun updateSyncMeta(id: Long, status: String, fbId: String, storagePath: String, storageUrl: String, ts: Long) {}
+    override suspend fun markSynced(fbId: String) {}
+    override suspend fun getItemByFirebaseId(fbId: String): ItemEntity? = null
+    override suspend fun hardDeleteByFirebaseId(fbId: String) { store.entries.removeIf { it.value.firebaseId == fbId }; publish() }
+    override suspend fun getItemsWithMissingLocalPhotos(): List<ItemEntity> = emptyList()
 }

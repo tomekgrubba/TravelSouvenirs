@@ -45,6 +45,7 @@ private val syncRepository by lazy {
         authRepository = authRepository,
         settings = settings,
         imageStorage = imageStorage,
+        networkMonitor = networkMonitor,
     )
 }
 

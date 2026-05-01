@@ -23,6 +23,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -33,6 +36,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,6 +58,8 @@ import com.travelsouvenirs.main.platform.PlatformMapContent
 import com.travelsouvenirs.main.ui.list.ListScreen
 import com.travelsouvenirs.main.ui.settings.SettingsScreen
 import com.travelsouvenirs.main.ui.shared.CategoryFilterViewModel
+import com.travelsouvenirs.main.ui.shared.UserMessageBus
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -69,6 +75,14 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
     val selectedTab = MainTab.valueOf(selectedTabName)
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showSignIn by rememberSaveable { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        UserMessageBus.messages.collect { msg ->
+            scope.launch { snackbarHostState.showSnackbar(msg) }
+        }
+    }
 
     val settings = LocalSettings.current
     val repository = LocalItemRepository.current
@@ -170,6 +184,9 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                     Text(stringResource(Res.string.fab_add_item))
                 }
             }
+        },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data -> Snackbar(snackbarData = data) }
         }
     ) { padding ->
         Box(

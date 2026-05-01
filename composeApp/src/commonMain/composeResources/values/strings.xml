@@ -73,6 +73,7 @@
     <string name="label_new_category">New category name</string>
     <string name="max_categories_reached">Maximum of 5 custom categories reached.</string>
     <string name="error_category_already_exists">A category with this name already exists.</string>
+    <string name="error_category_no_comma">Category names cannot contain commas.</string>
     <string name="cd_builtin_category">Built-in category</string>
     <string name="cd_delete_item">Delete %1$s</string>
     <string name="section_notes">Notes</string>
@@ -96,4 +97,15 @@
     <string name="section_sync">Sync</string>
     <string name="label_wifi_only_sync">Sync on Wi-Fi only</string>
     <string name="hint_wifi_only_sync">When enabled, items sync only over Wi-Fi to save mobile data.</string>
+    <string name="text_signed_in_as">Signed in as %1$s</string>
+    <string name="btn_sign_in">Sign in</string>
+    <string name="btn_sign_out">Sign out</string>
+    <string name="text_sync_sign_in_prompt">Sign in to sync your items across devices.</string>
+    <string name="label_appearance">Appearance</string>
+    <string name="label_theme">Theme</string>
+    <string name="text_theme_cosmic">Cool deep-space purples and indigos.</string>
+    <string name="text_theme_ember">Warm charcoal with amber and copper accents.</string>
+    <string name="dialog_delete_category_no_items">No items are currently using \"%1$s\".</string>
+    <string name="dialog_delete_category_one_item">1 item is currently assigned to \"%1$s\" and will be moved to Default.</string>
+    <string name="dialog_delete_category_many_items">%1$d items are currently assigned to \"%2$s\" and will all be moved to Default.</string>
 </resources>

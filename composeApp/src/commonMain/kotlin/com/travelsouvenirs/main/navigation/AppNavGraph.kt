@@ -34,7 +34,10 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
         composable(Screen.AddItem.route) {
-            AddItemScreen(onSaved = { navController.popBackStack() })
+            AddItemScreen(
+                onSaved = { navController.popBackStack() },
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(
             route = Screen.ItemDetail.route,
@@ -54,6 +57,7 @@ fun AppNavGraph(navController: NavHostController) {
             val itemId = backStackEntry.arguments?.read { getLong("itemId") } ?: 0L
             AddItemScreen(
                 onSaved = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
                 itemId = itemId
             )
         }

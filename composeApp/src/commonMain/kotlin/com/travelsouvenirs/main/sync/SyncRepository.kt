@@ -6,6 +6,10 @@ import com.travelsouvenirs.main.data.ItemDao
 import com.travelsouvenirs.main.data.ItemEntity
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.image.ImageStorage
+import com.travelsouvenirs.main.network.NetworkMonitor
+import com.travelsouvenirs.main.ui.shared.UserMessageBus
+import com.travelsouvenirs.main.util.KEY_CATEGORIES
+import com.travelsouvenirs.main.util.KEY_WIFI_ONLY_SYNC
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,8 +17,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.Clock
 import kotlin.random.Random
 
-private const val KEY_CATEGORIES = "categories"
 private const val KEY_CATEGORIES_UPDATED = "categories_updated_at"
+private const val KEY_LAST_SYNC_MILLIS = "last_sync_millis"
 
 class SyncRepository(
     private val dao: ItemDao,
@@ -23,15 +27,22 @@ class SyncRepository(
     private val authRepository: AuthRepository,
     private val settings: Settings,
     private val imageStorage: ImageStorage,
+    private val networkMonitor: NetworkMonitor,
 ) {
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    private fun canSync(): Boolean {
+        val wifiOnly = settings.getBoolean(KEY_WIFI_ONLY_SYNC, false)
+        return !wifiOnly || networkMonitor.isWifi.value
+    }
 
     private val _isSyncingImages = MutableStateFlow(false)
     val isSyncingImages: StateFlow<Boolean> = _isSyncingImages.asStateFlow()
 
     /** Full bidirectional sync (metadata then images). Used for periodic background sync. */
     suspend fun sync() {
+        if (!canSync()) return
         syncData()
         syncImages()
     }
@@ -41,6 +52,7 @@ class SyncRepository(
      * Fast; blocks the UI until complete.
      */
     suspend fun syncData() {
+        if (!canSync()) return
         if (_isSyncing.value) return
         val userId = authRepository.currentUser.value?.uid ?: return
         _isSyncing.value = true
@@ -48,6 +60,7 @@ class SyncRepository(
             downloadRemoteMetadata(userId)
             syncCategories(userId)
         } catch (_: Exception) {
+            UserMessageBus.send("Sync failed. Check your connection.")
         } finally {
             _isSyncing.value = false
         }
@@ -58,6 +71,7 @@ class SyncRepository(
      * Runs in the background; shows a small indicator in the UI.
      */
     suspend fun syncImages() {
+        if (!canSync()) return
         if (_isSyncingImages.value) return
         val userId = authRepository.currentUser.value?.uid ?: return
         _isSyncingImages.value = true
@@ -65,6 +79,7 @@ class SyncRepository(
             uploadPending(userId)
             downloadMissingImages()
         } catch (_: Exception) {
+            UserMessageBus.send("Sync failed. Check your connection.")
         } finally {
             _isSyncingImages.value = false
         }
@@ -127,9 +142,11 @@ class SyncRepository(
 
     /** Downloads item metadata from Firestore without fetching image files from Storage. */
     private suspend fun downloadRemoteMetadata(userId: String) {
-        val snapshot = firestore
-            .collection("users").document(userId).collection("items")
-            .get()
+        val lastSync = settings.getLong(KEY_LAST_SYNC_MILLIS, 0L)
+        val now = Clock.System.now().toEpochMilliseconds()
+        val collectionRef = firestore.collection("users").document(userId).collection("items")
+        val snapshot = if (lastSync == 0L) collectionRef.get()
+        else collectionRef.where { "updatedAtMillis" greaterThan lastSync }.get()
 
         for (doc in snapshot.documents) {
             val remote = doc.data<FirebaseItem>()
@@ -146,6 +163,7 @@ class SyncRepository(
                 dao.insertItem(merged)
             }
         }
+        settings.putLong(KEY_LAST_SYNC_MILLIS, now)
     }
 
     /** Downloads image files for items that have a remote URL but no local photo file yet. */

@@ -55,11 +55,13 @@ import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalItemRepository
+import com.travelsouvenirs.main.ui.map.ItemGroup
 import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.map.rememberGroupIcons
 import com.travelsouvenirs.main.ui.map.rememberIndividualIcons
-import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
@@ -83,11 +85,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
 
-    val items = remember(allItems, selectedCategories) {
-        allItems.filter { m ->
-            m.category in selectedCategories || m.category !in categoryFilter.allCategoriesSet
-        }
-    }
+    val items = remember(allItems, selectedCategories) { categoryFilter.filterItems(allItems) }
     val itemPins = remember(allPins, selectedCategories) {
         allPins.filter { pin ->
             pin.item.category in selectedCategories || pin.item.category !in categoryFilter.allCategoriesSet
@@ -114,9 +112,10 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         )
     }
 
-    val itemGroups = remember(items, zoom) {
-        if (showIndividual) emptyList()
-        else MapViewModel.groupByZoom(items, zoom)
+    var itemGroups by remember { mutableStateOf<List<ItemGroup>>(emptyList()) }
+    LaunchedEffect(items, zoom, showIndividual) {
+        itemGroups = if (showIndividual) emptyList()
+        else withContext(Dispatchers.Default) { MapViewModel.groupByZoom(items, zoom) }
     }
 
     val individualIcons = rememberIndividualIcons(itemPins)

@@ -21,9 +21,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.travelsouvenirs.main.platform.todayLocalDate
+import com.travelsouvenirs.main.util.KEY_CATEGORIES
 import kotlinx.datetime.LocalDate
-
-private const val KEY_CATEGORIES = "categories"
 
 /**
  * Drives both the Add and Edit screens.

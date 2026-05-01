@@ -80,14 +80,15 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
 
     var newCategoryInput by remember { mutableStateOf("") }
     var duplicateCategoryError by remember { mutableStateOf(false) }
+    var commaError by remember { mutableStateOf(false) }
     var pendingDeleteCategory by remember { mutableStateOf<String?>(null) }
 
     pendingDeleteCategory?.let { categoryToDelete ->
         val affectedCount = allItems.count { it.category == categoryToDelete }
         val bodyText = when (affectedCount) {
-            0 -> "No items are currently using \"$categoryToDelete\"."
-            1 -> "1 item is currently assigned to \"$categoryToDelete\" and will be moved to Default."
-            else -> "$affectedCount items are currently assigned to \"$categoryToDelete\" and will all be moved to Default."
+            0 -> stringResource(Res.string.dialog_delete_category_no_items, categoryToDelete)
+            1 -> stringResource(Res.string.dialog_delete_category_one_item, categoryToDelete)
+            else -> stringResource(Res.string.dialog_delete_category_many_items, affectedCount, categoryToDelete)
         }
         AlertDialog(
             onDismissRequest = { pendingDeleteCategory = null },
@@ -128,7 +129,7 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                 if (currentUser != null) {
                     currentUser?.email?.let { email ->
                         Text(
-                            "Signed in as $email",
+                            stringResource(Res.string.text_signed_in_as, email),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -154,10 +155,10 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                         shape = RoundedCornerShape(50.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Sign out") }
+                    ) { Text(stringResource(Res.string.btn_sign_out)) }
                 } else {
                     Text(
-                        "Sign in to sync your items across devices.",
+                        stringResource(Res.string.text_sync_sign_in_prompt),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -165,7 +166,7 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                         onClick = onSignInClick,
                         shape = RoundedCornerShape(50.dp),
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Sign in") }
+                    ) { Text(stringResource(Res.string.btn_sign_in)) }
                 }
             }
         }
@@ -223,13 +224,16 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                             onValueChange = {
                                 newCategoryInput = it
                                 duplicateCategoryError = false
+                                commaError = ',' in it
                             },
                             placeholder = { Text(stringResource(Res.string.label_new_category)) },
                             singleLine = true,
-                            isError = duplicateCategoryError,
-                            supportingText = if (duplicateCategoryError) {
-                                { Text(stringResource(Res.string.error_category_already_exists)) }
-                            } else null,
+                            isError = duplicateCategoryError || commaError,
+                            supportingText = when {
+                                commaError -> { { Text(stringResource(Res.string.error_category_no_comma)) } }
+                                duplicateCategoryError -> { { Text(stringResource(Res.string.error_category_already_exists)) } }
+                                else -> null
+                            },
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
@@ -239,10 +243,10 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                         IconButton(
                             onClick = {
                                 val added = vm.addCategory(newCategoryInput)
-                                if (added) { newCategoryInput = ""; duplicateCategoryError = false }
+                                if (added) { newCategoryInput = ""; duplicateCategoryError = false; commaError = false }
                                 else duplicateCategoryError = true
                             },
-                            enabled = newCategoryInput.isNotBlank()
+                            enabled = newCategoryInput.isNotBlank() && !commaError
                         ) {
                             Icon(
                                 Icons.Default.Add,
@@ -276,7 +280,7 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
 
         // Appearance
         Text(
-            "Appearance",
+            stringResource(Res.string.label_appearance),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
@@ -289,7 +293,7 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Theme",
+                    stringResource(Res.string.label_theme),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -314,8 +318,8 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                 }
                 Text(
                     when (appStyle) {
-                        AppStyle.COSMIC -> "Cool deep-space purples and indigos."
-                        AppStyle.EMBER  -> "Warm charcoal with amber and copper accents."
+                        AppStyle.COSMIC -> stringResource(Res.string.text_theme_cosmic)
+                        AppStyle.EMBER  -> stringResource(Res.string.text_theme_ember)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

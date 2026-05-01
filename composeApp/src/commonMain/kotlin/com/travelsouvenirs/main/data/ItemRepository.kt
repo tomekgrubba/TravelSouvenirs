@@ -5,6 +5,8 @@ import com.travelsouvenirs.main.sync.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.TimeZone
 
 class ItemRepository(private val dao: ItemDao) {
 
@@ -17,25 +19,39 @@ class ItemRepository(private val dao: ItemDao) {
     fun getItemByIdFlow(id: Long): Flow<Item?> = dao.getItemByIdFlow(id).map { it?.toDomain() }
 
     suspend fun insertItem(item: Item): Long {
-        val stamped = item.copy(
-            syncStatus = SyncStatus.PENDING_UPLOAD,
-            updatedAtMillis = Clock.System.now().toEpochMilliseconds(),
+        val now = Clock.System.now().toEpochMilliseconds()
+        val existing: ItemEntity? = if (item.id != 0L) dao.getItemById(item.id) else null
+        val entity = ItemEntity(
+            id = item.id,
+            name = item.name,
+            notes = item.notes,
+            photoPath = item.photoPath,
+            latitude = item.latitude,
+            longitude = item.longitude,
+            placeName = item.placeName,
+            dateAcquiredMillis = item.dateAcquired.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds(),
+            category = item.category,
+            firebaseId = existing?.firebaseId ?: "",
+            syncStatus = SyncStatus.PENDING_UPLOAD.name,
+            updatedAtMillis = now,
+            photoStoragePath = existing?.photoStoragePath ?: "",
+            photoStorageUrl = existing?.photoStorageUrl ?: "",
         )
-        return dao.insertItem(stamped.toEntity())
+        return dao.insertItem(entity)
     }
 
     /** Marks an item for deletion and lets the sync engine remove it from Firebase. */
     suspend fun deleteItem(item: Item) {
-        if (item.firebaseId.isEmpty()) {
+        val existing = dao.getItemById(item.id) ?: return
+        if (existing.firebaseId.isEmpty()) {
             // Never synced — safe to hard-delete immediately
-            dao.deleteItem(item.toEntity())
+            dao.deleteItem(existing)
         } else {
             // Mark as pending delete so SyncRepository can remove it from Firebase first
-            val stamped = item.copy(
-                syncStatus = SyncStatus.PENDING_DELETE,
+            dao.insertItem(existing.copy(
+                syncStatus = SyncStatus.PENDING_DELETE.name,
                 updatedAtMillis = Clock.System.now().toEpochMilliseconds(),
-            )
-            dao.insertItem(stamped.toEntity())
+            ))
         }
     }
 

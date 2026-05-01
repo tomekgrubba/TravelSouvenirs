@@ -1,6 +1,5 @@
 package com.travelsouvenirs.main.domain
 
-import com.travelsouvenirs.main.sync.SyncStatus
 import kotlinx.datetime.LocalDate
 
 const val DEFAULT_CATEGORY = "Default"
@@ -18,9 +17,4 @@ data class Item(
     val placeName: String,
     val dateAcquired: LocalDate,
     val category: String = DEFAULT_CATEGORY,
-    val firebaseId: String = "",
-    val syncStatus: SyncStatus = SyncStatus.PENDING_UPLOAD,
-    val updatedAtMillis: Long = 0L,
-    val photoStoragePath: String = "",
-    val photoStorageUrl: String = "",
 )

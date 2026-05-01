@@ -52,7 +52,9 @@ import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.map.buildCircularBitmap
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.graphics.toArgb
 import org.osmdroid.events.MapListener
@@ -124,11 +126,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
         viewModel.osmCenterLng = null
     }
 
-    val items = remember(allItems, selectedCategories) {
-        allItems.filter { m ->
-            m.category in selectedCategories || m.category !in categoryFilter.allCategoriesSet
-        }
-    }
+    val items = remember(allItems, selectedCategories) { categoryFilter.filterItems(allItems) }
     val itemPins = remember(allPins, selectedCategories) {
         allPins.filter { pin ->
             pin.item.category in selectedCategories || pin.item.category !in categoryFilter.allCategoriesSet
@@ -301,9 +299,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
 
         if (showIndividual) {
             itemPins.forEach { pin ->
-                // Ensure the MapView is still in a valid state before creating markers
-                val repo = mapView.getRepository() ?: return@forEach
-                
+                mapView.getRepository() ?: return@forEach
                 val marker = Marker(mapView)
                 marker.position = GeoPoint(pin.position.lat, pin.position.lng)
                 marker.title = pin.item.name
@@ -315,7 +311,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 newOverlays.add(marker)
             }
         } else {
-            val groups = MapViewModel.groupByZoom(items, zoomLevel.toFloat())
+            val groups = withContext(Dispatchers.Default) { MapViewModel.groupByZoom(items, zoomLevel.toFloat()) }
             groups.forEach { group ->
                 val firstId = group.items.first().id
                 val count = group.items.size
@@ -325,9 +321,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     if (bmp != null) clusterIconCache[cacheKey] = BitmapDrawable(context.resources, bmp)
                 }
                 
-                // Ensure the MapView is still in a valid state before creating markers
-                val repo = mapView.getRepository() ?: return@forEach
-                
+                mapView.getRepository() ?: return@forEach
                 val marker = Marker(mapView)
                 marker.position = GeoPoint(group.centerLat, group.centerLng)
                 marker.title = group.items.first().name

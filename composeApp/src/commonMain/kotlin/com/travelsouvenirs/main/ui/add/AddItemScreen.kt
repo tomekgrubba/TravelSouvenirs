@@ -72,6 +72,7 @@ import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
 import com.travelsouvenirs.main.platform.rememberCameraCapture
 import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
+import com.travelsouvenirs.main.util.formatDisplay
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -79,7 +80,7 @@ import travelsouvenirs.composeapp.generated.resources.*
 /** Form for creating or editing an item; shows "Edit Item" title when [itemId] is non-null. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
+fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null) {
     val repository = LocalItemRepository.current
     val locationService = LocalLocationService.current
     val imageStorage = LocalImageStorage.current
@@ -204,7 +205,7 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
             TopAppBar(
                 title = { Text(stringResource(if (itemId != null) Res.string.title_edit_item else Res.string.title_add_item)) },
                 navigationIcon = {
-                    IconButton(onClick = onSaved) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.cd_back))
                     }
                 }
@@ -352,11 +353,9 @@ fun AddItemScreen(onSaved: () -> Unit, itemId: Long? = null) {
             }
 
             OutlinedTextField(
-                value = "${dateAcquired.dayOfMonth} " +
-                    "${dateAcquired.month.name.lowercase().replaceFirstChar { it.uppercase() }} " +
-                    "${dateAcquired.year}",
+                value = dateAcquired.formatDisplay(),
                 onValueChange = {},
-                label = { Text("Date acquired") },
+                label = { Text(stringResource(Res.string.label_date_acquired)) },
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,

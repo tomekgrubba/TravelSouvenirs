@@ -39,7 +39,8 @@ private class FakeLocationService(
 
 private class FakeImageStorage : ImageStorage {
     override suspend fun copyToInternalStorage(sourcePath: String): String = sourcePath
-    override suspend fun deleteImage(path: String) { /* no-op in tests */ }
+    override suspend fun deleteImage(path: String) {}
+    override fun localPathForDownload(firebaseId: String): String = "/cache/$firebaseId.jpg"
 }
 
 private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings {
@@ -226,7 +227,7 @@ class AddItemViewModelTest {
         advanceUntilIdle()
         assertTrue(vm.isSaved.value)
 
-        val savedItem = (dao.getAllItems() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.ItemEntity>>).value.first()
+        val savedItem = (dao.getAllActiveItems() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.ItemEntity>>).value.first()
         assertEquals("Eiffel Tower", savedItem.name)
         assertEquals("Souvenir", savedItem.category)
         assertEquals("Paris", savedItem.placeName)

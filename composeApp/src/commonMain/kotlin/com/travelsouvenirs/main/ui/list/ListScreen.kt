@@ -58,6 +58,7 @@ import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.domain.Item
+import com.travelsouvenirs.main.util.formatDisplay
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
@@ -76,12 +77,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val availableCategories by categoryFilter.availableCategories.collectAsState()
     val sortedItems by viewModel.sortedItems.collectAsState()
 
-    // Apply category filter at screen level so it stays in sync with the map
-    val items = remember(sortedItems, selectedCategories) {
-        sortedItems.filter { m ->
-            m.category in selectedCategories || m.category !in categoryFilter.allCategoriesSet
-        }
-    }
+    val items = remember(sortedItems, selectedCategories) { categoryFilter.filterItems(sortedItems) }
 
     val isIconHighlighted = sortOption != SortOption.NAME ||
         selectedCategories != categoryFilter.allCategoriesSet ||
@@ -295,10 +291,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
-                                    val date = "${item.dateAcquired.dayOfMonth} " +
-                                        item.dateAcquired.month.name.lowercase()
-                                            .replaceFirstChar { it.uppercase() } +
-                                        " ${item.dateAcquired.year}"
+                                    val date = item.dateAcquired.formatDisplay()
                                     Text(
                                         text = "$place · $date",
                                         style = MaterialTheme.typography.bodySmall,

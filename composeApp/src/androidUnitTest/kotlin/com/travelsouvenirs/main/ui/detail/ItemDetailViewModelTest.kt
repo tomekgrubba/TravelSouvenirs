@@ -45,6 +45,7 @@ class ItemDetailViewModelTest {
         val deletedPaths = mutableListOf<String>()
         override suspend fun copyToInternalStorage(sourcePath: String): String = sourcePath
         override suspend fun deleteImage(path: String) { deletedPaths.add(path) }
+        override fun localPathForDownload(firebaseId: String): String = "/cache/$firebaseId.jpg"
     }
 
     private fun viewModel(id: Long) = ItemDetailViewModel(repository, id, fakeImageStorage)

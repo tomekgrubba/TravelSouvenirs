@@ -9,14 +9,14 @@ import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.MapTheme
 import com.travelsouvenirs.main.theme.AppStyle
+import com.travelsouvenirs.main.util.KEY_CATEGORIES
+import com.travelsouvenirs.main.util.KEY_WIFI_ONLY_SYNC
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 private const val KEY_NOTES = "notes"
-private const val KEY_CATEGORIES = "categories"
-private const val KEY_WIFI_ONLY_SYNC = "wifi_only_sync"
 
 /** Persists notes and custom categories; reassigns item categories on deletion. */
 class SettingsViewModel(
