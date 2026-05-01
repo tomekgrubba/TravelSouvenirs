@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Shader
 import android.graphics.Typeface
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
@@ -45,13 +46,14 @@ fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, B
 @Composable
 fun rememberGroupIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<Int, BitmapDescriptor> {
     val context = LocalContext.current
+    val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer.toArgb()
     val icons = remember { mutableStateMapOf<Int, BitmapDescriptor>() }
-    LaunchedEffect(groups) {
+    LaunchedEffect(groups, primaryColor) {
         icons.clear()
         groups.forEachIndexed { idx, group ->
             launch {
                 val count = if (group.items.size > 1) group.items.size else 0
-                val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, sizePx)
+                val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor)
                 if (bmp != null) icons[idx] = BitmapDescriptorFactory.fromBitmap(bmp)
             }
         }
@@ -64,7 +66,8 @@ internal suspend fun buildCircularBitmap(
     context: Context,
     photoPath: String,
     count: Int,
-    sizePx: Int
+    sizePx: Int,
+    badgeColor: Int? = null
 ): Bitmap? = withContext(Dispatchers.IO) {
     try {
         val request = ImageRequest.Builder(context)
@@ -102,7 +105,7 @@ internal suspend fun buildCircularBitmap(
             val bx = sizePx - br + 2f
             val by = br - 2f
             canvas.drawCircle(bx, by, br, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.argb(255, 25, 118, 210)
+                color = badgeColor ?: Color.argb(255, 25, 118, 210)
             })
             canvas.drawCircle(bx, by, br - 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE

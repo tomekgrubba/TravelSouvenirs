@@ -145,6 +145,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     var showFilterMenu by remember { mutableStateOf(false) }
     val isFilterActive = selectedCategories != categoryFilter.allCategoriesSet
     val scope = rememberCoroutineScope()
+    val primaryColor = MaterialTheme.colorScheme.primaryContainer
 
     var hasFineLocation by remember {
         mutableStateOf(
@@ -320,7 +321,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 val count = group.items.size
                 val cacheKey = firstId to count
                 if (!clusterIconCache.containsKey(cacheKey)) {
-                    val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, 120)
+                    val bmp = buildCircularBitmap(context, group.items.first().photoPath, count, 120, primaryColor.toArgb())
                     if (bmp != null) clusterIconCache[cacheKey] = BitmapDrawable(context.resources, bmp)
                 }
                 
@@ -379,7 +380,6 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val primaryColor = MaterialTheme.colorScheme.primary
     LaunchedEffect(approxUserPos, isApproximate) {
         approxOverlay?.let { mapView.overlays.remove(it) }
         approxOverlay = null
