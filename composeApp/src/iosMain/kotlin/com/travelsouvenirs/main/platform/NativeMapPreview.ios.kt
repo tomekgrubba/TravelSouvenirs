@@ -11,8 +11,7 @@ import platform.MapKit.MKAnnotationProtocol
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
 import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
-import platform.UIKit.UIUserInterfaceStyleDark
-import platform.UIKit.UIUserInterfaceStyleLight
+import platform.UIKit.UIUserInterfaceStyle
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -34,7 +33,10 @@ internal fun NativeMapPreview(latitude: Double, longitude: Double, label: String
         }
     }
     LaunchedEffect(mapTheme) {
-        mapView.overrideUserInterfaceStyle = if (mapTheme == MapTheme.DARK) UIUserInterfaceStyleDark else UIUserInterfaceStyleLight
+        mapView.overrideUserInterfaceStyle = if (mapTheme == MapTheme.DARK)
+            UIUserInterfaceStyle.UIUserInterfaceStyleDark
+        else
+            UIUserInterfaceStyle.UIUserInterfaceStyleLight
     }
     UIKitView(factory = { mapView }, modifier = modifier)
 }
