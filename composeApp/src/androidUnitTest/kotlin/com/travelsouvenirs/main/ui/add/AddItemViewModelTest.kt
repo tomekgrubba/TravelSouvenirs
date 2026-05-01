@@ -438,6 +438,13 @@ class AddItemViewModelTest {
         assertEquals("Alpha,Beta", settings.getStringOrNull("categories"))
     }
 
+    @Test
+    fun `addCategoryOnTheFly returns false when name contains a comma`() {
+        val vm = viewModel()
+        assertFalse(vm.addCategoryOnTheFly("Work,Travel"))
+        assertEquals(1, vm.availableCategories.value.size) // only Default
+    }
+
     private fun setPhotoPath(vm: AddItemViewModel, path: String) {
         val field = AddItemViewModel::class.java.getDeclaredField("_photoPath")
         field.isAccessible = true

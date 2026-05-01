@@ -186,7 +186,7 @@ class AddItemViewModel(
      */
     fun addCategoryOnTheFly(name: String): Boolean {
         val trimmed = name.trim()
-        if (trimmed.isBlank()) return false
+        if (trimmed.isBlank() || trimmed.contains(',')) return false
         val custom = _availableCategories.value.filter { it != DEFAULT_CATEGORY }
         if (custom.size >= MAX_CUSTOM_CATEGORIES) return false
         val isDuplicate = trimmed.equals(DEFAULT_CATEGORY, ignoreCase = true) ||
