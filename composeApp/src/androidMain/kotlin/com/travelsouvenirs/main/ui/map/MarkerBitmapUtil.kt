@@ -28,6 +28,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** Returns the cache key for [group]: `"<photoPath>_<count>"` where count is 0 for single-item groups. */
+internal fun groupIconKey(group: ItemGroup): String {
+    val count = if (group.items.size > 1) group.items.size else 0
+    return "${group.items.first().photoPath}_$count"
+}
+
 /** Builds and caches photo map markers for individual items, keyed by item id. */
 @Composable
 fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, BitmapDescriptor> {
@@ -60,14 +66,11 @@ fun rememberGroupIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<String, 
     val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
     val icons = remember(isPolaroid) { mutableStateMapOf<String, BitmapDescriptor>() }
     LaunchedEffect(groups, primaryColor, borderColor, isPolaroid) {
-        val newKeys = groups.map { g ->
-            val count = if (g.items.size > 1) g.items.size else 0
-            "${g.items.first().photoPath}_$count"
-        }.toSet()
+        val newKeys = groups.map { groupIconKey(it) }.toSet()
         icons.keys.toList().forEach { if (it !in newKeys) icons.remove(it) }
         groups.forEach { group ->
+            val key = groupIconKey(group)
             val count = if (group.items.size > 1) group.items.size else 0
-            val key = "${group.items.first().photoPath}_$count"
             if (!icons.containsKey(key)) {
                 launch {
                     val bmp = if (isPolaroid)

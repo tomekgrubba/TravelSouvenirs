@@ -89,6 +89,9 @@ kotlin {
             implementation(libs.kotlin.testJunit)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.mockito.kotlin)
+            implementation(libs.robolectric)
+            implementation(libs.coil.test)
+            implementation(libs.compose.ui.test.junit4)
         }
         androidInstrumentedTest.dependencies {
             implementation(libs.junit)
@@ -122,6 +125,7 @@ android {
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
     }
     packaging {
         resources {
@@ -145,6 +149,7 @@ ksp {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     add("kspAndroid", libs.androidx.room.compiler)
     add("kspIosArm64", libs.androidx.room.compiler)
     add("kspIosSimulatorArm64", libs.androidx.room.compiler)
