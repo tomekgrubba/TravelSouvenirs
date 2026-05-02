@@ -35,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +49,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,6 +57,8 @@ import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalImageStorage
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.platform.PlatformMapPreview
+import com.travelsouvenirs.main.platform.rememberAppStyle
+import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.util.formatDisplay
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -120,6 +124,9 @@ fun ItemDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = if (rememberAppStyle() == AppStyle.POLAROID) TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                ) else TopAppBarDefaults.topAppBarColors(),
                 title = { Text(item?.name ?: "") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -219,7 +226,7 @@ fun ItemDetailScreen(
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary
                                         )
-                                        Text(m.placeName, style = MaterialTheme.typography.titleMedium)
+                                        Text(m.placeName, style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp))
                                     }
                                 }
 

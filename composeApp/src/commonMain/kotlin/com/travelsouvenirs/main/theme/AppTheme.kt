@@ -9,6 +9,7 @@ fun AppTheme(style: AppStyle = AppStyle.DEFAULT, content: @Composable () -> Unit
         AppStyle.COSMIC   -> CosmicColorScheme
         AppStyle.GATEWAY  -> GatewayColorScheme
         AppStyle.EMBER    -> EmberColorScheme
+        AppStyle.POLAROID -> PolaroidColorScheme
     }
     MaterialTheme(colorScheme = colorScheme, content = content)
 }

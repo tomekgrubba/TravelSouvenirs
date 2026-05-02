@@ -46,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,6 +59,8 @@ import com.travelsouvenirs.main.ui.shared.CategoryFilterMenuSection
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.domain.Item
+import com.travelsouvenirs.main.platform.rememberAppStyle
+import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.util.formatDisplay
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -70,6 +73,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val settings = LocalSettings.current
     val viewModel: ListViewModel = viewModel { ListViewModel(settings, repository) }
 
+    val appStyle = rememberAppStyle()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
@@ -225,63 +229,89 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 }
             }
             viewMode == ViewMode.GRID -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(items, key = { it.id }) { item ->
-                        TileCard(item = item, onClick = { onItemClick(item.id) })
+                if (appStyle == AppStyle.POLAROID) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        items(items, key = { it.id }) { item ->
+                            PolaroidTileCard(item = item, onClick = { onItemClick(item.id) })
+                        }
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(items, key = { it.id }) { item ->
+                            TileCard(item = item, onClick = { onItemClick(item.id) })
+                        }
                     }
                 }
             }
             else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(items, key = { it.id }) { item ->
-                        Card(
-                            onClick = { onItemClick(item.id) },
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                if (appStyle == AppStyle.POLAROID) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(items, key = { it.id }) { item ->
+                            PolaroidListCard(item = item, onClick = { onItemClick(item.id) })
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(items, key = { it.id }) { item ->
+                            Card(
+                                onClick = { onItemClick(item.id) },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                AsyncImage(
-                                    model = item.photoPath,
-                                    contentDescription = item.name,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                )
-                                Spacer(Modifier.width(14.dp))
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = item.name,
-                                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp),
-                                        fontWeight = FontWeight.SemiBold
+                                    AsyncImage(
+                                        model = item.photoPath,
+                                        contentDescription = item.name,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(60.dp)
+                                            .clip(RoundedCornerShape(12.dp))
                                     )
-                                    val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
-                                    val date = item.dateAcquired.formatDisplay()
-                                    Text(
-                                        text = "$place · $date",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Spacer(Modifier.width(14.dp))
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = item.name,
+                                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp),
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
+                                        val date = item.dateAcquired.formatDisplay()
+                                        Text(
+                                            text = "$place · $date",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -333,6 +363,104 @@ private fun ViewModeButton(
                 style = MaterialTheme.typography.labelMedium,
                 color = contentColor
             )
+        }
+    }
+}
+
+@Composable
+private fun PolaroidListCard(item: Item, onClick: () -> Unit) {
+    val rotation = ((item.id % 9L) - 4L).toFloat() * 0.45f
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .rotate(rotation)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Mini-polaroid thumbnail: equal frame on sides/top, thicker at bottom
+            Box(modifier = Modifier.padding(top = 3.dp, start = 3.dp, end = 3.dp, bottom = 8.dp)) {
+                AsyncImage(
+                    model = item.photoPath,
+                    contentDescription = item.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(64.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
+                val date = item.dateAcquired.formatDisplay()
+                Text(
+                    text = "$place · $date",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PolaroidTileCard(item: Item, onClick: () -> Unit) {
+    val rotation = ((item.id % 9L) - 4L).toFloat() * 0.45f
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+        modifier = Modifier.rotate(rotation)
+    ) {
+        Column {
+            Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, start = 8.dp, end = 8.dp)) {
+                AsyncImage(
+                    model = item.photoPath,
+                    contentDescription = item.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .padding(top = 8.dp, bottom = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
+                val month = item.dateAcquired.month.name.lowercase()
+                    .replaceFirstChar { it.uppercase() }.take(3)
+                val year2d = item.dateAcquired.year % 100
+                Text(
+                    text = "$place · $month '${year2d.toString().padStart(2, '0')}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

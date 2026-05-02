@@ -1,7 +1,7 @@
 package com.travelsouvenirs.main.theme
 
 enum class AppStyle {
-    COSMIC, GATEWAY, EMBER;
+    COSMIC, GATEWAY, EMBER, POLAROID;
 
     companion object {
         const val SETTINGS_KEY = "app_style"

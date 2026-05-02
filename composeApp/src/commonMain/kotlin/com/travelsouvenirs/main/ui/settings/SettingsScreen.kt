@@ -14,9 +14,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -82,6 +85,7 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
     var duplicateCategoryError by remember { mutableStateOf(false) }
     var commaError by remember { mutableStateOf(false) }
     var pendingDeleteCategory by remember { mutableStateOf<String?>(null) }
+    var devOptionsExpanded by remember { mutableStateOf(false) }
 
     pendingDeleteCategory?.let { categoryToDelete ->
         val affectedCount = allItems.count { it.category == categoryToDelete }
@@ -272,110 +276,129 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
         }
 
         // ── Developer Options ────────────────────────────────────────────────
-        Text(
-            stringResource(Res.string.section_developer_options),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 16.dp, bottom = 2.dp)
-        )
-
-        // Appearance
-        Text(
-            stringResource(Res.string.label_appearance),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-        )
-        Card(
-            shape = sectionCardShape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { devOptionsExpanded = !devOptionsExpanded }
+                .padding(top = 16.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    stringResource(Res.string.label_theme),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    AppStyle.entries.forEach { style ->
-                        FilterChip(
-                            selected = style == appStyle,
-                            onClick = { vm.setAppStyle(style) },
-                            label = {
-                                Text(
-                                    appStyleLabel(style),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center
-                                )
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                Text(
-                    when (appStyle) {
-                        AppStyle.COSMIC   -> stringResource(Res.string.text_theme_cosmic)
-                        AppStyle.GATEWAY  -> stringResource(Res.string.text_theme_gateway)
-                        AppStyle.EMBER    -> stringResource(Res.string.text_theme_ember)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                stringResource(Res.string.section_developer_options),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = if (devOptionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
-        // Map Provider
-        Text(
-            stringResource(Res.string.section_map_provider),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-        )
-        Text(
-            stringResource(Res.string.text_map_provider_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Card(
-            shape = sectionCardShape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MapProviderType.entries.forEach { provider ->
-                        FilterChip(
-                            selected = provider == mapProvider,
-                            onClick = { vm.setMapProvider(provider) },
-                            label = { Text(mapProviderLabel(provider), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                            modifier = Modifier.weight(1f)
-                        )
+        if (devOptionsExpanded) {
+            // Appearance
+            Text(
+                stringResource(Res.string.label_appearance),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+            )
+            Card(
+                shape = sectionCardShape,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(Res.string.label_theme),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    AppStyle.entries.chunked(2).forEach { rowStyles ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            rowStyles.forEach { style ->
+                                FilterChip(
+                                    selected = style == appStyle,
+                                    onClick = { vm.setAppStyle(style) },
+                                    label = {
+                                        Text(
+                                            appStyleLabel(style),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            repeat(2 - rowStyles.size) { Spacer(modifier = Modifier.weight(1f)) }
+                        }
                     }
+                    Text(
+                        when (appStyle) {
+                            AppStyle.COSMIC   -> stringResource(Res.string.text_theme_cosmic)
+                            AppStyle.GATEWAY  -> stringResource(Res.string.text_theme_gateway)
+                            AppStyle.EMBER    -> stringResource(Res.string.text_theme_ember)
+                            AppStyle.POLAROID -> stringResource(Res.string.text_theme_polaroid)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                Text(
-                    stringResource(Res.string.section_map_theme),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MapTheme.entries.forEach { theme ->
-                        FilterChip(
-                            selected = theme == mapTheme,
-                            onClick = { vm.setMapTheme(theme) },
-                            label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                            modifier = Modifier.weight(1f)
-                        )
+            }
+
+            // Map Provider
+            Text(
+                stringResource(Res.string.section_map_provider),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+            )
+            Text(
+                stringResource(Res.string.text_map_provider_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Card(
+                shape = sectionCardShape,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MapProviderType.entries.forEach { provider ->
+                            FilterChip(
+                                selected = provider == mapProvider,
+                                onClick = { vm.setMapProvider(provider) },
+                                label = { Text(mapProviderLabel(provider), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                    Text(
+                        stringResource(Res.string.section_map_theme),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MapTheme.entries.forEach { theme ->
+                            FilterChip(
+                                selected = theme == mapTheme,
+                                onClick = { vm.setMapTheme(theme) },
+                                label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
@@ -390,6 +413,7 @@ private fun appStyleLabel(style: AppStyle): String = when (style) {
     AppStyle.COSMIC   -> "Cosmic"
     AppStyle.GATEWAY  -> "Gateway"
     AppStyle.EMBER    -> "Ember"
+    AppStyle.POLAROID -> "Polaroid"
 }
 
 @Composable

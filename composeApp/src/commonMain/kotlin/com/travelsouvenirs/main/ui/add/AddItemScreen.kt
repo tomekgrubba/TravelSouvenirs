@@ -47,6 +47,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.Composable
@@ -69,7 +70,9 @@ import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
+import com.travelsouvenirs.main.platform.rememberAppStyle
 import com.travelsouvenirs.main.platform.rememberCameraCapture
+import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
 import com.travelsouvenirs.main.util.formatDisplay
@@ -203,6 +206,9 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = if (rememberAppStyle() == AppStyle.POLAROID) TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                ) else TopAppBarDefaults.topAppBarColors(),
                 title = { Text(stringResource(if (itemId != null) Res.string.title_edit_item else Res.string.title_add_item)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

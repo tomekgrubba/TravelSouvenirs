@@ -27,8 +27,10 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +52,8 @@ import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.di.LocalSyncRepository
+import com.travelsouvenirs.main.platform.rememberAppStyle
+import com.travelsouvenirs.main.theme.AppStyle
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.Res
 import com.travelsouvenirs.main.platform.PlatformBackHandler
@@ -92,6 +96,7 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
     val isSyncing by syncRepository.isSyncing.collectAsState()
     val isSyncingImages by syncRepository.isSyncingImages.collectAsState()
     val categoryFilterVM: CategoryFilterViewModel = viewModel { CategoryFilterViewModel(settings, repository) }
+    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
 
     // After login: sync DB (locks screen), then sync images (small indicator)
     LaunchedEffect(currentUser) {
@@ -118,6 +123,9 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
         topBar = {
             Column {
                 TopAppBar(
+                    colors = if (isPolaroid) TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) else TopAppBarDefaults.topAppBarColors(),
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
@@ -153,7 +161,13 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                     }
                 )
                 if (!showSettings) {
-                    PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
+                    PrimaryTabRow(
+                        selectedTabIndex = selectedTab.ordinal,
+                        containerColor = if (isPolaroid)
+                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        else
+                            TabRowDefaults.primaryContainerColor
+                    ) {
                         Tab(
                             selected = selectedTab == MainTab.MAP,
                             enabled = !isSyncing,

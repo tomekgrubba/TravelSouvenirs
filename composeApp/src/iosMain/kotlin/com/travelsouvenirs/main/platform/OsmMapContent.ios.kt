@@ -31,7 +31,9 @@ import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.ui.map.ItemGroup
 import com.travelsouvenirs.main.ui.map.MapViewModel
+import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.ui.map.buildCircularDataUrl
+import com.travelsouvenirs.main.ui.map.buildPolaroidDataUrl
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +58,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val categoryFilter = LocalCategoryFilter.current
 
     val mapTheme = rememberMapTheme()
+    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
     val allItems by viewModel.items.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
@@ -166,12 +169,12 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     }
 
     // Inject markers when data, groups, or zoom level changes (only after page ready)
-    LaunchedEffect(filteredItems, itemGroups, showIndividual, pageReady) {
+    LaunchedEffect(filteredItems, itemGroups, showIndividual, pageReady, isPolaroid) {
         if (!pageReady) return@LaunchedEffect
         if (showIndividual) {
-            injectIndividualMarkers(webView, filteredItems)
+            injectIndividualMarkers(webView, filteredItems, isPolaroid)
         } else {
-            injectGroupMarkers(webView, itemGroups)
+            injectGroupMarkers(webView, itemGroups, isPolaroid)
         }
     }
 
@@ -217,14 +220,16 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private suspend fun injectIndividualMarkers(webView: WKWebView, items: List<Item>) {
+private suspend fun injectIndividualMarkers(webView: WKWebView, items: List<Item>, isPolaroid: Boolean) {
     webView.evaluateJavaScript("clearPins();", completionHandler = null)
     items.forEach { m ->
         val title = m.name.replace("\\", "\\\\").replace("'", "\\'")
-        val dataUrl = buildCircularDataUrl(m.photoPath, sizePx = 80)
+        val dataUrl = if (isPolaroid) buildPolaroidDataUrl(m.photoPath, sizePx = 80)
+                      else buildCircularDataUrl(m.photoPath, sizePx = 80)
         if (dataUrl != null) {
+            val fn = if (isPolaroid) "addPhotoPinPolaroid" else "addPhotoPin"
             webView.evaluateJavaScript(
-                "addPhotoPin(${m.id}, ${m.latitude}, ${m.longitude}, '$title', '$dataUrl');",
+                "$fn(${m.id}, ${m.latitude}, ${m.longitude}, '$title', '$dataUrl');",
                 completionHandler = null
             )
         } else {
@@ -237,20 +242,23 @@ private suspend fun injectIndividualMarkers(webView: WKWebView, items: List<Item
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private suspend fun injectGroupMarkers(webView: WKWebView, groups: List<ItemGroup>) {
+private suspend fun injectGroupMarkers(webView: WKWebView, groups: List<ItemGroup>, isPolaroid: Boolean) {
     webView.evaluateJavaScript("clearPins();", completionHandler = null)
     groups.forEach { group ->
         val rep = group.items.first()
         val title = rep.name.replace("\\", "\\\\").replace("'", "\\'")
-        val dataUrl = buildCircularDataUrl(rep.photoPath, sizePx = 80)
+        val dataUrl = if (isPolaroid) buildPolaroidDataUrl(rep.photoPath, sizePx = 80)
+                      else buildCircularDataUrl(rep.photoPath, sizePx = 80)
         if (dataUrl != null && group.items.size > 1) {
+            val fn = if (isPolaroid) "addClusterPinPolaroid" else "addClusterPin"
             webView.evaluateJavaScript(
-                "addClusterPin(${rep.id}, ${group.centerLat}, ${group.centerLng}, '$title', '$dataUrl', ${group.items.size});",
+                "$fn(${rep.id}, ${group.centerLat}, ${group.centerLng}, '$title', '$dataUrl', ${group.items.size});",
                 completionHandler = null
             )
         } else if (dataUrl != null) {
+            val fn = if (isPolaroid) "addPhotoPinPolaroid" else "addPhotoPin"
             webView.evaluateJavaScript(
-                "addPhotoPin(${rep.id}, ${group.centerLat}, ${group.centerLng}, '$title', '$dataUrl');",
+                "$fn(${rep.id}, ${group.centerLat}, ${group.centerLng}, '$title', '$dataUrl');",
                 completionHandler = null
             )
         } else {
@@ -351,6 +359,37 @@ function addClusterPin(id,lat,lng,title,dataUrl,count){
         +'display:flex;align-items:center;justify-content:center;">'+count+'</div>'
         +'</div>',
     iconSize:[44,44],iconAnchor:[22,22],className:''
+  });
+  var m=L.marker([lat,lng],{icon:icon}).addTo(map);
+  m.bindTooltip(title,{permanent:false});
+  m.on('click',function(){window.webkit.messageHandlers.pinClick.postMessage(String(id));});
+  markers[id]=m;
+}
+function addPhotoPinPolaroid(id,lat,lng,title,dataUrl){
+  if(markers[id]){markers[id].setLatLng([lat,lng]);return;}
+  var icon=L.divIcon({
+    html:'<div style="background:white;padding:3px 3px 10px 3px;box-shadow:2px 3px 7px rgba(0,0,0,0.35);line-height:0;">'
+        +'<img src="'+dataUrl+'" style="width:34px;height:34px;display:block;object-fit:cover;"/>'
+        +'</div>',
+    iconSize:[40,47],iconAnchor:[20,47],className:''
+  });
+  var m=L.marker([lat,lng],{icon:icon}).addTo(map);
+  m.bindTooltip(title,{permanent:false});
+  m.on('click',function(){window.webkit.messageHandlers.pinClick.postMessage(String(id));});
+  markers[id]=m;
+}
+function addClusterPinPolaroid(id,lat,lng,title,dataUrl,count){
+  if(markers[id]){markers[id].setLatLng([lat,lng]);return;}
+  var icon=L.divIcon({
+    html:'<div style="position:relative;display:inline-block;">'
+        +'<div style="background:white;padding:3px 3px 10px 3px;box-shadow:2px 3px 7px rgba(0,0,0,0.35);line-height:0;">'
+        +'<img src="'+dataUrl+'" style="width:34px;height:34px;display:block;object-fit:cover;"/>'
+        +'</div>'
+        +'<div style="position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;'
+        +'background:'+badgeColor+';border:2px solid white;color:white;font-size:10px;font-weight:bold;'
+        +'display:flex;align-items:center;justify-content:center;">'+count+'</div>'
+        +'</div>',
+    iconSize:[46,52],iconAnchor:[23,52],className:''
   });
   var m=L.marker([lat,lng],{icon:icon}).addTo(map);
   m.bindTooltip(title,{permanent:false});
