@@ -108,7 +108,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     }
 
     var itemGroups by remember { mutableStateOf<List<ItemGroup>>(emptyList()) }
-    LaunchedEffect(items, zoom, showIndividual) {
+    LaunchedEffect(items, zoom.toInt(), showIndividual) {
         itemGroups = if (showIndividual) emptyList()
         else withContext(Dispatchers.Default) { MapViewModel.groupByZoom(items, zoom) }
     }
@@ -219,14 +219,14 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                     )
                 }
             } else {
-                itemGroups.forEachIndexed { idx, group ->
+                itemGroups.forEach { group ->
                     val center = LatLng(group.centerLat, group.centerLng)
                     Marker(
                         state = rememberUpdatedMarkerState(position = center),
                         title = group.items.first().name,
                         snippet = if (group.items.size > 1)
                             stringResource(Res.string.items_here, group.items.size) else group.items.first().placeName,
-                        icon = groupIcons[idx],
+                        icon = groupIcons["${group.items.first().photoPath}_${if (group.items.size > 1) group.items.size else 0}"],
                         onClick = {
                             if (group.items.size == 1) {
                                 onPinClick(group.items.first().id)

@@ -81,6 +81,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val showIndividual = zoomLevel >= OSM_IOS_CLUSTER_ZOOM_THRESHOLD
     var offScreen by remember { mutableStateOf(EdgeCounts(0, 0, 0, 0)) }
     var itemGroups by remember { mutableStateOf<List<ItemGroup>>(emptyList()) }
+    val dataUrlCache = remember { mutableMapOf<Pair<String, Boolean>, String?>() }
 
     // Page-ready flag: markers are injected only after Leaflet has loaded
     var pageReady by remember { mutableStateOf(false) }
@@ -173,9 +174,9 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     LaunchedEffect(filteredItems, itemGroups, showIndividual, pageReady, isPolaroid) {
         if (!pageReady) return@LaunchedEffect
         if (showIndividual) {
-            injectIndividualMarkers(webView, filteredItems, isPolaroid)
+            injectIndividualMarkers(webView, filteredItems, isPolaroid, dataUrlCache)
         } else {
-            injectGroupMarkers(webView, itemGroups, isPolaroid)
+            injectGroupMarkers(webView, itemGroups, isPolaroid, dataUrlCache)
         }
     }
 
@@ -221,12 +222,19 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private suspend fun injectIndividualMarkers(webView: WKWebView, items: List<Item>, isPolaroid: Boolean) {
+private suspend fun injectIndividualMarkers(
+    webView: WKWebView,
+    items: List<Item>,
+    isPolaroid: Boolean,
+    dataUrlCache: MutableMap<Pair<String, Boolean>, String?>
+) {
     webView.evaluateJavaScript("clearPins();", completionHandler = null)
     items.forEach { m ->
         val title = m.name.replace("\\", "\\\\").replace("'", "\\'")
-        val dataUrl = if (isPolaroid) buildPolaroidDataUrl(m.photoPath, sizePx = 80)
-                      else buildCircularDataUrl(m.photoPath, sizePx = 80)
+        val dataUrl = dataUrlCache.getOrPut(m.photoPath to isPolaroid) {
+            if (isPolaroid) buildPolaroidDataUrl(m.photoPath, sizePx = 80)
+            else buildCircularDataUrl(m.photoPath, sizePx = 80)
+        }
         if (dataUrl != null) {
             val fn = if (isPolaroid) "addPhotoPinPolaroid" else "addPhotoPin"
             webView.evaluateJavaScript(
@@ -243,13 +251,20 @@ private suspend fun injectIndividualMarkers(webView: WKWebView, items: List<Item
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private suspend fun injectGroupMarkers(webView: WKWebView, groups: List<ItemGroup>, isPolaroid: Boolean) {
+private suspend fun injectGroupMarkers(
+    webView: WKWebView,
+    groups: List<ItemGroup>,
+    isPolaroid: Boolean,
+    dataUrlCache: MutableMap<Pair<String, Boolean>, String?>
+) {
     webView.evaluateJavaScript("clearPins();", completionHandler = null)
     groups.forEach { group ->
         val rep = group.items.first()
         val title = rep.name.replace("\\", "\\\\").replace("'", "\\'")
-        val dataUrl = if (isPolaroid) buildPolaroidDataUrl(rep.photoPath, sizePx = 80)
-                      else buildCircularDataUrl(rep.photoPath, sizePx = 80)
+        val dataUrl = dataUrlCache.getOrPut(rep.photoPath to isPolaroid) {
+            if (isPolaroid) buildPolaroidDataUrl(rep.photoPath, sizePx = 80)
+            else buildCircularDataUrl(rep.photoPath, sizePx = 80)
+        }
         if (dataUrl != null && group.items.size > 1) {
             val fn = if (isPolaroid) "addClusterPinPolaroid" else "addClusterPin"
             webView.evaluateJavaScript(

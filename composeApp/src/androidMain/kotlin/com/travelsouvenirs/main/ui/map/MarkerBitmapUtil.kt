@@ -53,22 +53,29 @@ fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, B
 
 /** Builds and caches photo map markers for clusters; shows a count badge when group size > 1. */
 @Composable
-fun rememberGroupIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<Int, BitmapDescriptor> {
+fun rememberGroupIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<String, BitmapDescriptor> {
     val context = LocalContext.current
     val primaryColor = MaterialTheme.colorScheme.primaryContainer.toArgb()
     val borderColor = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
     val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
-    val icons = remember(isPolaroid) { mutableStateMapOf<Int, BitmapDescriptor>() }
+    val icons = remember(isPolaroid) { mutableStateMapOf<String, BitmapDescriptor>() }
     LaunchedEffect(groups, primaryColor, borderColor, isPolaroid) {
-        icons.clear()
-        groups.forEachIndexed { idx, group ->
-            launch {
-                val count = if (group.items.size > 1) group.items.size else 0
-                val bmp = if (isPolaroid)
-                    buildPolaroidBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor)
-                else
-                    buildCircularBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor, borderColor)
-                if (bmp != null) icons[idx] = BitmapDescriptorFactory.fromBitmap(bmp)
+        val newKeys = groups.map { g ->
+            val count = if (g.items.size > 1) g.items.size else 0
+            "${g.items.first().photoPath}_$count"
+        }.toSet()
+        icons.keys.toList().forEach { if (it !in newKeys) icons.remove(it) }
+        groups.forEach { group ->
+            val count = if (group.items.size > 1) group.items.size else 0
+            val key = "${group.items.first().photoPath}_$count"
+            if (!icons.containsKey(key)) {
+                launch {
+                    val bmp = if (isPolaroid)
+                        buildPolaroidBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor)
+                    else
+                        buildCircularBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor, borderColor)
+                    if (bmp != null) icons[key] = BitmapDescriptorFactory.fromBitmap(bmp)
+                }
             }
         }
     }
