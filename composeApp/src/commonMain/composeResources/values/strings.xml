@@ -104,6 +104,7 @@
     <string name="label_appearance">Appearance</string>
     <string name="label_theme">Theme</string>
     <string name="text_theme_cosmic">Cool deep-space purples and indigos.</string>
+    <string name="text_theme_gateway">Steel-blue sky with International Orange and sage accents.</string>
     <string name="text_theme_ember">Warm charcoal with amber and copper accents.</string>
     <string name="dialog_delete_category_no_items">No items are currently using \"%1$s\".</string>
     <string name="dialog_delete_category_one_item">1 item is currently assigned to \"%1$s\" and will be moved to Default.</string>

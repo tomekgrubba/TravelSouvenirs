@@ -6,8 +6,9 @@ import androidx.compose.runtime.Composable
 @Composable
 fun AppTheme(style: AppStyle = AppStyle.DEFAULT, content: @Composable () -> Unit) {
     val colorScheme = when (style) {
-        AppStyle.COSMIC -> CosmicColorScheme
-        AppStyle.EMBER  -> EmberColorScheme
+        AppStyle.COSMIC   -> CosmicColorScheme
+        AppStyle.GATEWAY  -> GatewayColorScheme
+        AppStyle.EMBER    -> EmberColorScheme
     }
     MaterialTheme(colorScheme = colorScheme, content = content)
 }

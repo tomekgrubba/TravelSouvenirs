@@ -318,8 +318,9 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
                 }
                 Text(
                     when (appStyle) {
-                        AppStyle.COSMIC -> stringResource(Res.string.text_theme_cosmic)
-                        AppStyle.EMBER  -> stringResource(Res.string.text_theme_ember)
+                        AppStyle.COSMIC   -> stringResource(Res.string.text_theme_cosmic)
+                        AppStyle.GATEWAY  -> stringResource(Res.string.text_theme_gateway)
+                        AppStyle.EMBER    -> stringResource(Res.string.text_theme_ember)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -386,8 +387,9 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
 
 @Composable
 private fun appStyleLabel(style: AppStyle): String = when (style) {
-    AppStyle.COSMIC -> "Cosmic"
-    AppStyle.EMBER  -> "Ember"
+    AppStyle.COSMIC   -> "Cosmic"
+    AppStyle.GATEWAY  -> "Gateway"
+    AppStyle.EMBER    -> "Ember"
 }
 
 @Composable
