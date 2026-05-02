@@ -14,7 +14,7 @@ import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.datetime.Clock
+import com.travelsouvenirs.main.util.nowEpochMillis
 import kotlin.random.Random
 
 private const val KEY_CATEGORIES_UPDATED = "categories_updated_at"
@@ -101,7 +101,7 @@ class SyncRepository(
 
                 SyncStatus.PENDING_UPLOAD -> {
                     val fbId = entity.firebaseId.ifEmpty { randomId() }
-                    val now = Clock.System.now().toEpochMilliseconds()
+                    val now = nowEpochMillis()
 
                     var storagePath = entity.photoStoragePath
                     var storageUrl = entity.photoStorageUrl
@@ -143,7 +143,7 @@ class SyncRepository(
     /** Downloads item metadata from Firestore without fetching image files from Storage. */
     private suspend fun downloadRemoteMetadata(userId: String) {
         val lastSync = settings.getLong(KEY_LAST_SYNC_MILLIS, 0L)
-        val now = Clock.System.now().toEpochMilliseconds()
+        val now = nowEpochMillis()
         val collectionRef = firestore.collection("users").document(userId).collection("items")
         val snapshot = if (lastSync == 0L) collectionRef.get()
         else collectionRef.where { "updatedAtMillis" greaterThan lastSync }.get()
@@ -222,7 +222,7 @@ class SyncRepository(
 
         val localCategories = (settings.getStringOrNull(KEY_CATEGORIES) ?: "")
             .split(",").filter { it.isNotBlank() }
-        val now = Clock.System.now().toEpochMilliseconds()
+        val now = nowEpochMillis()
         remoteRef.set(
             mapOf(
                 "list" to listOf(DEFAULT_CATEGORY) + localCategories,

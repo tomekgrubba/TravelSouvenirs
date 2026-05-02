@@ -4,7 +4,7 @@ import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.sync.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Clock
+import com.travelsouvenirs.main.util.nowEpochMillis
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.TimeZone
 
@@ -19,7 +19,7 @@ class ItemRepository(private val dao: ItemDao) {
     fun getItemByIdFlow(id: Long): Flow<Item?> = dao.getItemByIdFlow(id).map { it?.toDomain() }
 
     suspend fun insertItem(item: Item): Long {
-        val now = Clock.System.now().toEpochMilliseconds()
+        val now = nowEpochMillis()
         val existing: ItemEntity? = if (item.id != 0L) dao.getItemById(item.id) else null
         val entity = ItemEntity(
             id = item.id,
@@ -50,7 +50,7 @@ class ItemRepository(private val dao: ItemDao) {
             // Mark as pending delete so SyncRepository can remove it from Firebase first
             dao.insertItem(existing.copy(
                 syncStatus = SyncStatus.PENDING_DELETE.name,
-                updatedAtMillis = Clock.System.now().toEpochMilliseconds(),
+                updatedAtMillis = nowEpochMillis(),
             ))
         }
     }

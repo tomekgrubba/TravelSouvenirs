@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -55,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalCategoryFilter
+import com.travelsouvenirs.main.ui.shared.CategoryFilterMenuSection
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalSettings
 import com.travelsouvenirs.main.domain.Item
@@ -200,26 +200,11 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                     )
 
-                    // Filter by category
-                    Text(
-                        text = stringResource(Res.string.filter_by_category),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
+                    CategoryFilterMenuSection(
+                        availableCategories = availableCategories,
+                        selectedCategories = selectedCategories,
+                        onToggleCategory = { categoryFilter.toggleCategoryFilter(it) }
                     )
-                    availableCategories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category, style = MaterialTheme.typography.bodyMedium) },
-                            leadingIcon = {
-                                Checkbox(
-                                    checked = category in selectedCategories,
-                                    onCheckedChange = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            onClick = { categoryFilter.toggleCategoryFilter(category) }
-                        )
-                    }
                     Spacer(modifier = Modifier.size(4.dp))
                 }
             }

@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 package com.travelsouvenirs.main.platform
 
 import androidx.compose.runtime.Composable
@@ -8,10 +10,8 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSizeMake
-import platform.Foundation.NSData
+import platform.Foundation.NSFileManager
 import platform.Foundation.NSHomeDirectory
-import platform.Foundation.NSURL
-import platform.Foundation.dataWithContentsOfURL
 import platform.PhotosUI.PHPickerConfiguration
 import platform.PhotosUI.PHPickerFilter
 import platform.PhotosUI.PHPickerResult
@@ -21,6 +21,7 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
 import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
+import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
 import platform.UIKit.UIImagePickerController
 import platform.UIKit.UIImagePickerControllerDelegateProtocol
@@ -34,9 +35,10 @@ import platform.darwin.NSObject
 import com.travelsouvenirs.main.image.IMAGE_JPEG_QUALITY
 import com.travelsouvenirs.main.image.IMAGE_MAX_SIDE_PX
 import kotlinx.datetime.LocalDate
+import platform.posix.time
 
 @OptIn(ExperimentalForeignApi::class)
-private fun resizeUIImage(image: platform.UIKit.UIImage): platform.UIKit.UIImage {
+private fun resizeUIImage(image: UIImage): UIImage {
     val (w, h) = image.size.useContents { width to height }
     val longest = maxOf(w, h)
     val maxSide = IMAGE_MAX_SIDE_PX.toDouble()
@@ -51,21 +53,29 @@ private fun resizeUIImage(image: platform.UIKit.UIImage): platform.UIKit.UIImage
     return resized ?: image
 }
 
+@OptIn(ExperimentalForeignApi::class)
 private fun activeRootViewController() =
     UIApplication.sharedApplication.connectedScenes
         .filterIsInstance<UIWindowScene>()
         .firstOrNull()
         ?.windows
         ?.filterIsInstance<UIWindow>()
-        ?.firstOrNull { it.isKeyWindow }
+        ?.firstOrNull { it.isKeyWindow() }
         ?.rootViewController
+
+private fun saveJpegToDir(data: platform.Foundation.NSData, dir: String): String {
+    val filename = "item_${time(null)}.jpg"
+    val destPath = "$dir/$filename"
+    NSFileManager.defaultManager.createDirectoryAtPath(dir, withIntermediateDirectories = true, attributes = null, error = null)
+    NSFileManager.defaultManager.createFileAtPath(destPath, contents = data, attributes = null)
+    return destPath
+}
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifLng: Double?, exifDate: LocalDate?) -> Unit): () -> Unit {
     val currentOnResult = rememberUpdatedState(onResult)
     val imageStorage = remember { IosImageStorage() }
-    // Strong references prevent ARC from collecting delegates whose picker.delegate is weak.
     val retainedDelegates = remember { mutableSetOf<Any>() }
     return remember {
         {
@@ -79,18 +89,13 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
                     picker.dismissViewControllerAnimated(true, null)
                     val result = didFinishPicking.firstOrNull() as? PHPickerResult
                     val provider = result?.itemProvider
-                    if (provider != null && provider.canLoadObjectOfClass(platform.UIKit.UIImage)) {
-                        provider.loadObjectOfClass(platform.UIKit.UIImage) { obj, _ ->
-                            val image = obj as? platform.UIKit.UIImage
-                            val data = image?.let { UIImageJPEGRepresentation(resizeUIImage(it), IMAGE_JPEG_QUALITY / 100.0) }
-                            if (data != null) {
-                                val filename = "item_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
+                    if (provider != null && provider.hasItemConformingToTypeIdentifier("public.image")) {
+                        provider.loadDataRepresentationForTypeIdentifier("public.image") { nsData, _ ->
+                            val image = nsData?.let { UIImage(data = it) }
+                            val jpegData = image?.let { UIImageJPEGRepresentation(resizeUIImage(it), IMAGE_JPEG_QUALITY / 100.0) }
+                            if (jpegData != null) {
                                 val dir = "${NSHomeDirectory()}/Documents/item_photos"
-                                val destPath = "$dir/$filename"
-                                platform.Foundation.NSFileManager.defaultManager.let { fm ->
-                                    fm.createDirectoryAtPath(dir, withIntermediateDirectories = true, attributes = null, error = null)
-                                    data.writeToFile(destPath, atomically = true)
-                                }
+                                val destPath = saveJpegToDir(jpegData, dir)
                                 currentOnResult.value(destPath, null, null, null)
                             } else {
                                 currentOnResult.value(null, null, null, null)
@@ -130,16 +135,11 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
                     picker.dismissViewControllerAnimated(true, null)
                     val image = (didFinishPickingMediaWithInfo[UIImagePickerControllerEditedImage]
                         ?: didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage])
-                            as? platform.UIKit.UIImage
+                            as? UIImage
                     val data = image?.let { UIImageJPEGRepresentation(it, 0.85) }
                     if (data != null) {
-                        val filename = "item_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
                         val dir = "${NSHomeDirectory()}/Documents/item_photos"
-                        val destPath = "$dir/$filename"
-                        platform.Foundation.NSFileManager.defaultManager.let { fm ->
-                            fm.createDirectoryAtPath(dir, withIntermediateDirectories = true, attributes = null, error = null)
-                            data.writeToFile(destPath, atomically = true)
-                        }
+                        val destPath = saveJpegToDir(data, dir)
                         currentOnResult.value(destPath)
                     } else {
                         currentOnResult.value(null)

@@ -1,13 +1,14 @@
 package com.travelsouvenirs.main.image
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHomeDirectory
+import platform.posix.time
 
-/** iOS implementation of [ImageStorage] that copies image files to app Documents. */
+@OptIn(ExperimentalForeignApi::class)
 class IosImageStorage : ImageStorage {
-    /** Copies the file at [sourcePath] to the app's private photo directory and returns the new path. */
     override suspend fun copyToInternalStorage(sourcePath: String): String {
-        val filename = "item_${platform.Foundation.NSDate().timeIntervalSince1970.toLong()}.jpg"
+        val filename = "item_${time(null)}.jpg"
         val dir = "${NSHomeDirectory()}/Documents/item_photos"
         val destPath = "$dir/$filename"
         val fm = NSFileManager.defaultManager
@@ -16,7 +17,6 @@ class IosImageStorage : ImageStorage {
         return destPath
     }
 
-    /** Deletes the image file at [path] if it exists within the app's Documents directory. */
     override suspend fun deleteImage(path: String) {
         if (path.isBlank()) return
         val fm = NSFileManager.defaultManager

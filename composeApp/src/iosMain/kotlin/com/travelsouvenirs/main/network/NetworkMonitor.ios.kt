@@ -1,5 +1,6 @@
 package com.travelsouvenirs.main.network
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,9 +12,9 @@ import platform.Network.nw_path_monitor_set_update_handler
 import platform.Network.nw_path_monitor_start
 import platform.Network.nw_path_status_satisfied
 import platform.Network.nw_path_uses_interface_type
-import platform.darwin.dispatch_queue_create
-import platform.darwin.DISPATCH_QUEUE_SERIAL
+import platform.darwin.dispatch_get_main_queue
 
+@OptIn(ExperimentalForeignApi::class)
 class IosNetworkMonitor : NetworkMonitor {
 
     private val _isConnected = MutableStateFlow(false)
@@ -24,7 +25,7 @@ class IosNetworkMonitor : NetworkMonitor {
 
     init {
         val monitor = nw_path_monitor_create()
-        val queue = dispatch_queue_create("NetworkMonitor", DISPATCH_QUEUE_SERIAL)
+        val queue = dispatch_get_main_queue()
         nw_path_monitor_set_update_handler(monitor) { path ->
             val satisfied = nw_path_get_status(path) == nw_path_status_satisfied
             _isConnected.value = satisfied

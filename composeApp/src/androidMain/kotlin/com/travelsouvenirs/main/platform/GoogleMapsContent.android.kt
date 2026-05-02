@@ -11,15 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -36,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -56,6 +49,7 @@ import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.ui.map.ItemGroup
+import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
 import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.map.rememberGroupIcons
 import com.travelsouvenirs.main.ui.map.rememberIndividualIcons
@@ -192,9 +186,6 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         }
     }
 
-    var showFilterMenu by remember { mutableStateOf(false) }
-    val isFilterActive = selectedCategories != categoryFilter.allCategoriesSet
-
     Box(modifier = Modifier.fillMaxSize()) {
         @Suppress("MissingPermission")
         GoogleMap(
@@ -264,49 +255,11 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                 Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.cd_my_location))
             }
 
-            Box {
-                SmallFloatingActionButton(
-                    onClick = { showFilterMenu = true },
-                    containerColor = if (isFilterActive)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = if (isFilterActive)
-                        MaterialTheme.colorScheme.onPrimary
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                ) {
-                    Icon(Icons.Default.FilterList, contentDescription = stringResource(Res.string.cd_filter_category))
-                }
-
-                DropdownMenu(
-                    expanded = showFilterMenu,
-                    onDismissRequest = { showFilterMenu = false },
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.width(220.dp)
-                ) {
-                    Text(
-                        text = stringResource(Res.string.filter_by_category),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
-                    )
-                    availableCategories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category) },
-                            leadingIcon = {
-                                Checkbox(
-                                    checked = category in selectedCategories,
-                                    onCheckedChange = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            onClick = { categoryFilter.toggleCategoryFilter(category) }
-                        )
-                    }
-                }
-            }
+            CategoryFilterFab(
+                availableCategories = availableCategories,
+                selectedCategories = selectedCategories,
+                onToggleCategory = { categoryFilter.toggleCategoryFilter(it) }
+            )
         }
 
         if (items.isEmpty()) {

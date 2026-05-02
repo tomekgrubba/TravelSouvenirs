@@ -1,6 +1,5 @@
 package com.travelsouvenirs.main.sync
 
-import dev.gitlive.firebase.storage.Data
 import dev.gitlive.firebase.storage.FirebaseStorage
 
 class ImageSyncHelper(private val storage: FirebaseStorage) {
@@ -8,7 +7,7 @@ class ImageSyncHelper(private val storage: FirebaseStorage) {
         val storagePath = "users/$userId/photos/$firebaseId.jpg"
         val ref = storage.reference(storagePath)
         val bytes = readLocalFileBytes(localPath)
-        ref.putData(Data(bytes))
+        ref.putData(bytes.toFirebaseData())
         val url = ref.getDownloadUrl()
         return storagePath to url
     }

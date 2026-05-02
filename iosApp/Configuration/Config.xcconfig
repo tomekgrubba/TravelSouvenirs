@@ -1,4 +1,4 @@
-TEAM_ID=
+TEAM_ID=88499W832G
 
 PRODUCT_NAME=TravelSouvenirs
 PRODUCT_BUNDLE_IDENTIFIER=com.travelsouvenirs.main.TravelSouvenirs$(TEAM_ID)

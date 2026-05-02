@@ -14,6 +14,14 @@ import platform.CoreLocation.kCLLocationAccuracyBest
 import platform.darwin.NSObject
 import kotlin.coroutines.resume
 
+private fun Double.fmt4(): String {
+    val s = kotlin.math.abs(this).toString()
+    val dot = s.indexOf('.')
+    val frac = if (dot < 0) "0000" else s.drop(dot + 1).take(4).padEnd(4, '0')
+    val intPart = if (dot < 0) s else s.take(dot)
+    return "${if (this < 0) "-" else ""}$intPart.$frac"
+}
+
 /** iOS implementation of [LocationService] using CLLocationManager and CLGeocoder. */
 @OptIn(ExperimentalForeignApi::class)
 class IosLocationService : LocationService {
@@ -91,7 +99,7 @@ class IosLocationService : LocationService {
                 geocoder.reverseGeocodeLocation(location) { placemarks, _ ->
                     val mark = (placemarks as? List<*>)?.firstOrNull() as? platform.CoreLocation.CLPlacemark
                     val name = mark?.locality ?: mark?.administrativeArea
-                        ?: "%.4f, %.4f".format(lat, lng)
+                        ?: "${lat.fmt4()}, ${lng.fmt4()}"
                     cont.resume(name)
                 }
                 cont.invokeOnCancellation { geocoder.cancelGeocode() }

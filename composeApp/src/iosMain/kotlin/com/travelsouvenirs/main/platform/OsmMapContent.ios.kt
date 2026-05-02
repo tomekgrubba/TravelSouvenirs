@@ -6,16 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,11 +21,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.interop.UIKitView
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
+import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.domain.Item
@@ -80,9 +72,6 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     }
 
     val filteredItems = remember(allItems, selectedCategories) { categoryFilter.filterItems(allItems) }
-
-    var showFilterMenu by remember { mutableStateOf(false) }
-    val isFilterActive = selectedCategories != categoryFilter.allCategoriesSet
 
     // Zoom and bounds tracked from JS map events
     var zoomLevel by remember { mutableStateOf(2f) }
@@ -189,52 +178,12 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         UIKitView(factory = { webView }, modifier = Modifier.fillMaxSize())
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        ) {
-            SmallFloatingActionButton(
-                onClick = { showFilterMenu = true },
-                containerColor = if (isFilterActive)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (isFilterActive)
-                    MaterialTheme.colorScheme.onPrimary
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant
-            ) {
-                Icon(Icons.Default.FilterList, contentDescription = stringResource(Res.string.cd_filter_category))
-            }
-
-            DropdownMenu(
-                expanded = showFilterMenu,
-                onDismissRequest = { showFilterMenu = false },
-                modifier = Modifier.width(220.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.filter_by_category),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                availableCategories.forEach { category ->
-                    DropdownMenuItem(
-                        text = { Text(category) },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = category in selectedCategories,
-                                onCheckedChange = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        onClick = { categoryFilter.toggleCategoryFilter(category) }
-                    )
-                }
-            }
-        }
+        CategoryFilterFab(
+            availableCategories = availableCategories,
+            selectedCategories = selectedCategories,
+            onToggleCategory = { categoryFilter.toggleCategoryFilter(it) },
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+        )
 
         if (filteredItems.isEmpty()) {
             val noItems = allItems.isEmpty()

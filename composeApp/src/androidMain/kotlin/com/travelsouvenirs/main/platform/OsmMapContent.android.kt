@@ -12,15 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -48,6 +42,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
+import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.ui.map.MapViewModel
@@ -140,8 +135,6 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     // Always reflects the latest filtered items inside the map listener closure
     val latestItems = rememberUpdatedState(items)
     var offScreen by remember { mutableStateOf(EdgeCounts(0, 0, 0, 0)) }
-    var showFilterMenu by remember { mutableStateOf(false) }
-    val isFilterActive = selectedCategories != categoryFilter.allCategoriesSet
     val scope = rememberCoroutineScope()
     val primaryColor = MaterialTheme.colorScheme.primaryContainer
 
@@ -424,49 +417,11 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.cd_my_location))
             }
 
-            Box {
-                SmallFloatingActionButton(
-                    onClick = { showFilterMenu = true },
-                    containerColor = if (isFilterActive)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = if (isFilterActive)
-                        MaterialTheme.colorScheme.onPrimary
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                ) {
-                    Icon(Icons.Default.FilterList, contentDescription = stringResource(Res.string.cd_filter_category))
-                }
-
-                DropdownMenu(
-                    expanded = showFilterMenu,
-                    onDismissRequest = { showFilterMenu = false },
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.width(220.dp)
-                ) {
-                    Text(
-                        text = stringResource(Res.string.filter_by_category),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
-                    )
-                    availableCategories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category) },
-                            leadingIcon = {
-                                Checkbox(
-                                    checked = category in selectedCategories,
-                                    onCheckedChange = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            onClick = { categoryFilter.toggleCategoryFilter(category) }
-                        )
-                    }
-                }
-            }
+            CategoryFilterFab(
+                availableCategories = availableCategories,
+                selectedCategories = selectedCategories,
+                onToggleCategory = { categoryFilter.toggleCategoryFilter(it) }
+            )
         }
 
         if (items.isEmpty()) {

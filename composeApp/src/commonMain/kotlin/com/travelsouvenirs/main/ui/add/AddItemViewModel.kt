@@ -108,7 +108,7 @@ class AddItemViewModel(
     private var _dateSetByUser = editId != null
 
     private var searchJob: Job? = null
-    private val cleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val cleanupScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     // Tracks all image files copied during this session so orphans can be cleaned up.
     private val copiedPhotoPaths = mutableSetOf<String>()
@@ -135,7 +135,7 @@ class AddItemViewModel(
 
     /** Copies the image at [sourcePath] to internal storage on the IO dispatcher and updates [photoPath]. */
     fun onPhotoSelected(sourcePath: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             val path = imageStorage.copyToInternalStorage(sourcePath)
             if (path != null) {
                 copiedPhotoPaths.add(path)
