@@ -46,6 +46,7 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.travelsouvenirs.main.di.LocalCategoryFilter
+import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.ui.map.ItemGroup
@@ -194,7 +195,11 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission,
                 minZoomPreference = 2f,
-                mapStyleOptions = if (mapTheme == MapTheme.DARK) MapStyleOptions(darkMapStyle(appStyle)) else null
+                mapStyleOptions = when {
+                    mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle(appStyle))
+                    appStyle == AppStyle.POLAROID -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
+                    else -> null
+                }
             ),
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,

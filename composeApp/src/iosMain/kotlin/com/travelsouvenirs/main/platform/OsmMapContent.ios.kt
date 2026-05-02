@@ -126,7 +126,8 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
             config.userContentController.addScriptMessageHandler(mapEventHandler, name = "mapEvent")
             WKWebView(frame = CGRectZero.readValue(), configuration = config).also { wv ->
                 wv.navigationDelegate = navigationDelegate
-                wv.loadHTMLString(osmInteractiveHtml(20.0, 0.0, 2, mapTheme == MapTheme.DARK, badgeHex), baseURL = null)
+                val tileMode = when { mapTheme == MapTheme.DARK -> "dark"; isPolaroid -> "polaroid"; else -> "light" }
+                wv.loadHTMLString(osmInteractiveHtml(20.0, 0.0, 2, tileMode, badgeHex), baseURL = null)
                 viewModel.nativeMapView = wv
                 viewModel.onClearNativeView = {
                     wv.configuration.userContentController.removeScriptMessageHandlerForName("pinClick")
@@ -156,10 +157,10 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
         }
     }
 
-    LaunchedEffect(mapTheme, pageReady) {
+    LaunchedEffect(mapTheme, isPolaroid, pageReady) {
         if (!pageReady) return@LaunchedEffect
-        val isDark = mapTheme == MapTheme.DARK
-        webView.evaluateJavaScript("setTileLayer($isDark);", completionHandler = null)
+        val mode = when { mapTheme == MapTheme.DARK -> "dark"; isPolaroid -> "polaroid"; else -> "light" }
+        webView.evaluateJavaScript("setTileLayer('$mode');", completionHandler = null)
     }
 
     // Compute groups when zoom or items change
@@ -294,7 +295,7 @@ private fun colorToHex(color: Color): String {
     return "#${r.hex2()}${g.hex2()}${b.hex2()}"
 }
 
-private fun osmInteractiveHtml(lat: Double, lng: Double, zoom: Int, isDark: Boolean, badgeHex: String): String = """
+private fun osmInteractiveHtml(lat: Double, lng: Double, zoom: Int, tileMode: String, badgeHex: String): String = """
 <!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -306,10 +307,15 @@ private fun osmInteractiveHtml(lat: Double, lng: Double, zoom: Int, isDark: Bool
 var map=L.map('map').setView([$lat,$lng],$zoom);
 var tileLayer=null;
 var badgeColor='$badgeHex';
-function setTileLayer(dark){
+function setTileLayer(mode){
   if(tileLayer){map.removeLayer(tileLayer);}
-  if(dark){
+  if(mode==='dark'){
     tileLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains:'abcd'
+    }).addTo(map);
+  } else if(mode==='polaroid'){
+    tileLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',{
       attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains:'abcd'
     }).addTo(map);
@@ -319,7 +325,7 @@ function setTileLayer(dark){
     }).addTo(map);
   }
 }
-setTileLayer($isDark);
+setTileLayer('$tileMode');
 map.on('zoomend moveend',function(){
   var b=map.getBounds();
   window.webkit.messageHandlers.mapEvent.postMessage(JSON.stringify({

@@ -42,6 +42,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
+import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
 import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.di.LocalItemRepository
@@ -80,6 +81,16 @@ private fun osmDarkTileSource() = XYTileSource(
     )
 )
 
+private fun osmPolaroidTileSource() = XYTileSource(
+    "CartoDB Voyager", 0, 19, 256, ".png",
+    arrayOf(
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://d.basemaps.cartocdn.com/rastertiles/voyager/"
+    )
+)
+
 
 private fun buildApproxCircle(center: GeoPoint, radiusMeters: Double, fillArgb: Int, strokeArgb: Int): OsmPolygon {
     val steps = 64
@@ -107,6 +118,7 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val mapTheme = rememberMapTheme()
+    val appStyle = rememberAppStyle()
     val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
     val allItems by viewModel.items.collectAsState()
     val allPins by viewModel.itemPins.collectAsState()
@@ -162,7 +174,11 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
 
     val mapView = remember {
         MapView(context).apply {
-            setTileSource(if (mapTheme == MapTheme.DARK) osmDarkTileSource() else TileSourceFactory.MAPNIK)
+            setTileSource(when {
+                mapTheme == MapTheme.DARK -> osmDarkTileSource()
+                appStyle == AppStyle.POLAROID -> osmPolaroidTileSource()
+                else -> TileSourceFactory.MAPNIK
+            })
             setMultiTouchControls(true)
             setBuiltInZoomControls(false)
             
@@ -186,8 +202,12 @@ internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
         }
     }
 
-    LaunchedEffect(mapTheme) {
-        mapView.setTileSource(if (mapTheme == MapTheme.DARK) osmDarkTileSource() else TileSourceFactory.MAPNIK)
+    LaunchedEffect(mapTheme, appStyle) {
+        mapView.setTileSource(when {
+            mapTheme == MapTheme.DARK -> osmDarkTileSource()
+            appStyle == AppStyle.POLAROID -> osmPolaroidTileSource()
+            else -> TileSourceFactory.MAPNIK
+        })
         mapView.invalidate()
     }
 
