@@ -2,6 +2,7 @@ package com.travelsouvenirs.main.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.travelsouvenirs.main.theme.AppStyle
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -24,7 +25,11 @@ internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: Strin
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             minZoomPreference = 2f,
-            mapStyleOptions = if (mapTheme == MapTheme.DARK) MapStyleOptions(darkMapStyle(appStyle)) else null
+            mapStyleOptions = when {
+                mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle(appStyle))
+                appStyle == AppStyle.POLAROID -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
+                else -> null
+            }
         ),
         uiSettings = MapUiSettings(
             scrollGesturesEnabled = false,

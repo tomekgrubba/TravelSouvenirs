@@ -31,6 +31,16 @@ private fun osmPickerDarkTileSource() = XYTileSource(
     )
 )
 
+private fun osmPickerPolaroidTileSource() = XYTileSource(
+    "CartoDB Voyager", 0, 19, 256, ".png",
+    arrayOf(
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://d.basemaps.cartocdn.com/rastertiles/voyager/"
+    )
+)
+
 /** Location picker backed by OSMDroid. Clips to its layout bounds to match the Google Maps variant. */
 @Composable
 internal fun OsmMapLocationPicker(
@@ -44,10 +54,17 @@ internal fun OsmMapLocationPicker(
     val lifecycleOwner = LocalLifecycleOwner.current
     val onLocationPickedState = rememberUpdatedState(onLocationPicked)
     val mapTheme = rememberMapTheme()
+    val appStyle = rememberAppStyle()
+
+    fun tileSource() = when {
+        mapTheme == MapTheme.DARK -> osmPickerDarkTileSource()
+        appStyle == com.travelsouvenirs.main.theme.AppStyle.POLAROID -> osmPickerPolaroidTileSource()
+        else -> TileSourceFactory.MAPNIK
+    }
 
     val mapView = remember {
         MapView(context).apply {
-            setTileSource(if (mapTheme == MapTheme.DARK) osmPickerDarkTileSource() else TileSourceFactory.MAPNIK)
+            setTileSource(tileSource())
             setMultiTouchControls(true)
             setBuiltInZoomControls(true)
             minZoomLevel = MAP_ZOOM_MIN.toDouble()
@@ -74,8 +91,8 @@ internal fun OsmMapLocationPicker(
         onDispose { mapView.overlays.remove(tapOverlay) }
     }
 
-    LaunchedEffect(mapTheme) {
-        mapView.setTileSource(if (mapTheme == MapTheme.DARK) osmPickerDarkTileSource() else TileSourceFactory.MAPNIK)
+    LaunchedEffect(mapTheme, appStyle) {
+        mapView.setTileSource(tileSource())
         mapView.invalidate()
     }
 

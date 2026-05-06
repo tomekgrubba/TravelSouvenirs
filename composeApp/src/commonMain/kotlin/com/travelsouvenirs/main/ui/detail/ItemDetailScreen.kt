@@ -1,5 +1,6 @@
 package com.travelsouvenirs.main.ui.detail
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -121,10 +123,12 @@ fun ItemDetailScreen(
         )
     }
 
+    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
+
     Scaffold(
         topBar = {
             TopAppBar(
-                colors = if (rememberAppStyle() == AppStyle.POLAROID) TopAppBarDefaults.topAppBarColors(
+                colors = if (isPolaroid) TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                 ) else TopAppBarDefaults.topAppBarColors(),
                 title = { Text(item?.name ?: "") },
@@ -160,103 +164,225 @@ fun ItemDetailScreen(
                             .heightIn(max = maxContentHeight)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(280.dp)
-                                .padding(horizontal = 16.dp)
-                        ) {
-                            AsyncImage(
-                                model = m.photoPath,
-                                contentDescription = stringResource(Res.string.cd_item_photo),
+                        if (isPolaroid) {
+                            val photoRotation = ((m.id % 9L) - 4L).toFloat() * 0.3f
+                            Card(
+                                shape = RoundedCornerShape(2.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable { showFullscreenPhoto = true },
-                                contentScale = ContentScale.Crop
-                            )
-                            if (m.category.isNotBlank()) {
-                                Surface(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(8.dp),
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, vertical = 8.dp)
+                                    .rotate(photoRotation)
+                            ) {
+                                Column {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 12.dp, start = 12.dp, end = 12.dp)
+                                            .clickable { showFullscreenPhoto = true }
                                     ) {
-                                        Icon(
-                                            Icons.Default.Label,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp),
-                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                        AsyncImage(
+                                            model = m.photoPath,
+                                            contentDescription = stringResource(Res.string.cd_item_photo),
+                                            modifier = Modifier.fillMaxWidth().height(260.dp),
+                                            contentScale = ContentScale.Crop
                                         )
-                                        Text(
-                                            m.category,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 28.dp)
+                                    ) {
+                                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                            if (m.placeName.isNotBlank()) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Place,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(14.dp),
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                    Text(
+                                                        m.placeName,
+                                                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 18.sp),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                            }
+                                            Text(
+                                                m.dateAcquired.formatDisplay(),
+                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(start = 18.dp)
+                                            )
+                                        }
+                                        if (m.category.isNotBlank()) {
+                                            Surface(
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomEnd)
+                                                    .rotate(-12f),
+                                                shape = RoundedCornerShape(2.dp),
+                                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+                                                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.85f))
+                                            ) {
+                                                Text(
+                                                    m.category.uppercase(),
+                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.sp),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
-                        }
-
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            if (m.notes.isNotBlank()) {
+                                Card(
+                                    shape = RoundedCornerShape(2.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        m.notes,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(16.dp),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(280.dp)
+                                    .padding(horizontal = 16.dp)
                             ) {
-                                if (m.placeName.isNotBlank()) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                AsyncImage(
+                                    model = m.photoPath,
+                                    contentDescription = stringResource(Res.string.cd_item_photo),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable { showFullscreenPhoto = true },
+                                    contentScale = ContentScale.Crop
+                                )
+                                if (m.category.isNotBlank()) {
+                                    Surface(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(8.dp),
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
                                     ) {
-                                        Icon(
-                                            Icons.Default.Place,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(m.placeName, style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp))
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Label,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp),
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                            Text(
+                                                m.category,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
                                     }
                                 }
+                            }
 
-                                Text(
-                                    m.dateAcquired.formatDisplay(),
-                                    modifier = Modifier.padding(start = 32.dp),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    if (m.placeName.isNotBlank()) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Place,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(m.placeName, style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp))
+                                        }
+                                    }
 
-                                if (m.notes.isNotBlank()) {
-                                    Text(m.notes, style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        m.dateAcquired.formatDisplay(),
+                                        modifier = Modifier.padding(start = 32.dp),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    if (m.notes.isNotBlank()) {
+                                        Text(m.notes, style = MaterialTheme.typography.bodyMedium)
+                                    }
                                 }
                             }
                         }
                     }
 
                     if (hasLocation) {
-                        PlatformMapPreview(
-                            latitude = m.latitude,
-                            longitude = m.longitude,
-                            label = m.name,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .heightIn(min = minMapHeight, max = mapMaxHeight)
-                                .padding(horizontal = 16.dp, vertical = 4.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .clipToBounds()
-                        )
+                        if (isPolaroid) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .heightIn(min = minMapHeight, max = mapMaxHeight)
+                                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Card(
+                                    shape = RoundedCornerShape(2.dp),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .rotate(1.2f)
+                                ) {
+                                    PlatformMapPreview(
+                                        latitude = m.latitude,
+                                        longitude = m.longitude,
+                                        label = m.name,
+                                        modifier = Modifier.fillMaxSize().clipToBounds()
+                                    )
+                                }
+                            }
+                        } else {
+                            PlatformMapPreview(
+                                latitude = m.latitude,
+                                longitude = m.longitude,
+                                label = m.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .heightIn(min = minMapHeight, max = mapMaxHeight)
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clipToBounds()
+                            )
+                        }
                     }
                 }
             }

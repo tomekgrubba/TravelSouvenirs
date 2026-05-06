@@ -8,6 +8,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
+import com.travelsouvenirs.main.theme.AppStyle
 import com.google.maps.android.compose.DragState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
@@ -71,7 +72,11 @@ internal fun GoogleMapsLocationPicker(
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             minZoomPreference = 2f,
-            mapStyleOptions = if (mapTheme == MapTheme.DARK) MapStyleOptions(darkMapStyle(appStyle)) else null
+            mapStyleOptions = when {
+                mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle(appStyle))
+                appStyle == AppStyle.POLAROID -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
+                else -> null
+            }
         ),
         uiSettings = MapUiSettings(zoomControlsEnabled = true, myLocationButtonEnabled = false, mapToolbarEnabled = false),
         onMapClick = { latLng -> onLocationPicked(latLng.latitude, latLng.longitude) }

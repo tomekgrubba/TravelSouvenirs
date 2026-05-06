@@ -50,6 +50,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -126,6 +127,9 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = kotlin.time.Clock.System.now().toEpochMilliseconds()
     )
+    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
+    val fieldShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(16.dp)
+    val buttonShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(50.dp)
 
     if (showDatePicker) {
         DatePickerDialog(
@@ -149,7 +153,8 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     if (showLocationDialog) {
         LocationPickerDialog(
             viewModel = viewModel,
-            onRequestGps = { requestLocationPermission() }
+            onRequestGps = { requestLocationPermission() },
+            isPolaroid = isPolaroid
         )
     }
 
@@ -206,7 +211,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     Scaffold(
         topBar = {
             TopAppBar(
-                colors = if (rememberAppStyle() == AppStyle.POLAROID) TopAppBarDefaults.topAppBarColors(
+                colors = if (isPolaroid) TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                 ) else TopAppBarDefaults.topAppBarColors(),
                 title = { Text(stringResource(if (itemId != null) Res.string.title_edit_item else Res.string.title_add_item)) },
@@ -226,36 +231,79 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    stringResource(Res.string.label_photo),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-                if (photoPath != null) {
-                    AsyncImage(
-                        model = photoPath,
-                        contentDescription = stringResource(Res.string.cd_item_photo),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(16.dp)),
-                        contentScale = ContentScale.Crop
+            if (isPolaroid) {
+                Card(
+                    shape = RoundedCornerShape(2.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                        .rotate(-1.5f)
+                ) {
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp, start = 12.dp, end = 12.dp)
+                        ) {
+                            if (photoPath != null) {
+                                AsyncImage(
+                                    model = photoPath,
+                                    contentDescription = stringResource(Res.string.cd_item_photo),
+                                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(160.dp)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        stringResource(Res.string.no_photo_selected),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                        Box(modifier = Modifier.fillMaxWidth().height(32.dp))
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        stringResource(Res.string.label_photo),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp)
                     )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            stringResource(Res.string.no_photo_selected),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (photoPath != null) {
+                        AsyncImage(
+                            model = photoPath,
+                            contentDescription = stringResource(Res.string.cd_item_photo),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(16.dp)),
+                            contentScale = ContentScale.Crop
                         )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                stringResource(Res.string.no_photo_selected),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -263,20 +311,20 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = { launchCamera() },
-                    shape = RoundedCornerShape(50.dp),
+                    shape = buttonShape,
                     modifier = Modifier.weight(1f)
                 ) { Text(stringResource(Res.string.btn_take_photo)) }
 
                 OutlinedButton(
                     onClick = { launchPhotoPicker() },
-                    shape = RoundedCornerShape(50.dp),
+                    shape = buttonShape,
                     modifier = Modifier.weight(1f)
                 ) { Text(stringResource(Res.string.btn_gallery)) }
             }
 
             OutlinedButton(
                 onClick = { viewModel.openLocationDialog() },
-                shape = RoundedCornerShape(50.dp),
+                shape = buttonShape,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
@@ -295,7 +343,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                 value = name,
                 onValueChange = viewModel::onNameChange,
                 label = { Text(stringResource(Res.string.label_name)) },
-                shape = RoundedCornerShape(16.dp),
+                shape = fieldShape,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -304,7 +352,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                 value = notes,
                 onValueChange = viewModel::onNotesChange,
                 label = { Text(stringResource(Res.string.label_notes)) },
-                shape = RoundedCornerShape(16.dp),
+                shape = fieldShape,
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 maxLines = 4
@@ -320,7 +368,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                     readOnly = true,
                     label = { Text(stringResource(Res.string.label_category)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryDropdown) },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = fieldShape,
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -362,7 +410,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                 value = dateAcquired.formatDisplay(),
                 onValueChange = {},
                 label = { Text(stringResource(Res.string.label_date_acquired)) },
-                shape = RoundedCornerShape(16.dp),
+                shape = fieldShape,
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 trailingIcon = {
@@ -375,7 +423,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
             Button(
                 onClick = viewModel::saveItem,
                 enabled = isFormValid,
-                shape = RoundedCornerShape(50.dp),
+                shape = buttonShape,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(Res.string.btn_save_item))
@@ -387,8 +435,11 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
 @Composable
 private fun LocationPickerDialog(
     viewModel: AddItemViewModel,
-    onRequestGps: () -> Unit
+    onRequestGps: () -> Unit,
+    isPolaroid: Boolean = false
 ) {
+    val dialogFieldShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(16.dp)
+    val dialogButtonShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(50.dp)
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
@@ -425,7 +476,7 @@ private fun LocationPickerDialog(
                         value = searchQuery,
                         onValueChange = viewModel::onSearchQueryChange,
                         label = { Text(stringResource(Res.string.label_city_or_place)) },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = dialogFieldShape,
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
@@ -536,7 +587,7 @@ private fun LocationPickerDialog(
                 ) {
                     OutlinedButton(
                         onClick = { viewModel.closeLocationDialog() },
-                        shape = RoundedCornerShape(50.dp),
+                        shape = dialogButtonShape,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(stringResource(Res.string.btn_cancel))
@@ -544,7 +595,7 @@ private fun LocationPickerDialog(
                     Button(
                         onClick = { viewModel.confirmLocation() },
                         enabled = pendingLat != null && !isLocating,
-                        shape = RoundedCornerShape(50.dp),
+                        shape = dialogButtonShape,
                         modifier = Modifier.weight(1f)
                     ) {
                         if (isLocating && pendingLat != null) {
