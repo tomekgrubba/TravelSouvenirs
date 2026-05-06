@@ -129,7 +129,10 @@ fun ItemDetailScreen(
         topBar = {
             TopAppBar(
                 colors = if (isPolaroid) TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ) else TopAppBarDefaults.topAppBarColors(),
                 title = { Text(item?.name ?: "") },
                 navigationIcon = {

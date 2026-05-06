@@ -27,6 +27,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -124,7 +125,10 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
             Column {
                 TopAppBar(
                     colors = if (isPolaroid) TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     ) else TopAppBarDefaults.topAppBarColors(),
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -164,9 +168,19 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                     PrimaryTabRow(
                         selectedTabIndex = selectedTab.ordinal,
                         containerColor = if (isPolaroid)
-                            MaterialTheme.colorScheme.surfaceContainerHighest
+                            MaterialTheme.colorScheme.primaryContainer
                         else
-                            TabRowDefaults.primaryContainerColor
+                            TabRowDefaults.primaryContainerColor,
+                        contentColor = if (isPolaroid)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            TabRowDefaults.primaryContentColor,
+                        indicator = {
+                            TabRowDefaults.PrimaryIndicator(
+                                modifier = Modifier.tabIndicatorOffset(selectedTab.ordinal),
+                                color = if (isPolaroid) MaterialTheme.colorScheme.onPrimary else LocalContentColor.current
+                            )
+                        }
                     ) {
                         Tab(
                             selected = selectedTab == MainTab.MAP,

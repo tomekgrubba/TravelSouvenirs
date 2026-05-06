@@ -212,7 +212,10 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
         topBar = {
             TopAppBar(
                 colors = if (isPolaroid) TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ) else TopAppBarDefaults.topAppBarColors(),
                 title = { Text(stringResource(if (itemId != null) Res.string.title_edit_item else Res.string.title_add_item)) },
                 navigationIcon = {

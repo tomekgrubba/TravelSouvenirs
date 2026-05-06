@@ -63,7 +63,7 @@ import travelsouvenirs.composeapp.generated.resources.*
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
 private const val INITIAL_ZOOM = 5f
-private const val LOCATION_ZOOM = 7f
+private const val LOCATION_ZOOM = 10f
 
 
 @Composable
