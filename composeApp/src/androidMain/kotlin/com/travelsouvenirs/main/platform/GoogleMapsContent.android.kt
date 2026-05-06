@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -62,7 +63,7 @@ import travelsouvenirs.composeapp.generated.resources.*
 
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
 private const val INITIAL_ZOOM = 5f
-private const val LOCATION_ZOOM = 12f
+private const val LOCATION_ZOOM = 7f
 
 
 @Composable
@@ -274,7 +275,11 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp)
-                    .clickable { onAddClick() }
+                    .clickable { onAddClick() },
+                colors = if (appStyle == AppStyle.POLAROID)
+                    CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                else
+                    CardDefaults.cardColors()
             ) {
                 Text(
                     if (allItems.isEmpty())

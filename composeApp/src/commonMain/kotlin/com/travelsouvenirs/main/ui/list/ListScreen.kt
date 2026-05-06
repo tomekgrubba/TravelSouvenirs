@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -220,12 +221,30 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     modifier = Modifier.fillMaxSize().clickable { onAddClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(stringResource(Res.string.empty_state_no_items))
+                    if (appStyle == AppStyle.POLAROID) {
+                        Card(
+                            modifier = Modifier.padding(32.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                        ) {
+                            Text(stringResource(Res.string.empty_state_no_items), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
+                        }
+                    } else {
+                        Text(stringResource(Res.string.empty_state_no_items))
+                    }
                 }
             }
             items.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(Res.string.empty_state_no_results))
+                    if (appStyle == AppStyle.POLAROID) {
+                        Card(
+                            modifier = Modifier.padding(32.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                        ) {
+                            Text(stringResource(Res.string.empty_state_no_results), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
+                        }
+                    } else {
+                        Text(stringResource(Res.string.empty_state_no_results))
+                    }
                 }
             }
             viewMode == ViewMode.GRID -> {
