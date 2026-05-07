@@ -54,10 +54,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.travelsouvenirs.main.di.LocalImageStorage
-import com.travelsouvenirs.main.di.LocalItemRepository
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import com.travelsouvenirs.main.platform.PlatformMapPreview
 import com.travelsouvenirs.main.platform.rememberAppStyle
 import com.travelsouvenirs.main.theme.AppStyle
@@ -73,11 +72,10 @@ fun ItemDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit = {}
 ) {
-    val repository = LocalItemRepository.current
-    val imageStorage = LocalImageStorage.current
-    val viewModel: ItemDetailViewModel = viewModel(key = itemId.toString()) {
-        ItemDetailViewModel(repository, itemId, imageStorage)
-    }
+    val viewModel: ItemDetailViewModel = koinViewModel(
+        key = itemId.toString(),
+        parameters = { parametersOf(itemId) },
+    )
     val item by viewModel.item.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showFullscreenPhoto by remember { mutableStateOf(false) }

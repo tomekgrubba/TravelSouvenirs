@@ -23,14 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.interop.UIKitView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
-import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
-import com.travelsouvenirs.main.di.LocalItemRepository
-import com.travelsouvenirs.main.di.LocalLocationService
 import com.travelsouvenirs.main.domain.Item
+import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.ui.map.ItemGroup
 import com.travelsouvenirs.main.ui.map.MapViewModel
+import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.ui.map.buildCircularDataUrl
 import com.travelsouvenirs.main.ui.map.buildPolaroidDataUrl
@@ -53,13 +53,12 @@ private const val OSM_IOS_CLUSTER_ZOOM_THRESHOLD = 13f
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 internal fun OsmMapContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
-    val repository = LocalItemRepository.current
-    val locationService = LocalLocationService.current
+    val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
 
     val mapTheme = rememberMapTheme()
     val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
-    val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
+    val viewModel: MapViewModel = koinViewModel()
     val allItems by viewModel.items.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()

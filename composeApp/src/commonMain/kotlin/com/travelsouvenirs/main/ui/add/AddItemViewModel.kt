@@ -2,386 +2,288 @@ package com.travelsouvenirs.main.ui.add
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.domain.Item
+import com.travelsouvenirs.main.domain.usecase.SaveItemUseCase
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.location.PlaceResult
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.travelsouvenirs.main.platform.todayLocalDate
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.travelsouvenirs.main.platform.todayLocalDate
-import com.travelsouvenirs.main.util.KEY_CATEGORIES
 import kotlinx.datetime.LocalDate
+
+data class AddItemUiState(
+    val photoPath: String? = null,
+    val name: String = "",
+    val notes: String = "",
+    val dateAcquired: LocalDate = todayLocalDate(),
+    val category: String = DEFAULT_CATEGORY,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val placeName: String = "",
+    val isSaved: Boolean = false,
+    // Location picker dialog state
+    val showLocationDialog: Boolean = false,
+    val pendingLat: Double? = null,
+    val pendingLng: Double? = null,
+    val cameraMoveId: Int = 0,
+    val searchQuery: String = "",
+    val searchResults: List<PlaceResult> = emptyList(),
+    val isSearching: Boolean = false,
+    val isLocating: Boolean = false,
+    val locationError: String? = null,
+    // Category state
+    val availableCategories: List<String> = listOf(DEFAULT_CATEGORY),
+)
 
 /**
  * Drives both the Add and Edit screens.
  * When [editId] is non-null, pre-populates fields from the existing item and upserts on save.
  */
 class AddItemViewModel(
-    private val repository: ItemRepository,
+    repository: ItemRepository,
     private val locationService: LocationService,
-    private val imageStorage: ImageStorage,
+    imageStorage: ImageStorage,
     private val editId: Long? = null,
-    private val settings: Settings
+    private val categoryRepository: CategoryRepository,
 ) : ViewModel() {
 
-    private val _photoPath = MutableStateFlow<String?>(null)
-    val photoPath: StateFlow<String?> = _photoPath.asStateFlow()
+    private val saveItem = SaveItemUseCase(repository)
+    private val imagePicker = ImagePickerHandler(imageStorage)
 
-    private val _name = MutableStateFlow("")
-    val name: StateFlow<String> = _name.asStateFlow()
+    private val _uiState = MutableStateFlow(AddItemUiState())
+    val uiState: StateFlow<AddItemUiState> = _uiState
 
-    private val _notes = MutableStateFlow("")
-    val notes: StateFlow<String> = _notes.asStateFlow()
-
-    private val _dateAcquired: MutableStateFlow<LocalDate> = MutableStateFlow(todayLocalDate())
-    val dateAcquired: StateFlow<LocalDate> = _dateAcquired.asStateFlow()
-
-    private val _latitude = MutableStateFlow(0.0)
-    private val _longitude = MutableStateFlow(0.0)
-
-    private val _placeName = MutableStateFlow("")
-    val placeName: StateFlow<String> = _placeName.asStateFlow()
-
-    private val _isSaved = MutableStateFlow(false)
-    val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
-
-    private val _showLocationDialog = MutableStateFlow(false)
-    val showLocationDialog: StateFlow<Boolean> = _showLocationDialog.asStateFlow()
-
-    // Staged pin coordinates inside the location dialog — committed only on Confirm.
-    private val _pendingLat = MutableStateFlow<Double?>(null)
-    val pendingLat: StateFlow<Double?> = _pendingLat.asStateFlow()
-
-    private val _pendingLng = MutableStateFlow<Double?>(null)
-    val pendingLng: StateFlow<Double?> = _pendingLng.asStateFlow()
-
-    // Incremented on GPS fetch or search selection to trigger a camera animation in the map.
-    // NOT incremented on drag or tap — so the camera never snaps back mid-drag.
-    private val _cameraMoveId = MutableStateFlow(0)
-    val cameraMoveId: StateFlow<Int> = _cameraMoveId.asStateFlow()
-
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    private val _searchResults = MutableStateFlow<List<PlaceResult>>(emptyList())
-    val searchResults: StateFlow<List<PlaceResult>> = _searchResults.asStateFlow()
-
-    private val _isSearching = MutableStateFlow(false)
-    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
-
-    private val _isLocating = MutableStateFlow(false)
-    val isLocating: StateFlow<Boolean> = _isLocating.asStateFlow()
-
-    private val _locationError = MutableStateFlow<String?>(null)
-    val locationError: StateFlow<String?> = _locationError.asStateFlow()
-
-    private val _availableCategories = MutableStateFlow(buildList {
-        add(DEFAULT_CATEGORY)
-        val raw = settings.getStringOrNull(KEY_CATEGORIES) ?: ""
-        addAll(raw.split(",").filter { it.isNotBlank() })
-    })
-    /** All selectable categories: Default + user-defined custom categories. */
-    val availableCategories: StateFlow<List<String>> = _availableCategories.asStateFlow()
-
-    /** True while the user can still add a custom category (fewer than [MAX_CUSTOM_CATEGORIES] custom entries). */
     val canAddCategory: Boolean get() =
-        _availableCategories.value.count { it != DEFAULT_CATEGORY } < MAX_CUSTOM_CATEGORIES
+        _uiState.value.availableCategories.count { it != DEFAULT_CATEGORY } < MAX_CUSTOM_CATEGORIES
 
-    private val _category = MutableStateFlow(resolveDefaultCategory(_availableCategories.value, editId))
-    /** Currently selected category for this item. */
-    val category: StateFlow<String> = _category.asStateFlow()
-
-    // True once the user has explicitly picked a date (or in edit mode where the date is pre-loaded).
-    // Prevents EXIF prefill from overwriting a deliberate choice.
-    private var _dateSetByUser = editId != null
+    // True once the user has explicitly picked a date; prevents EXIF prefill from overwriting it.
+    private var dateSetByUser = editId != null
 
     private var searchJob: Job? = null
-    private val cleanupScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-
-    // Tracks all image files copied during this session so orphans can be cleaned up.
-    private val copiedPhotoPaths = mutableSetOf<String>()
-    // The original photo path when editing — must never be deleted by this ViewModel.
-    private var originalPhotoPath: String? = null
 
     init {
+        viewModelScope.launch {
+            categoryRepository.categories.collect { customCategories ->
+                _uiState.update { state ->
+                    val available = listOf(DEFAULT_CATEGORY) + customCategories
+                    val selectedCategory = when {
+                        state.category in available -> state.category
+                        customCategories.size == 1 && editId == null -> customCategories[0]
+                        else -> DEFAULT_CATEGORY
+                    }
+                    state.copy(availableCategories = available, category = selectedCategory)
+                }
+            }
+        }
         if (editId != null) {
             viewModelScope.launch {
-                repository.getItemById(editId)?.let { m ->
-                    _photoPath.value = m.photoPath
-                    originalPhotoPath = m.photoPath
-                    _name.value = m.name
-                    _notes.value = m.notes
-                    _dateAcquired.value = m.dateAcquired
-                    _placeName.value = m.placeName
-                    _latitude.value = m.latitude
-                    _longitude.value = m.longitude
-                    _category.value = m.category
+                repository.getItemById(editId)?.let { item ->
+                    imagePicker.originalPhotoPath = item.photoPath
+                    _uiState.update { state ->
+                        state.copy(
+                            photoPath = item.photoPath,
+                            name = item.name,
+                            notes = item.notes,
+                            dateAcquired = item.dateAcquired,
+                            placeName = item.placeName,
+                            latitude = item.latitude,
+                            longitude = item.longitude,
+                            category = item.category,
+                        )
+                    }
                 }
             }
         }
     }
 
-    /** Copies the image at [sourcePath] to internal storage on the IO dispatcher and updates [photoPath]. */
     fun onPhotoSelected(sourcePath: String) {
-        viewModelScope.launch(Dispatchers.Default) {
-            val path = imageStorage.copyToInternalStorage(sourcePath)
-            if (path != null) {
-                copiedPhotoPaths.add(path)
-            }
-            _photoPath.value = path
+        imagePicker.onPhotoSelected(sourcePath) { path ->
+            _uiState.update { it.copy(photoPath = path) }
         }
     }
 
-    /**
-     * Pre-fills location from EXIF GPS coordinates if no location has been set yet.
-     * Performs reverse geocoding in the background; silently ignored on failure.
-     */
     fun prefillLocationFromExif(lat: Double, lng: Double) {
-        if (_latitude.value != 0.0 || _longitude.value != 0.0 || _placeName.value.isNotBlank()) return
+        val state = _uiState.value
+        if (state.latitude != 0.0 || state.longitude != 0.0 || state.placeName.isNotBlank()) return
         viewModelScope.launch {
-            try {
+            runCatching {
                 val resolved = locationService.reverseGeocode(lat, lng)
-                _latitude.value = lat
-                _longitude.value = lng
-                _placeName.value = resolved
-            } catch (_: Exception) { }
+                _uiState.update { it.copy(latitude = lat, longitude = lng, placeName = resolved) }
+            }
         }
     }
 
-    /** Updates the item name field. */
-    fun onNameChange(value: String) { _name.value = value }
-    /** Updates the notes field. */
-    fun onNotesChange(value: String) { _notes.value = value }
-    /** Updates the acquisition date; marks the date as user-set so EXIF prefill won't overwrite it. */
-    fun onDateChange(date: LocalDate) { _dateSetByUser = true; _dateAcquired.value = date }
-    /** Updates the selected category. */
-    fun onCategoryChange(value: String) { _category.value = value }
+    fun onNameChange(value: String) { _uiState.update { it.copy(name = value) } }
+    fun onNotesChange(value: String) { _uiState.update { it.copy(notes = value) } }
+    fun onDateChange(date: LocalDate) {
+        dateSetByUser = true
+        _uiState.update { it.copy(dateAcquired = date) }
+    }
+    fun onCategoryChange(value: String) { _uiState.update { it.copy(category = value) } }
 
-    /**
-     * Pre-fills the acquisition date from EXIF metadata if the user has not yet chosen a date.
-     * No-op in edit mode or after the user has opened the date picker.
-     */
     fun prefillDateFromExif(date: LocalDate) {
-        if (_dateSetByUser) return
-        _dateAcquired.value = date
+        if (dateSetByUser) return
+        _uiState.update { it.copy(dateAcquired = date) }
     }
 
-    /**
-     * Creates a new custom category, persists it to settings, and auto-selects it.
-     * Applies the same validation as [com.travelsouvenirs.main.ui.settings.SettingsViewModel.addCategory]:
-     * no duplicates (case-insensitive), no match against [DEFAULT_CATEGORY], max [MAX_CUSTOM_CATEGORIES].
-     * @return true if the category was added and selected; false if validation failed.
-     */
     fun addCategoryOnTheFly(name: String): Boolean {
         val trimmed = name.trim()
         if (trimmed.isBlank() || trimmed.contains(',')) return false
-        val custom = _availableCategories.value.filter { it != DEFAULT_CATEGORY }
+        val custom = _uiState.value.availableCategories.filter { it != DEFAULT_CATEGORY }
         if (custom.size >= MAX_CUSTOM_CATEGORIES) return false
         val isDuplicate = trimmed.equals(DEFAULT_CATEGORY, ignoreCase = true) ||
-            _availableCategories.value.any { it.equals(trimmed, ignoreCase = true) }
+            _uiState.value.availableCategories.any { it.equals(trimmed, ignoreCase = true) }
         if (isDuplicate) return false
-        val updatedCustom = custom + trimmed
-        _availableCategories.value = listOf(DEFAULT_CATEGORY) + updatedCustom
-        settings.putString(KEY_CATEGORIES, updatedCustom.joinToString(","))
-        _category.value = trimmed
+        _uiState.update { it.copy(category = trimmed) }
+        viewModelScope.launch { categoryRepository.add(trimmed) }
         return true
     }
 
-    /**
-     * Opens the unified location dialog. Pre-populates the pending pin from the committed
-     * location if one exists; otherwise tries GPS silently (no error shown on failure).
-     */
     fun openLocationDialog() {
-        _searchQuery.value = ""
-        _searchResults.value = emptyList()
-        _locationError.value = null
-        val lat = _latitude.value
-        val lng = _longitude.value
-        if (lat != 0.0 && lng != 0.0) {
-            _pendingLat.value = lat
-            _pendingLng.value = lng
-            _cameraMoveId.value++
+        val state = _uiState.value
+        _uiState.update { it.copy(
+            searchQuery = "",
+            searchResults = emptyList(),
+            locationError = null,
+            showLocationDialog = true,
+        ) }
+        if (state.latitude != 0.0 && state.longitude != 0.0) {
+            _uiState.update { it.copy(
+                pendingLat = state.latitude,
+                pendingLng = state.longitude,
+                cameraMoveId = state.cameraMoveId + 1,
+            ) }
         } else {
-            _pendingLat.value = null
-            _pendingLng.value = null
+            _uiState.update { it.copy(pendingLat = null, pendingLng = null) }
             viewModelScope.launch {
-                _isLocating.value = true
-                try {
-                    val loc = locationService.getCurrentLocation()
-                    if (loc != null) {
-                        _pendingLat.value = loc.lat
-                        _pendingLng.value = loc.lng
-                        _cameraMoveId.value++
+                _uiState.update { it.copy(isLocating = true) }
+                runCatching {
+                    locationService.getCurrentLocation()?.let { loc ->
+                        _uiState.update { it.copy(
+                            pendingLat = loc.lat,
+                            pendingLng = loc.lng,
+                            cameraMoveId = it.cameraMoveId + 1,
+                        ) }
                     }
-                } catch (_: Exception) {
-                    // Silently ignored — user can tap the map or search instead
-                } finally {
-                    _isLocating.value = false
                 }
+                _uiState.update { it.copy(isLocating = false) }
             }
         }
-        _showLocationDialog.value = true
     }
 
-    /** Closes the location picker dialog and cancels any in-flight search. */
     fun closeLocationDialog() {
-        _showLocationDialog.value = false
+        _uiState.update { it.copy(showLocationDialog = false) }
         searchJob?.cancel()
     }
 
-    /** Debounces geocoder search by 400 ms; clears results when query is fewer than 2 characters. */
     fun onSearchQueryChange(query: String) {
-        _searchQuery.value = query
+        _uiState.update { it.copy(searchQuery = query) }
         searchJob?.cancel()
         if (query.length < 2) {
-            _searchResults.value = emptyList()
+            _uiState.update { it.copy(searchResults = emptyList()) }
             return
         }
         searchJob = viewModelScope.launch {
             delay(400)
-            _isSearching.value = true
-            _searchResults.value = locationService.searchByName(query)
-            _isSearching.value = false
+            _uiState.update { it.copy(isSearching = true) }
+            val results = locationService.searchByName(query)
+            _uiState.update { it.copy(searchResults = results, isSearching = false) }
         }
     }
 
-    /**
-     * Places the pending pin at the selected [place] and animates the camera there.
-     * Does not close the dialog — the user must tap Confirm.
-     */
     fun onPlaceSelected(place: PlaceResult) {
-        _pendingLat.value = place.latitude
-        _pendingLng.value = place.longitude
-        _searchQuery.value = ""
-        _searchResults.value = emptyList()
-        _cameraMoveId.value++
-        if (_name.value.isBlank()) _name.value = place.name.split(", ").first()
+        _uiState.update { it.copy(
+            pendingLat = place.latitude,
+            pendingLng = place.longitude,
+            searchQuery = "",
+            searchResults = emptyList(),
+            cameraMoveId = it.cameraMoveId + 1,
+            name = if (it.name.isBlank()) place.name.split(", ").first() else it.name,
+        ) }
     }
 
-    /**
-     * Fetches the device's current GPS location and places the pending pin there.
-     * Animates the camera to the new position. Shows an error if location is unavailable.
-     * Does not close the dialog — the user must tap Confirm.
-     */
     fun fetchCurrentLocation() {
         viewModelScope.launch {
-            _isLocating.value = true
-            _locationError.value = null
+            _uiState.update { it.copy(isLocating = true, locationError = null) }
             try {
                 val location = locationService.getCurrentLocation()
                 if (location != null) {
-                    _pendingLat.value = location.lat
-                    _pendingLng.value = location.lng
-                    _cameraMoveId.value++
+                    _uiState.update { it.copy(
+                        pendingLat = location.lat,
+                        pendingLng = location.lng,
+                        cameraMoveId = it.cameraMoveId + 1,
+                    ) }
                 } else {
-                    _locationError.value = "Could not get location. Try again."
+                    _uiState.update { it.copy(locationError = "Could not get location. Try again.") }
                 }
             } catch (e: Exception) {
-                _locationError.value = "Location error: ${e.message}"
+                _uiState.update { it.copy(locationError = "Location error: ${e.message}") }
             } finally {
-                _isLocating.value = false
+                _uiState.update { it.copy(isLocating = false) }
             }
         }
     }
 
-    /**
-     * Updates the pending pin position from a map tap or drag.
-     * Does NOT increment [_cameraMoveId] so the camera does not snap back.
-     */
     fun onPendingLocationChanged(lat: Double, lng: Double) {
-        _pendingLat.value = lat
-        _pendingLng.value = lng
+        _uiState.update { it.copy(pendingLat = lat, pendingLng = lng) }
     }
 
-    /**
-     * Reverse-geocodes the pending pin, commits it to the form, and closes the dialog.
-     */
     fun confirmLocation() {
-        val lat = _pendingLat.value ?: return
-        val lng = _pendingLng.value ?: return
+        val state = _uiState.value
+        val lat = state.pendingLat ?: return
+        val lng = state.pendingLng ?: return
         viewModelScope.launch {
-            _isLocating.value = true
+            _uiState.update { it.copy(isLocating = true) }
             try {
                 val resolved = locationService.reverseGeocode(lat, lng)
-                _latitude.value = lat
-                _longitude.value = lng
-                _placeName.value = resolved
-                if (_name.value.isBlank()) _name.value = resolved.split(", ").first()
+                _uiState.update { it.copy(
+                    latitude = lat,
+                    longitude = lng,
+                    placeName = resolved,
+                    name = if (it.name.isBlank()) resolved.split(", ").first() else it.name,
+                ) }
             } finally {
-                _isLocating.value = false
+                _uiState.update { it.copy(isLocating = false) }
             }
             closeLocationDialog()
         }
     }
 
-    /** Persists the item; no-ops if photo or name is missing. Sets [isSaved] to true on success. */
     fun saveItem() {
-        val path = _photoPath.value ?: return
-        if (_name.value.isBlank()) return
+        val state = _uiState.value
+        val path = state.photoPath ?: return
         viewModelScope.launch {
-            // Clean up any previously-copied photos that were replaced before saving.
-            copiedPhotoPaths
-                .filter { it != path }
-                .forEach { imageStorage.deleteImage(it) }
-            copiedPhotoPaths.clear()
-
-            // If editing and the user picked a new photo, delete the old one.
-            val orig = originalPhotoPath
-            if (orig != null && orig != path) {
-                imageStorage.deleteImage(orig)
-            }
-
-            repository.insertItem(
-                Item(
-                    id = editId ?: 0,
-                    name = _name.value,
-                    notes = _notes.value,
-                    photoPath = path,
-                    latitude = _latitude.value,
-                    longitude = _longitude.value,
-                    placeName = _placeName.value,
-                    dateAcquired = _dateAcquired.value,
-                    category = _category.value
-                )
-            )
-            _isSaved.value = true
+            imagePicker.cleanupOnSave(path)
+            val saved = saveItem(Item(
+                id = editId ?: 0,
+                name = state.name,
+                notes = state.notes,
+                photoPath = path,
+                latitude = state.latitude,
+                longitude = state.longitude,
+                placeName = state.placeName,
+                dateAcquired = state.dateAcquired,
+                category = state.category,
+            ))
+            if (saved) _uiState.update { it.copy(isSaved = true) }
         }
     }
 
-    /**
-     * Called when the ViewModel is destroyed (user navigated away).
-     * Deletes any copied photos that were never saved to the database.
-     */
     override fun onCleared() {
         super.onCleared()
-        if (!_isSaved.value && copiedPhotoPaths.isNotEmpty()) {
-            val paths = copiedPhotoPaths.toList()
-            cleanupScope.launch {
-                paths.forEach { path ->
-                    try { imageStorage.deleteImage(path) } catch (_: Exception) { }
-                }
-                cleanupScope.cancel()
-            }
+        if (!_uiState.value.isSaved) {
+            imagePicker.cleanupOrphansAndClose()
         } else {
-            cleanupScope.cancel()
+            imagePicker.close()
         }
     }
-}
-
-private fun resolveDefaultCategory(available: List<String>, editId: Long?): String {
-    if (editId != null) return DEFAULT_CATEGORY  // will be overwritten by init block
-    val custom = available.filter { it != DEFAULT_CATEGORY }
-    return if (custom.size == 1) custom[0] else DEFAULT_CATEGORY
 }

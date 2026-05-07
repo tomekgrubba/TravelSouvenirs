@@ -2,8 +2,7 @@ package com.travelsouvenirs.main.ui.shared
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.russhwolf.settings.Settings
-import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.Item
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,22 +16,16 @@ import kotlinx.coroutines.launch
 /**
  * Shared ViewModel that holds category filter state used by both the List and Map screens.
  * Scoped to MainScreen so both tabs observe the same selection.
- * Only categories that have at least one item assigned are shown in the filter.
+ * Category list comes from the Room categories table, not from items.
  */
 class CategoryFilterViewModel(
-    private val settings: Settings,
-    private val repository: ItemRepository,
+    private val categoryRepository: CategoryRepository,
 ) : ViewModel() {
 
-    /** Categories derived from actual items — only non-empty categories are included. */
-    val availableCategories: StateFlow<List<String>> = repository.allItems
-        .map { items ->
-            items.map { it.category }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .sortedWith(compareBy { if (it == DEFAULT_CATEGORY) "" else it.lowercase() })
-        }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    /** Categories from the Room table — DEFAULT_CATEGORY prepended, then custom in alphabetical order. */
+    val availableCategories: StateFlow<List<String>> = categoryRepository.categories
+        .map { custom -> listOf(DEFAULT_CATEGORY) + custom }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, listOf(DEFAULT_CATEGORY))
 
     /** Snapshot set of all known categories. */
     val allCategoriesSet: Set<String> get() = availableCategories.value.toSet()

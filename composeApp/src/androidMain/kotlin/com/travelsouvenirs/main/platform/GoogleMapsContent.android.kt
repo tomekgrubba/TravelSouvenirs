@@ -34,7 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -47,9 +48,8 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.travelsouvenirs.main.di.LocalCategoryFilter
+import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.theme.AppStyle
-import com.travelsouvenirs.main.di.LocalLocationService
-import com.travelsouvenirs.main.di.LocalItemRepository
 import com.travelsouvenirs.main.ui.map.ItemGroup
 import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
 import com.travelsouvenirs.main.ui.map.MapViewModel
@@ -69,13 +69,12 @@ private const val LOCATION_ZOOM = 10f
 @Composable
 internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val context = LocalContext.current
-    val repository = LocalItemRepository.current
-    val locationService = LocalLocationService.current
+    val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
 
     val mapTheme = rememberMapTheme()
     val appStyle = rememberAppStyle()
-    val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
+    val viewModel: MapViewModel = koinViewModel()
     val allItems by viewModel.items.collectAsState()
     val allPins by viewModel.itemPins.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()

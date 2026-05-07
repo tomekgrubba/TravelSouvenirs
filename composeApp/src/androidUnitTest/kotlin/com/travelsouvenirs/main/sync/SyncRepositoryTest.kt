@@ -6,7 +6,7 @@ import com.travelsouvenirs.main.data.ItemDao
 import com.travelsouvenirs.main.data.ItemEntity
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.network.NetworkMonitor
-import com.travelsouvenirs.main.util.KEY_WIFI_ONLY_SYNC
+import com.travelsouvenirs.main.util.AppSettings
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -87,43 +87,50 @@ class SyncRepositoryTest {
 
     private fun buildRepo(
         networkMonitor: NetworkMonitor,
-        settings: Settings,
+        appSettings: AppSettings,
         authUserId: String? = null,
-    ) = SyncRepository(
-        dao = NoOpItemDao(),
-        firestore = mock<FirebaseFirestore>(),
-        imageSyncHelper = mock<ImageSyncHelper>(),
-        authRepository = FakeAuthRepository(authUserId),
-        settings = settings,
-        imageStorage = mock<ImageStorage>(),
-        networkMonitor = networkMonitor,
-    )
+    ): SyncCoordinator {
+        val firestore = mock<FirebaseFirestore>()
+        val dao = NoOpItemDao()
+        val categoryRepo = com.travelsouvenirs.main.data.CategoryRepository(
+            com.travelsouvenirs.main.data.FakeCategoryDao()
+        )
+        return SyncCoordinator(
+            imageSyncHelper = mock<ImageSyncHelper>(),
+            authRepository = FakeAuthRepository(authUserId),
+            appSettings = appSettings,
+            networkMonitor = networkMonitor,
+            metadataSync = MetadataSyncService(dao, firestore, appSettings),
+            imageSync = ImageSyncService(dao, mock<com.travelsouvenirs.main.image.ImageStorage>()),
+            categorySync = CategorySyncService(firestore, categoryRepo, appSettings),
+        )
+    }
+
+    private fun fakeAppSettings(wifiOnly: Boolean = false): AppSettings =
+        AppSettings(FakeSettings()).also { it.wifiOnlySync = wifiOnly }
 
     // ── canSync() guard tests ─────────────────────────────────────────────────
 
     @Test
     fun `sync skipped entirely when wifi-only enabled and not on wifi`() = runTest {
-        val settings = FakeSettings(mapOf(KEY_WIFI_ONLY_SYNC to true))
+        val appSettings = fakeAppSettings(wifiOnly = true)
         val repo = buildRepo(
             networkMonitor = FakeNetworkMonitor(connected = true, wifi = false),
-            settings = settings,
+            appSettings = appSettings,
         )
 
         repo.sync()
 
         assertFalse(repo.isSyncing.value, "isSyncing should stay false when canSync=false")
         assertFalse(repo.isSyncingImages.value, "isSyncingImages should stay false when canSync=false")
-        // Timestamp must not be written when sync is skipped
-        val lastSync = settings.getLong("last_sync_millis", 0L)
-        assertTrue(lastSync == 0L, "last_sync_millis should not be updated when sync is skipped")
+        assertTrue(appSettings.lastSyncMillis == 0L, "last_sync_millis should not be updated when sync is skipped")
     }
 
     @Test
     fun `syncData skipped when wifi-only enabled and not on wifi`() = runTest {
-        val settings = FakeSettings(mapOf(KEY_WIFI_ONLY_SYNC to true))
         val repo = buildRepo(
             networkMonitor = FakeNetworkMonitor(connected = true, wifi = false),
-            settings = settings,
+            appSettings = fakeAppSettings(wifiOnly = true),
         )
 
         repo.syncData()
@@ -133,10 +140,9 @@ class SyncRepositoryTest {
 
     @Test
     fun `syncImages skipped when wifi-only enabled and not on wifi`() = runTest {
-        val settings = FakeSettings(mapOf(KEY_WIFI_ONLY_SYNC to true))
         val repo = buildRepo(
             networkMonitor = FakeNetworkMonitor(connected = true, wifi = false),
-            settings = settings,
+            appSettings = fakeAppSettings(wifiOnly = true),
         )
 
         repo.syncImages()
@@ -146,15 +152,11 @@ class SyncRepositoryTest {
 
     @Test
     fun `sync allowed when wifi-only disabled regardless of wifi state`() = runTest {
-        // wifiOnly=false → canSync() is true → sync() proceeds past the guard
-        // (returns early at null-user check, but at least canSync doesn't block it)
-        val settings = FakeSettings(mapOf(KEY_WIFI_ONLY_SYNC to false))
         val repo = buildRepo(
             networkMonitor = FakeNetworkMonitor(connected = true, wifi = false),
-            settings = settings,
+            appSettings = fakeAppSettings(wifiOnly = false),
         )
 
-        // Should not throw and should complete cleanly
         repo.sync()
 
         assertFalse(repo.isSyncing.value)
@@ -163,13 +165,11 @@ class SyncRepositoryTest {
 
     @Test
     fun `sync allowed when wifi-only enabled and device is on wifi`() = runTest {
-        val settings = FakeSettings(mapOf(KEY_WIFI_ONLY_SYNC to true))
         val repo = buildRepo(
             networkMonitor = FakeNetworkMonitor(connected = true, wifi = true),
-            settings = settings,
+            appSettings = fakeAppSettings(wifiOnly = true),
         )
 
-        // canSync() == true, null user → returns early after canSync check, no crash
         repo.sync()
 
         assertFalse(repo.isSyncing.value)
@@ -178,15 +178,11 @@ class SyncRepositoryTest {
 
     @Test
     fun `concurrent syncData calls do not double-sync`() = runTest {
-        val settings = FakeSettings()
-        // Using null user so syncData returns early without needing Firestore
         val repo = buildRepo(
             networkMonitor = FakeNetworkMonitor(connected = true, wifi = true),
-            settings = settings,
+            appSettings = fakeAppSettings(),
         )
 
-        // First call completes cleanly; second call would be guarded by _isSyncing=true
-        // (both return early here due to null user, but the logic still won't double-sync)
         repo.syncData()
         repo.syncData()
 

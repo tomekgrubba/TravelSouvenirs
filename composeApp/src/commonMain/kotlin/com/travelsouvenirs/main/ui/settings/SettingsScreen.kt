@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
@@ -34,10 +36,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -54,10 +59,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.travelsouvenirs.main.di.LocalAuthRepository
-import com.travelsouvenirs.main.di.LocalItemRepository
-import com.travelsouvenirs.main.di.LocalSettings
+import com.travelsouvenirs.main.auth.AuthRepository
+import com.travelsouvenirs.main.data.ItemRepository
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.MapTheme
 import com.travelsouvenirs.main.platform.nativeMapProviderName
@@ -68,16 +73,14 @@ import travelsouvenirs.composeapp.generated.resources.*
 
 private val sectionCardShape = RoundedCornerShape(16.dp)
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onSignInClick: () -> Unit = {}) {
-    val settings = LocalSettings.current
-    val repository = LocalItemRepository.current
-    val authRepository = LocalAuthRepository.current
-    val vm: SettingsViewModel = viewModel { SettingsViewModel(settings, repository) }
+fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
+    val vm: SettingsViewModel = koinViewModel()
+    val authRepository: AuthRepository = koinInject()
+    val repository: ItemRepository = koinInject()
     val currentUser by authRepository.currentUser.collectAsState()
     val scope = rememberCoroutineScope()
-
-    LaunchedEffect(Unit) { vm.refreshCategories() }
 
     val customCategories by vm.customCategories.collectAsState()
     val appStyle by vm.appStyle.collectAsState()
@@ -422,89 +425,109 @@ fun SettingsScreen(onSignInClick: () -> Unit = {}) {
 
     // ── Layout ───────────────────────────────────────────────────────────────
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(if (isPolaroid) 20.dp else 8.dp)
-    ) {
-        if (isPolaroid) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            PolaroidSectionCard(
-                title = stringResource(Res.string.section_sync),
-                rotation = -0.5f
-            ) { syncContent() }
-
-            PolaroidSectionCard(
-                title = stringResource(Res.string.section_categories),
-                rotation = 0.4f
-            ) { categoriesContent() }
-
-            PolaroidSectionCard(
-                title = stringResource(Res.string.section_developer_options),
-                rotation = -0.3f,
-                collapsible = true,
-                expanded = devOptionsExpanded,
-                onExpandToggle = { devOptionsExpanded = !devOptionsExpanded }
-            ) { devOptionsContent() }
-
-            Spacer(modifier = Modifier.height(8.dp))
-        } else {
-            // ── Sync & Account ──────────────────────────────────────────────
-            Text(
-                stringResource(Res.string.section_sync),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 16.dp, bottom = 2.dp)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = if (isPolaroid) TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ) else TopAppBarDefaults.topAppBarColors(),
+                title = { Text(stringResource(Res.string.title_settings)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.cd_back))
+                    }
+                }
             )
-            Card(
-                shape = sectionCardShape,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) { syncContent() }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (isPolaroid) 20.dp else 8.dp)
+        ) {
+            if (isPolaroid) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // ── Categories ──────────────────────────────────────────────────
-            Text(
-                stringResource(Res.string.section_categories),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-            )
-            Text(
-                stringResource(Res.string.text_categories_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Card(
-                shape = sectionCardShape,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) { categoriesContent() }
+                PolaroidSectionCard(
+                    title = stringResource(Res.string.section_sync),
+                    rotation = -0.5f
+                ) { syncContent() }
 
-            // ── Developer Options ───────────────────────────────────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { devOptionsExpanded = !devOptionsExpanded }
-                    .padding(top = 16.dp, bottom = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                PolaroidSectionCard(
+                    title = stringResource(Res.string.section_categories),
+                    rotation = 0.4f
+                ) { categoriesContent() }
+
+                PolaroidSectionCard(
+                    title = stringResource(Res.string.section_developer_options),
+                    rotation = -0.3f,
+                    collapsible = true,
+                    expanded = devOptionsExpanded,
+                    onExpandToggle = { devOptionsExpanded = !devOptionsExpanded }
+                ) { devOptionsContent() }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            } else {
+                // ── Sync & Account ──────────────────────────────────────────────
                 Text(
-                    stringResource(Res.string.section_developer_options),
+                    stringResource(Res.string.section_sync),
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.padding(top = 16.dp, bottom = 2.dp)
                 )
-                Icon(
-                    imageVector = if (devOptionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (devOptionsExpanded) { devOptionsContent() }
+                Card(
+                    shape = sectionCardShape,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) { syncContent() }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                // ── Categories ──────────────────────────────────────────────────
+                Text(
+                    stringResource(Res.string.section_categories),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+                )
+                Text(
+                    stringResource(Res.string.text_categories_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Card(
+                    shape = sectionCardShape,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) { categoriesContent() }
+
+                // ── Developer Options ───────────────────────────────────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { devOptionsExpanded = !devOptionsExpanded }
+                        .padding(top = 16.dp, bottom = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(Res.string.section_developer_options),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = if (devOptionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (devOptionsExpanded) { devOptionsContent() }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }

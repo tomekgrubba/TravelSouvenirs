@@ -1,6 +1,8 @@
 package com.travelsouvenirs.main.ui.add
 
-import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.data.CategoryEntity
+import com.travelsouvenirs.main.data.CategoryRepository
+import com.travelsouvenirs.main.data.FakeCategoryDao
 import com.travelsouvenirs.main.data.FakeItemDao
 import com.travelsouvenirs.main.data.ItemEntity
 import com.travelsouvenirs.main.data.ItemRepository
@@ -10,6 +12,7 @@ import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.location.PlaceResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -43,47 +46,22 @@ private class FakeImageStorage : ImageStorage {
     override fun localPathForDownload(firebaseId: String): String = "/cache/$firebaseId.jpg"
 }
 
-private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings {
-    private val map = mutableMapOf<String, Any>().also { it.putAll(initial) }
-    override val keys: Set<String> get() = map.keys
-    override val size: Int get() = map.size
-    override fun clear() = map.clear()
-    override fun remove(key: String) { map.remove(key) }
-    override fun hasKey(key: String) = map.containsKey(key)
-    override fun putInt(key: String, value: Int) { map[key] = value }
-    override fun getInt(key: String, defaultValue: Int) = map[key] as? Int ?: defaultValue
-    override fun getIntOrNull(key: String) = map[key] as? Int
-    override fun putLong(key: String, value: Long) { map[key] = value }
-    override fun getLong(key: String, defaultValue: Long) = map[key] as? Long ?: defaultValue
-    override fun getLongOrNull(key: String) = map[key] as? Long
-    override fun putString(key: String, value: String) { map[key] = value }
-    override fun getString(key: String, defaultValue: String) = map[key] as? String ?: defaultValue
-    override fun getStringOrNull(key: String) = map[key] as? String
-    override fun putFloat(key: String, value: Float) { map[key] = value }
-    override fun getFloat(key: String, defaultValue: Float) = map[key] as? Float ?: defaultValue
-    override fun getFloatOrNull(key: String) = map[key] as? Float
-    override fun putDouble(key: String, value: Double) { map[key] = value }
-    override fun getDouble(key: String, defaultValue: Double) = map[key] as? Double ?: defaultValue
-    override fun getDoubleOrNull(key: String) = map[key] as? Double
-    override fun putBoolean(key: String, value: Boolean) { map[key] = value }
-    override fun getBoolean(key: String, defaultValue: Boolean) = map[key] as? Boolean ?: defaultValue
-    override fun getBooleanOrNull(key: String) = map[key] as? Boolean
-}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddItemViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var dao: FakeItemDao
+    private lateinit var categoryDao: FakeCategoryDao
     private lateinit var repository: ItemRepository
     private val fakeLocationService = FakeLocationService()
     private val fakeImageStorage = FakeImageStorage()
-    private val fakeSettings = FakeSettings()
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         dao = FakeItemDao()
+        categoryDao = FakeCategoryDao()
         repository = ItemRepository(dao)
     }
 
@@ -95,48 +73,69 @@ class AddItemViewModelTest {
     private fun viewModel(
         editId: Long? = null,
         locationService: LocationService = fakeLocationService,
-        settings: Settings = fakeSettings
-    ) = AddItemViewModel(repository, locationService, fakeImageStorage, editId, settings)
+        categoryDaoOverride: FakeCategoryDao = categoryDao,
+    ) = AddItemViewModel(
+        repository,
+        locationService,
+        fakeImageStorage,
+        editId,
+        CategoryRepository(categoryDaoOverride),
+    )
+
+    private val AddItemViewModel.state get() = uiState.value
+
+    private fun setPhotoPath(vm: AddItemViewModel, path: String) {
+        val field = AddItemViewModel::class.java.getDeclaredField("_uiState")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        val stateFlow = field.get(vm) as MutableStateFlow<AddItemUiState>
+        stateFlow.value = stateFlow.value.copy(photoPath = path)
+    }
 
     @Test
-    fun `initial state has blank name and notes and parses available categories`() {
-        val settings = FakeSettings(mapOf("categories" to "Trip,Gifts"))
-        val vm = viewModel(settings = settings)
-        assertEquals("", vm.name.value)
-        assertEquals("", vm.notes.value)
-        assertEquals("", vm.placeName.value)
-        assertEquals(listOf("Default", "Trip", "Gifts"), vm.availableCategories.value)
-        assertEquals("Default", vm.category.value)
+    fun `initial state has blank name and notes`() {
+        val vm = viewModel()
+        assertEquals("", vm.state.name)
+        assertEquals("", vm.state.notes)
+        assertEquals("", vm.state.placeName)
+        assertEquals("Default", vm.state.category)
+    }
+
+    @Test
+    fun `initial state loads categories from room`() = runTest {
+        categoryDao.insertCategory(CategoryEntity("Gifts"))
+        categoryDao.insertCategory(CategoryEntity("Trip"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(listOf("Default", "Gifts", "Trip"), vm.state.availableCategories)
     }
 
     @Test
     fun `onNameChange updates name state`() {
         val vm = viewModel()
         vm.onNameChange("Colosseum")
-        assertEquals("Colosseum", vm.name.value)
+        assertEquals("Colosseum", vm.state.name)
     }
 
     @Test
     fun `onNotesChange updates notes state`() {
         val vm = viewModel()
         vm.onNotesChange("Bought at the entrance")
-        assertEquals("Bought at the entrance", vm.notes.value)
+        assertEquals("Bought at the entrance", vm.state.notes)
     }
 
     @Test
     fun `onCategoryChange updates category state`() {
         val vm = viewModel()
         vm.onCategoryChange("Custom Category")
-        assertEquals("Custom Category", vm.category.value)
+        assertEquals("Custom Category", vm.state.category)
     }
 
     @Test
     fun `onPhotoSelected copies photo and updates photoPath state`() = runTest {
         val vm = viewModel()
-        // onPhotoSelected runs on Dispatchers.Default (not the test dispatcher),
-        // so we verify via reflection that the path is set correctly.
         setPhotoPath(vm, "/source/image.jpg")
-        assertEquals("/source/image.jpg", vm.photoPath.value)
+        assertEquals("/source/image.jpg", vm.state.photoPath)
     }
 
     @Test
@@ -144,24 +143,24 @@ class AddItemViewModelTest {
         val vm = viewModel()
         val newDate = LocalDate(2023, 3, 21)
         vm.onDateChange(newDate)
-        assertEquals(newDate, vm.dateAcquired.value)
+        assertEquals(newDate, vm.state.dateAcquired)
     }
 
     @Test
     fun `onPlaceSelected sets pending coords, clears search, and auto-fills blank name`() {
         val vm = viewModel()
         vm.onPlaceSelected(PlaceResult("Rome", 41.9, 12.5))
-        assertEquals(41.9, vm.pendingLat.value)
-        assertEquals(12.5, vm.pendingLng.value)
-        assertTrue(vm.searchResults.value.isEmpty())
-        assertEquals("Rome", vm.name.value)
+        assertEquals(41.9, vm.state.pendingLat)
+        assertEquals(12.5, vm.state.pendingLng)
+        assertTrue(vm.state.searchResults.isEmpty())
+        assertEquals("Rome", vm.state.name)
     }
 
     @Test
     fun `openLocationDialog sets showLocationDialog to true`() {
         val vm = viewModel()
         vm.openLocationDialog()
-        assertTrue(vm.showLocationDialog.value)
+        assertTrue(vm.state.showLocationDialog)
     }
 
     @Test
@@ -169,7 +168,7 @@ class AddItemViewModelTest {
         val vm = viewModel()
         vm.openLocationDialog()
         vm.closeLocationDialog()
-        assertFalse(vm.showLocationDialog.value)
+        assertFalse(vm.state.showLocationDialog)
     }
 
     @Test
@@ -178,7 +177,7 @@ class AddItemViewModelTest {
         vm.onNameChange("Test")
         vm.onPlaceSelected(PlaceResult("Rome", 41.9, 12.5))
         vm.saveItem()
-        assertFalse(vm.isSaved.value)
+        assertFalse(vm.state.isSaved)
     }
 
     @Test
@@ -186,7 +185,7 @@ class AddItemViewModelTest {
         val vm = viewModel()
         setPhotoPath(vm, "/photo.jpg")
         vm.saveItem()
-        assertFalse(vm.isSaved.value)
+        assertFalse(vm.state.isSaved)
     }
 
     @Test
@@ -207,10 +206,10 @@ class AddItemViewModelTest {
         val vm = viewModel(editId = 5)
         advanceUntilIdle()
 
-        assertEquals("Louvre", vm.name.value)
-        assertEquals("Nice museum", vm.notes.value)
-        assertEquals("Paris", vm.placeName.value)
-        assertEquals("/photos/louvre.jpg", vm.photoPath.value)
+        assertEquals("Louvre", vm.state.name)
+        assertEquals("Nice museum", vm.state.notes)
+        assertEquals("Paris", vm.state.placeName)
+        assertEquals("/photos/louvre.jpg", vm.state.photoPath)
     }
 
     @Test
@@ -225,7 +224,7 @@ class AddItemViewModelTest {
         advanceUntilIdle()
         vm.saveItem()
         advanceUntilIdle()
-        assertTrue(vm.isSaved.value)
+        assertTrue(vm.state.isSaved)
 
         val savedItem = (dao.getAllActiveItems() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.ItemEntity>>).value.first()
         assertEquals("Eiffel Tower", savedItem.name)
@@ -253,7 +252,7 @@ class AddItemViewModelTest {
         setPhotoPath(vm, "/old.jpg")
         vm.saveItem()
         advanceUntilIdle()
-        assertTrue(vm.isSaved.value)
+        assertTrue(vm.state.isSaved)
         assertEquals("New Name", dao.getItemById(7)?.name)
     }
 
@@ -262,16 +261,16 @@ class AddItemViewModelTest {
         val location = LatLon(51.51, -0.12)
         val vm = viewModel(locationService = FakeLocationService(location = location))
         vm.openLocationDialog()
-        assertTrue(vm.showLocationDialog.value)
+        assertTrue(vm.state.showLocationDialog)
 
         vm.fetchCurrentLocation()
         advanceUntilIdle()
 
-        assertEquals(51.51, vm.pendingLat.value)
-        assertEquals(-0.12, vm.pendingLng.value)
-        assertTrue(vm.showLocationDialog.value)
-        assertFalse(vm.isLocating.value)
-        assertEquals("", vm.placeName.value) // not committed until confirmLocation
+        assertEquals(51.51, vm.state.pendingLat)
+        assertEquals(-0.12, vm.state.pendingLng)
+        assertTrue(vm.state.showLocationDialog)
+        assertFalse(vm.state.isLocating)
+        assertEquals("", vm.state.placeName) // not committed until confirmLocation
     }
 
     @Test
@@ -282,9 +281,9 @@ class AddItemViewModelTest {
         vm.fetchCurrentLocation()
         advanceUntilIdle()
 
-        assertTrue(vm.locationError.value != null)
-        assertTrue(vm.showLocationDialog.value, "Dialog should stay open on error")
-        assertFalse(vm.isLocating.value)
+        assertTrue(vm.state.locationError != null)
+        assertTrue(vm.state.showLocationDialog, "Dialog should stay open on error")
+        assertFalse(vm.state.isLocating)
     }
 
     @Test
@@ -293,27 +292,27 @@ class AddItemViewModelTest {
         vm.fetchCurrentLocation()
         advanceUntilIdle()
 
-        assertTrue(vm.locationError.value?.contains("GPS unavailable") == true)
-        assertFalse(vm.isLocating.value)
+        assertTrue(vm.state.locationError?.contains("GPS unavailable") == true)
+        assertFalse(vm.state.isLocating)
     }
 
     @Test
     fun `onSearchQueryChange shorter than 2 chars clears results`() = runTest {
         val vm = viewModel(locationService = FakeLocationService(results = listOf(PlaceResult("Rome", 41.9, 12.5))))
         vm.onSearchQueryChange("R")
-        assertTrue(vm.searchResults.value.isEmpty())
+        assertTrue(vm.state.searchResults.isEmpty())
     }
 
     @Test
     fun `onSearchQueryChange triggers search after debounce delay`() = runTest {
         val vm = viewModel(locationService = FakeLocationService(results = listOf(PlaceResult("Rome", 41.9, 12.5))))
         vm.onSearchQueryChange("Rome")
-        assertTrue(vm.searchResults.value.isEmpty(), "Results should not arrive before delay")
+        assertTrue(vm.state.searchResults.isEmpty(), "Results should not arrive before delay")
 
         advanceUntilIdle()
 
-        assertEquals(1, vm.searchResults.value.size)
-        assertEquals("Rome", vm.searchResults.value[0].name)
+        assertEquals(1, vm.state.searchResults.size)
+        assertEquals("Rome", vm.state.searchResults[0].name)
     }
 
     @Test
@@ -324,8 +323,7 @@ class AddItemViewModelTest {
         vm.onSearchQueryChange("Berl")
         advanceUntilIdle()
 
-        // Only one search should have fired
-        assertEquals(1, vm.searchResults.value.size)
+        assertEquals(1, vm.state.searchResults.size)
     }
 
     @Test
@@ -336,17 +334,17 @@ class AddItemViewModelTest {
         vm.closeLocationDialog()
         advanceUntilIdle()
 
-        assertTrue(vm.searchResults.value.isEmpty(), "Search cancelled by closing dialog should yield no results")
+        assertTrue(vm.state.searchResults.isEmpty(), "Search cancelled by closing dialog should yield no results")
     }
 
     @Test
     fun `onPendingLocationChanged sets pending coords without incrementing cameraMoveId`() {
         val vm = viewModel()
-        val initialCameraId = vm.cameraMoveId.value
+        val initialCameraId = vm.state.cameraMoveId
         vm.onPendingLocationChanged(48.85, 2.35)
-        assertEquals(48.85, vm.pendingLat.value)
-        assertEquals(2.35, vm.pendingLng.value)
-        assertEquals(initialCameraId, vm.cameraMoveId.value)
+        assertEquals(48.85, vm.state.pendingLat)
+        assertEquals(2.35, vm.state.pendingLng)
+        assertEquals(initialCameraId, vm.state.cameraMoveId)
     }
 
     @Test
@@ -358,10 +356,10 @@ class AddItemViewModelTest {
         vm.confirmLocation()
         advanceUntilIdle()
 
-        assertEquals("Paris", vm.placeName.value)
-        assertEquals(48.85, vm.pendingLat.value)
-        assertFalse(vm.showLocationDialog.value)
-        assertFalse(vm.isLocating.value)
+        assertEquals("Paris", vm.state.placeName)
+        assertEquals(48.85, vm.state.pendingLat)
+        assertFalse(vm.state.showLocationDialog)
+        assertFalse(vm.state.isLocating)
     }
 
     @Test
@@ -372,83 +370,74 @@ class AddItemViewModelTest {
         vm.confirmLocation()
         advanceUntilIdle()
 
-        val cameraIdBefore = vm.cameraMoveId.value
+        val cameraIdBefore = vm.state.cameraMoveId
         vm.openLocationDialog()
 
-        assertEquals(41.9, vm.pendingLat.value)
-        assertEquals(12.5, vm.pendingLng.value)
-        assertTrue(vm.cameraMoveId.value > cameraIdBefore)
-        assertTrue(vm.showLocationDialog.value)
+        assertEquals(41.9, vm.state.pendingLat)
+        assertEquals(12.5, vm.state.pendingLng)
+        assertTrue(vm.state.cameraMoveId > cameraIdBefore)
+        assertTrue(vm.state.showLocationDialog)
     }
 
     @Test
-    fun `addCategoryOnTheFly returns true, adds to availableCategories, and auto-selects`() {
+    fun `addCategoryOnTheFly returns true, adds to room, and auto-selects`() = runTest {
         val vm = viewModel()
         assertTrue(vm.addCategoryOnTheFly("Souvenir"))
-        assertTrue(vm.availableCategories.value.contains("Souvenir"))
-        assertEquals("Souvenir", vm.category.value)
+        advanceUntilIdle()
+        assertTrue(vm.state.availableCategories.contains("Souvenir"))
+        assertEquals("Souvenir", vm.state.category)
     }
 
     @Test
-    fun `addCategoryOnTheFly returns false for exact duplicate`() {
+    fun `addCategoryOnTheFly returns false for exact duplicate`() = runTest {
         val vm = viewModel()
         vm.addCategoryOnTheFly("Souvenir")
+        advanceUntilIdle()
         assertFalse(vm.addCategoryOnTheFly("Souvenir"))
-        assertEquals(2, vm.availableCategories.value.size) // Default + Souvenir
+        assertEquals(2, vm.state.availableCategories.size) // Default + Souvenir
     }
 
     @Test
-    fun `addCategoryOnTheFly returns false for case-insensitive duplicate`() {
+    fun `addCategoryOnTheFly returns false for case-insensitive duplicate`() = runTest {
         val vm = viewModel()
         vm.addCategoryOnTheFly("Souvenir")
+        advanceUntilIdle()
         assertFalse(vm.addCategoryOnTheFly("souvenir"))
         assertFalse(vm.addCategoryOnTheFly("SOUVENIR"))
-        assertEquals(2, vm.availableCategories.value.size)
+        assertEquals(2, vm.state.availableCategories.size)
     }
 
     @Test
-    fun `addCategoryOnTheFly returns false when name matches Default`() {
+    fun `addCategoryOnTheFly returns false when name matches Default`() = runTest {
         val vm = viewModel()
         assertFalse(vm.addCategoryOnTheFly("Default"))
         assertFalse(vm.addCategoryOnTheFly("default"))
+        advanceUntilIdle()
+        assertEquals(listOf("Default"), vm.state.availableCategories)
     }
 
     @Test
-    fun `addCategoryOnTheFly returns false when max categories reached`() {
+    fun `addCategoryOnTheFly returns false when max categories reached`() = runTest {
         val vm = viewModel()
-        repeat(5) { i -> vm.addCategoryOnTheFly("Cat$i") }
+        repeat(5) { i -> vm.addCategoryOnTheFly("Cat$i"); advanceUntilIdle() }
         assertFalse(vm.addCategoryOnTheFly("OneMore"))
-        assertEquals(6, vm.availableCategories.value.size) // Default + 5 custom
+        advanceUntilIdle()
+        assertEquals(6, vm.state.availableCategories.size) // Default + 5 custom
     }
 
     @Test
-    fun `addCategoryOnTheFly persists new category to settings`() {
-        val settings = FakeSettings()
-        val vm = viewModel(settings = settings)
+    fun `addCategoryOnTheFly persists new category to room`() = runTest {
+        val vm = viewModel()
         vm.addCategoryOnTheFly("Souvenir")
-        assertEquals("Souvenir", settings.getStringOrNull("categories"))
+        advanceUntilIdle()
+        assertEquals(listOf("Souvenir"), categoryDao.getAllNames())
     }
 
     @Test
-    fun `addCategoryOnTheFly persists multiple categories correctly`() {
-        val settings = FakeSettings()
-        val vm = viewModel(settings = settings)
-        vm.addCategoryOnTheFly("Alpha")
-        vm.addCategoryOnTheFly("Beta")
-        assertEquals("Alpha,Beta", settings.getStringOrNull("categories"))
-    }
-
-    @Test
-    fun `addCategoryOnTheFly returns false when name contains a comma`() {
+    fun `addCategoryOnTheFly returns false when name contains a comma`() = runTest {
         val vm = viewModel()
         assertFalse(vm.addCategoryOnTheFly("Work,Travel"))
-        assertEquals(1, vm.availableCategories.value.size) // only Default
-    }
-
-    private fun setPhotoPath(vm: AddItemViewModel, path: String) {
-        val field = AddItemViewModel::class.java.getDeclaredField("_photoPath")
-        field.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        (field.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<String?>).value = path
+        advanceUntilIdle()
+        assertEquals(listOf("Default"), vm.state.availableCategories)
     }
 }

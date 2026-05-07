@@ -64,12 +64,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.travelsouvenirs.main.di.LocalImageStorage
-import com.travelsouvenirs.main.di.LocalLocationService
-import com.travelsouvenirs.main.di.LocalItemRepository
-import com.travelsouvenirs.main.di.LocalSettings
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
 import com.travelsouvenirs.main.platform.rememberAppStyle
 import com.travelsouvenirs.main.platform.rememberCameraCapture
@@ -85,23 +82,21 @@ import travelsouvenirs.composeapp.generated.resources.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null) {
-    val repository = LocalItemRepository.current
-    val locationService = LocalLocationService.current
-    val imageStorage = LocalImageStorage.current
-    val settings = LocalSettings.current
-    val viewModel: AddItemViewModel = viewModel(key = itemId?.toString() ?: "add") {
-        AddItemViewModel(repository, locationService, imageStorage, itemId, settings)
-    }
+    val viewModel: AddItemViewModel = koinViewModel(
+        key = itemId?.toString() ?: "add",
+        parameters = { parametersOf(itemId) },
+    )
 
-    val photoPath by viewModel.photoPath.collectAsState()
-    val name by viewModel.name.collectAsState()
-    val notes by viewModel.notes.collectAsState()
-    val dateAcquired by viewModel.dateAcquired.collectAsState()
-    val placeName by viewModel.placeName.collectAsState()
-    val category by viewModel.category.collectAsState()
-    val availableCategories by viewModel.availableCategories.collectAsState()
-    val isSaved by viewModel.isSaved.collectAsState()
-    val showLocationDialog by viewModel.showLocationDialog.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val photoPath = uiState.photoPath
+    val name = uiState.name
+    val notes = uiState.notes
+    val dateAcquired = uiState.dateAcquired
+    val placeName = uiState.placeName
+    val category = uiState.category
+    val availableCategories = uiState.availableCategories
+    val isSaved = uiState.isSaved
+    val showLocationDialog = uiState.showLocationDialog
 
     LaunchedEffect(isSaved) {
         if (isSaved) onSaved()
@@ -443,14 +438,15 @@ private fun LocationPickerDialog(
 ) {
     val dialogFieldShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(16.dp)
     val dialogButtonShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(50.dp)
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val searchResults by viewModel.searchResults.collectAsState()
-    val isSearching by viewModel.isSearching.collectAsState()
-    val isLocating by viewModel.isLocating.collectAsState()
-    val locationError by viewModel.locationError.collectAsState()
-    val pendingLat by viewModel.pendingLat.collectAsState()
-    val pendingLng by viewModel.pendingLng.collectAsState()
-    val cameraMoveId by viewModel.cameraMoveId.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val searchQuery = uiState.searchQuery
+    val searchResults = uiState.searchResults
+    val isSearching = uiState.isSearching
+    val isLocating = uiState.isLocating
+    val locationError = uiState.locationError
+    val pendingLat = uiState.pendingLat
+    val pendingLng = uiState.pendingLng
+    val cameraMoveId = uiState.cameraMoveId
 
     Dialog(
         onDismissRequest = { viewModel.closeLocationDialog() },

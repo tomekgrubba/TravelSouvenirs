@@ -1,8 +1,19 @@
 package com.travelsouvenirs.main.ui.settings
 
 import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.data.CategoryRepository
+import com.travelsouvenirs.main.data.FakeCategoryDao
 import com.travelsouvenirs.main.data.FakeItemDao
 import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.util.AppSettings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -44,25 +55,37 @@ private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings
     override fun getBooleanOrNull(key: String): Boolean? = store[key] as? Boolean
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
-    private val fakeRepo = ItemRepository(FakeItemDao())
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    @Before fun setUp() { Dispatchers.setMain(testDispatcher) }
+    @After fun tearDown() { Dispatchers.resetMain() }
+
+    private fun vm(
+        settings: FakeSettings = FakeSettings(),
+        categoryDao: FakeCategoryDao = FakeCategoryDao(),
+    ) = SettingsViewModel(
+        AppSettings(settings),
+        ItemRepository(FakeItemDao()),
+        CategoryRepository(categoryDao),
+    )
 
     @Test
     fun `initial notes is empty string when no key stored`() {
-        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
-        assertEquals("", vm.notes.value)
+        assertEquals("", vm().notes.value)
     }
 
     @Test
     fun `initial notes loaded from pre-existing settings`() {
-        val vm = SettingsViewModel(FakeSettings(mapOf("notes" to "My travel journal")), fakeRepo)
+        val vm = vm(FakeSettings(mapOf("notes" to "My travel journal")))
         assertEquals("My travel journal", vm.notes.value)
     }
 
     @Test
     fun `onNotesChange updates notes state`() {
-        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+        val vm = vm()
         vm.onNotesChange("Remember Paris")
         assertEquals("Remember Paris", vm.notes.value)
     }
@@ -70,22 +93,21 @@ class SettingsViewModelTest {
     @Test
     fun `onNotesChange persists value to settings`() {
         val settings = FakeSettings()
-        val vm = SettingsViewModel(settings, fakeRepo)
-        vm.onNotesChange("Persisted note")
+        vm(settings).onNotesChange("Persisted note")
         assertEquals("Persisted note", settings.getStringOrNull("notes"))
     }
 
     @Test
     fun `new ViewModel instance reads value persisted by previous instance`() {
         val settings = FakeSettings()
-        SettingsViewModel(settings, fakeRepo).onNotesChange("Saved text")
-        assertEquals("Saved text", SettingsViewModel(settings, fakeRepo).notes.value)
+        vm(settings).onNotesChange("Saved text")
+        assertEquals("Saved text", vm(settings).notes.value)
     }
 
     @Test
     fun `onNotesChange with empty string clears persisted value`() {
         val settings = FakeSettings(mapOf("notes" to "Old note"))
-        val vm = SettingsViewModel(settings, fakeRepo)
+        val vm = vm(settings)
         vm.onNotesChange("")
         assertEquals("", vm.notes.value)
         assertEquals("", settings.getStringOrNull("notes"))
@@ -94,7 +116,7 @@ class SettingsViewModelTest {
     @Test
     fun `successive onNotesChange calls each update state and persistence`() {
         val settings = FakeSettings()
-        val vm = SettingsViewModel(settings, fakeRepo)
+        val vm = vm(settings)
         vm.onNotesChange("First")
         vm.onNotesChange("Second")
         vm.onNotesChange("Third")
@@ -103,23 +125,23 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `addCategory returns true and adds category`() {
-        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+    fun `addCategory returns true and adds category`() = runTest {
+        val vm = vm()
         assertTrue(vm.addCategory("Souvenir"))
         assertEquals(listOf("Souvenir"), vm.customCategories.value)
     }
 
     @Test
-    fun `addCategory returns false for exact duplicate`() {
-        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+    fun `addCategory returns false for exact duplicate`() = runTest {
+        val vm = vm()
         vm.addCategory("Souvenir")
         assertFalse(vm.addCategory("Souvenir"))
         assertEquals(1, vm.customCategories.value.size)
     }
 
     @Test
-    fun `addCategory returns false for case-insensitive duplicate`() {
-        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+    fun `addCategory returns false for case-insensitive duplicate`() = runTest {
+        val vm = vm()
         vm.addCategory("Souvenir")
         assertFalse(vm.addCategory("souvenir"))
         assertFalse(vm.addCategory("SOUVENIR"))
@@ -127,40 +149,35 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `addCategory returns false when name matches default category`() {
-        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+    fun `addCategory returns false when name matches default category`() = runTest {
+        val vm = vm()
         assertFalse(vm.addCategory("Default"))
         assertFalse(vm.addCategory("default"))
         assertTrue(vm.customCategories.value.isEmpty())
     }
 
     @Test
-    fun `addCategory returns false for blank input`() {
-        val vm = SettingsViewModel(FakeSettings(), fakeRepo)
+    fun `addCategory returns false for blank input`() = runTest {
+        val vm = vm()
         assertFalse(vm.addCategory("   "))
         assertTrue(vm.customCategories.value.isEmpty())
     }
 
     @Test
-    fun `refreshCategories picks up categories written by another component`() {
-        val settings = FakeSettings()
-        val vm = SettingsViewModel(settings, fakeRepo)
+    fun `categories update reactively when another component writes to the dao`() = runTest {
+        val dao = FakeCategoryDao()
+        val vm = vm(categoryDao = dao)
         assertEquals(emptyList(), vm.customCategories.value)
 
-        // Simulate AddItemViewModel writing a new category directly to Settings
-        settings.putString("categories", "Souvenir")
-        assertEquals(emptyList(), vm.customCategories.value) // stale until refresh
-
-        vm.refreshCategories()
+        dao.insertCategory(com.travelsouvenirs.main.data.CategoryEntity("Souvenir"))
         assertEquals(listOf("Souvenir"), vm.customCategories.value)
     }
 
     @Test
     fun `settings key used is notes`() {
         val settings = FakeSettings()
-        SettingsViewModel(settings, fakeRepo).onNotesChange("value")
-        // Verify the exact key so a rename doesn't silently break persistence
-        assertNull(settings.getStringOrNull("note"))   // typo key should be absent
+        vm(settings).onNotesChange("value")
+        assertNull(settings.getStringOrNull("note"))
         assertEquals("value", settings.getStringOrNull("notes"))
     }
 }

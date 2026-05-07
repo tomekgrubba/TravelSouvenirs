@@ -3,7 +3,9 @@ package com.travelsouvenirs.main.ui.list
 import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.data.FakeItemDao
 import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.util.AppSettings
 import com.travelsouvenirs.main.domain.Item
+import com.travelsouvenirs.main.domain.SortOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -59,7 +61,7 @@ class ListViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         dao = FakeItemDao()
-        viewModel = ListViewModel(FakeSettings(), ItemRepository(dao))
+        viewModel = ListViewModel(AppSettings(FakeSettings()), ItemRepository(dao))
     }
 
     @After

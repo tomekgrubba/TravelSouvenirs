@@ -2,7 +2,6 @@ package com.travelsouvenirs.main.ui.map
 
 import android.graphics.Bitmap
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
@@ -12,11 +11,17 @@ import coil3.SingletonImageLoader
 import coil3.asImage
 import coil3.test.FakeImageLoaderEngine
 import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.data.FakeCategoryDao
 import com.travelsouvenirs.main.data.FakeItemDao
+import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.ItemRepository
-import com.travelsouvenirs.main.di.LocalItemRepository
-import com.travelsouvenirs.main.di.LocalSettings
+import com.travelsouvenirs.main.ui.settings.SettingsViewModel
+import com.travelsouvenirs.main.util.AppSettings
 import com.travelsouvenirs.main.domain.Item
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.module
 import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Before
@@ -149,28 +154,42 @@ class GroupIconKeyTest {
 // Maps SDK mocking is set up.
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+// application override prevents Robolectric from instantiating TravelSouvenirsApp, which would
+// call startKoin before this test's @Before setUp() does, causing KoinApplicationAlreadyStartedException.
+@Config(sdk = [34], application = android.app.Application::class)
 class RememberGroupIconsSmokeTest {
 
     @get:Rule val composeTestRule = createComposeRule()
 
-    private val fakeSettings = FakeSettings()
+    private val fakeAppSettings = AppSettings(FakeSettings())
     private val fakeRepository = ItemRepository(FakeItemDao())
 
-    @OptIn(DelicateCoilApi::class)
     @Before
-    fun mockCoil() {
+    fun setUp() {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val fakeBitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
-        val engine = FakeImageLoaderEngine.Builder().default(fakeBitmap.asImage()).build()
-        SingletonImageLoader.setSafe {
-            ImageLoader.Builder(ctx).components { add(engine) }.build()
+        startKoin {
+            modules(module {
+                single { fakeAppSettings }
+                single { fakeRepository }
+                single { CategoryRepository(FakeCategoryDao()) }
+                viewModel { SettingsViewModel(get(), get(), get()) }
+            })
+        }
+
+        @OptIn(DelicateCoilApi::class)
+        run {
+            val fakeBitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
+            val engine = FakeImageLoaderEngine.Builder().default(fakeBitmap.asImage()).build()
+            SingletonImageLoader.setSafe {
+                ImageLoader.Builder(ctx).components { add(engine) }.build()
+            }
         }
     }
 
-    @OptIn(DelicateCoilApi::class)
     @After
-    fun resetCoil() {
+    fun tearDown() {
+        stopKoin()
+        @OptIn(DelicateCoilApi::class)
         SingletonImageLoader.reset()
     }
 
@@ -180,14 +199,9 @@ class RememberGroupIconsSmokeTest {
         var composed = false
 
         composeTestRule.setContent {
-            CompositionLocalProvider(
-                LocalSettings provides fakeSettings,
-                LocalItemRepository provides fakeRepository
-            ) {
-                MaterialTheme {
-                    rememberGroupIcons(groups)
-                    SideEffect { composed = true }
-                }
+            MaterialTheme {
+                rememberGroupIcons(groups)
+                SideEffect { composed = true }
             }
         }
 
@@ -198,13 +212,8 @@ class RememberGroupIconsSmokeTest {
     @Test
     fun `rememberGroupIcons composes without error for empty groups`() {
         composeTestRule.setContent {
-            CompositionLocalProvider(
-                LocalSettings provides fakeSettings,
-                LocalItemRepository provides fakeRepository
-            ) {
-                MaterialTheme {
-                    rememberGroupIcons(emptyList())
-                }
+            MaterialTheme {
+                rememberGroupIcons(emptyList())
             }
         }
         composeTestRule.waitForIdle()

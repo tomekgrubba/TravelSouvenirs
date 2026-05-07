@@ -7,7 +7,6 @@ enum class MapProviderType {
     OPEN_STREET_MAP;
 
     companion object {
-        const val SETTINGS_KEY = "map_provider"
         val DEFAULT = NATIVE
         fun fromString(value: String?) = entries.firstOrNull { it.name == value } ?: DEFAULT
     }

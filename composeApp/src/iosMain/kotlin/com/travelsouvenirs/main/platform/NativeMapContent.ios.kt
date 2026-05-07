@@ -21,13 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
-import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
-import com.travelsouvenirs.main.di.LocalItemRepository
-import com.travelsouvenirs.main.di.LocalLocationService
+import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.ui.map.ItemGroup
 import com.travelsouvenirs.main.ui.map.MapViewModel
+import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import com.travelsouvenirs.main.ui.map.rememberGroupIosIcons
 import com.travelsouvenirs.main.ui.map.rememberIndividualIosIcons
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -101,10 +101,9 @@ private class MapDelegateHelper(
 @Composable
 internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val mapTheme = rememberMapTheme()
-    val repository = LocalItemRepository.current
-    val locationService = LocalLocationService.current
+    val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
-    val viewModel: MapViewModel = viewModel { MapViewModel(repository) }
+    val viewModel: MapViewModel = koinViewModel()
 
     if (viewModel.lastProvider != MapProviderType.NATIVE.name) {
         viewModel.lastProvider = MapProviderType.NATIVE.name

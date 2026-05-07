@@ -2,117 +2,106 @@ package com.travelsouvenirs.main.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.MapTheme
 import com.travelsouvenirs.main.theme.AppStyle
-import com.travelsouvenirs.main.util.KEY_CATEGORIES
-import com.travelsouvenirs.main.util.KEY_WIFI_ONLY_SYNC
+import com.travelsouvenirs.main.util.AppSettings
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private const val KEY_NOTES = "notes"
+data class SettingsUiState(
+    val appStyle: AppStyle = AppStyle.DEFAULT,
+    val mapProvider: MapProviderType = MapProviderType.DEFAULT,
+    val mapTheme: MapTheme = MapTheme.DEFAULT,
+    val wifiOnlySync: Boolean = false,
+    val notes: String = "",
+)
 
-/** Persists notes and custom categories; reassigns item categories on deletion. */
+/** Persists appearance and sync settings; delegates category management to CategoryRepository. */
 class SettingsViewModel(
-    private val settings: Settings,
-    private val repository: ItemRepository
+    private val appSettings: AppSettings,
+    private val repository: ItemRepository,
+    private val categoryRepository: CategoryRepository,
 ) : ViewModel() {
 
-    private val _appStyle = MutableStateFlow(
-        AppStyle.fromString(settings.getStringOrNull(AppStyle.SETTINGS_KEY))
+    private val _uiState = MutableStateFlow(
+        SettingsUiState(
+            appStyle = appSettings.appStyle,
+            mapProvider = appSettings.mapProvider,
+            mapTheme = appSettings.mapTheme,
+            wifiOnlySync = appSettings.wifiOnlySync,
+            notes = appSettings.notes,
+        )
     )
-    val appStyle: StateFlow<AppStyle> = _appStyle.asStateFlow()
+    val uiState: StateFlow<SettingsUiState> = _uiState
+
+    // Eagerly (not WhileSubscribed) so unit tests can read .value without an active collector.
+    val appStyle: StateFlow<AppStyle> = _uiState.map { it.appStyle }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.appStyle)
+    val mapProvider: StateFlow<MapProviderType> = _uiState.map { it.mapProvider }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.mapProvider)
+    val mapTheme: StateFlow<MapTheme> = _uiState.map { it.mapTheme }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.mapTheme)
+    val wifiOnlySync: StateFlow<Boolean> = _uiState.map { it.wifiOnlySync }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.wifiOnlySync)
+    val notes: StateFlow<String> = _uiState.map { it.notes }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.notes)
+
+    val customCategories: StateFlow<List<String>> = categoryRepository.categories
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val canAddCategory: Boolean get() = customCategories.value.size < MAX_CUSTOM_CATEGORIES
 
     fun setAppStyle(style: AppStyle) {
-        _appStyle.value = style
-        settings.putString(AppStyle.SETTINGS_KEY, style.name)
+        _uiState.update { it.copy(appStyle = style) }
+        appSettings.appStyle = style
     }
-
-    private val _mapProvider = MutableStateFlow(
-        MapProviderType.fromString(settings.getStringOrNull(MapProviderType.SETTINGS_KEY))
-    )
-    val mapProvider: StateFlow<MapProviderType> = _mapProvider.asStateFlow()
 
     fun setMapProvider(provider: MapProviderType) {
-        _mapProvider.value = provider
-        settings.putString(MapProviderType.SETTINGS_KEY, provider.name)
+        _uiState.update { it.copy(mapProvider = provider) }
+        appSettings.mapProvider = provider
     }
-
-    private val _mapTheme = MutableStateFlow(
-        MapTheme.fromString(settings.getStringOrNull(MapTheme.SETTINGS_KEY))
-    )
-    val mapTheme: StateFlow<MapTheme> = _mapTheme.asStateFlow()
 
     fun setMapTheme(theme: MapTheme) {
-        _mapTheme.value = theme
-        settings.putString(MapTheme.SETTINGS_KEY, theme.name)
+        _uiState.update { it.copy(mapTheme = theme) }
+        appSettings.mapTheme = theme
     }
-
-    private val _wifiOnlySync = MutableStateFlow(settings.getBoolean(KEY_WIFI_ONLY_SYNC, false))
-    val wifiOnlySync: StateFlow<Boolean> = _wifiOnlySync.asStateFlow()
 
     fun setWifiOnlySync(enabled: Boolean) {
-        _wifiOnlySync.value = enabled
-        settings.putBoolean(KEY_WIFI_ONLY_SYNC, enabled)
-    }
-
-    private val _notes = MutableStateFlow(settings.getStringOrNull(KEY_NOTES) ?: "")
-    val notes: StateFlow<String> = _notes.asStateFlow()
-
-    private val _customCategories = MutableStateFlow(loadCategories())
-    val customCategories: StateFlow<List<String>> = _customCategories.asStateFlow()
-
-    val canAddCategory: Boolean get() = _customCategories.value.size < MAX_CUSTOM_CATEGORIES
-
-    /** Re-reads categories from persistent storage; call whenever the settings panel becomes visible. */
-    fun refreshCategories() {
-        _customCategories.value = loadCategories()
-    }
-
-    private fun loadCategories(): List<String> {
-        val raw = settings.getStringOrNull(KEY_CATEGORIES) ?: return emptyList()
-        return raw.split(",").filter { it.isNotBlank() }
-    }
-
-    private fun persistCategories(list: List<String>) {
-        settings.putString(KEY_CATEGORIES, list.joinToString(","))
+        _uiState.update { it.copy(wifiOnlySync = enabled) }
+        appSettings.wifiOnlySync = enabled
     }
 
     fun onNotesChange(value: String) {
-        _notes.value = value
-        settings.putString(KEY_NOTES, value)
+        _uiState.update { it.copy(notes = value) }
+        appSettings.notes = value
     }
 
-    /** Returns true if the category was added, false if a category with that name already exists. */
+    /** Returns true if the category was added, false if validation failed. */
     fun addCategory(name: String): Boolean {
         val trimmed = name.trim()
         if (trimmed.isBlank()) return false
-        val current = _customCategories.value
+        val current = customCategories.value
         if (current.size >= MAX_CUSTOM_CATEGORIES) return false
         val isDuplicate = trimmed.equals(DEFAULT_CATEGORY, ignoreCase = true) ||
                 current.any { it.equals(trimmed, ignoreCase = true) }
         if (isDuplicate) return false
-        val updated = current + trimmed
-        _customCategories.value = updated
-        persistCategories(updated)
+        viewModelScope.launch { categoryRepository.add(trimmed) }
         return true
     }
 
-    /**
-     * Removes [name] from the category list and moves all items using it to [DEFAULT_CATEGORY].
-     * The settings update happens immediately; the DB reassignment runs in the background.
-     */
     fun deleteCategory(name: String) {
-        val updated = _customCategories.value.filter { it != name }
-        _customCategories.value = updated
-        persistCategories(updated)
         viewModelScope.launch {
+            categoryRepository.delete(name)
             repository.reassignCategory(fromCategory = name, toCategory = DEFAULT_CATEGORY)
         }
     }

@@ -53,13 +53,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.ui.shared.CategoryFilterMenuSection
-import com.travelsouvenirs.main.di.LocalItemRepository
-import com.travelsouvenirs.main.di.LocalSettings
+import org.koin.compose.viewmodel.koinViewModel
 import com.travelsouvenirs.main.domain.Item
+import com.travelsouvenirs.main.domain.SortOption
 import com.travelsouvenirs.main.platform.rememberAppStyle
 import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.util.formatDisplay
@@ -69,18 +68,18 @@ import travelsouvenirs.composeapp.generated.resources.*
 /** Displays all items in a searchable, filterable list or tile grid; tapping a card navigates to its detail screen. */
 @Composable
 fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
-    val repository = LocalItemRepository.current
     val categoryFilter = LocalCategoryFilter.current
-    val settings = LocalSettings.current
-    val viewModel: ListViewModel = viewModel { ListViewModel(settings, repository) }
+    val viewModel: ListViewModel = koinViewModel()
 
     val appStyle = rememberAppStyle()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val sortOption by viewModel.sortOption.collectAsState()
-    val viewMode by viewModel.viewMode.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
     val sortedItems by viewModel.sortedItems.collectAsState()
+
+    val searchQuery = uiState.searchQuery
+    val sortOption = uiState.sortOption
+    val viewMode = uiState.viewMode
 
     val items = remember(sortedItems, selectedCategories) { categoryFilter.filterItems(sortedItems) }
 

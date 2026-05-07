@@ -23,18 +23,18 @@ data class ItemGroup(val items: List<Item>, val centerLat: Double, val centerLng
 /** Supplies the map screen with pre-computed pin positions, groups, and raw item list. */
 class MapViewModel(repository: ItemRepository) : ViewModel() {
 
-    /** Cached native map view (MKMapView / WKWebView on iOS, MapView on Android OSM); survives nav pops. */
-    var nativeMapView: Any? = null
     /** True once the map has been given its initial camera position; prevents re-zoom on back-nav. */
     var initialCameraSet: Boolean = false
     /** Tracks the last-active provider key; triggers camera reset when the provider changes. */
     var lastProvider: String? = null
-    /** Called from onCleared() to release platform-specific native view resources. */
+
+    // iOS-only: caches the WKWebView/MKMapView across recompositions so the native view
+    // is not recreated on every recomposition. Android avoids this by storing primitives below.
+    var nativeMapView: Any? = null
     var onClearNativeView: (() -> Unit)? = null
 
-    // Android osmdroid state. Instead of caching the MapView instance (which holds a reference to the Activity 
-    // and causes a memory leak when the screen rotates or navigates), we store these primitive state 
-    // values and restore them on the newly created MapView.
+    // Android OSM camera state stored as primitives to survive navigation without holding
+    // any Android View reference (which would leak the Activity context).
     var osmZoom: Double? = null
     var osmCenterLat: Double? = null
     var osmCenterLng: Double? = null

@@ -47,77 +47,74 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.travelsouvenirs.main.di.LocalAuthRepository
+import com.travelsouvenirs.main.auth.AuthRepository
+import com.travelsouvenirs.main.di.LocalAppViewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
-import com.travelsouvenirs.main.di.LocalItemRepository
-import com.travelsouvenirs.main.di.LocalSettings
-import com.travelsouvenirs.main.di.LocalSyncRepository
-import com.travelsouvenirs.main.platform.rememberAppStyle
-import com.travelsouvenirs.main.theme.AppStyle
-import org.jetbrains.compose.resources.stringResource
-import travelsouvenirs.composeapp.generated.resources.Res
 import com.travelsouvenirs.main.platform.PlatformBackHandler
-import com.travelsouvenirs.main.ui.auth.SignInScreen
 import com.travelsouvenirs.main.platform.PlatformMapContent
+import com.travelsouvenirs.main.platform.rememberAppStyle
+import com.travelsouvenirs.main.sync.SyncCoordinator
+import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.ui.list.ListScreen
-import com.travelsouvenirs.main.ui.settings.SettingsScreen
 import com.travelsouvenirs.main.ui.shared.CategoryFilterViewModel
-import com.travelsouvenirs.main.ui.shared.UserMessageBus
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import travelsouvenirs.composeapp.generated.resources.*
 
-/** The two available content tabs (Settings is accessed via the app bar icon). */
+/** The two available content tabs. Settings and SignIn are separate NavGraph destinations. */
 enum class MainTab { MAP, LIST }
 
 /** Root scaffold with app bar, Material 3 top tab row, FAB, and tab content. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
+fun MainScreen(
+    onAddClick: () -> Unit,
+    onItemClick: (Long) -> Unit,
+    onSettingsClick: () -> Unit,
+) {
     var selectedTabName by rememberSaveable { mutableStateOf(MainTab.MAP.name) }
     val selectedTab = MainTab.valueOf(selectedTabName)
-    var showSettings by rememberSaveable { mutableStateOf(false) }
-    var showSignIn by rememberSaveable { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val appViewModel = LocalAppViewModel.current
+    val authRepository: AuthRepository = koinInject()
+    val syncRepository: SyncCoordinator = koinInject()
+
     LaunchedEffect(Unit) {
-        UserMessageBus.messages.collect { msg ->
+        appViewModel.snackbarMessage.collect { msg ->
+            scope.launch { snackbarHostState.showSnackbar(msg) }
+        }
+    }
+    LaunchedEffect(Unit) {
+        syncRepository.errors.collect { msg ->
             scope.launch { snackbarHostState.showSnackbar(msg) }
         }
     }
 
-    val settings = LocalSettings.current
-    val repository = LocalItemRepository.current
-    val authRepository = LocalAuthRepository.current
-    val syncRepository = LocalSyncRepository.current
     val currentUser by authRepository.currentUser.collectAsState()
     val isSyncing by syncRepository.isSyncing.collectAsState()
     val isSyncingImages by syncRepository.isSyncingImages.collectAsState()
-    val categoryFilterVM: CategoryFilterViewModel = viewModel { CategoryFilterViewModel(settings, repository) }
+    val categoryFilterVM: CategoryFilterViewModel = koinViewModel()
     val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
 
-    // After login: sync DB (locks screen), then sync images (small indicator)
+    // Trigger sync when user signs in (currentUser transitions from null → non-null)
+    var prevUser by remember { mutableStateOf(currentUser) }
     LaunchedEffect(currentUser) {
-        if (currentUser != null && showSignIn) {
+        val prev = prevUser
+        prevUser = currentUser
+        if (currentUser != null && prev == null) {
             syncRepository.syncData()
-            showSignIn = false
             syncRepository.syncImages()
-        } else if (currentUser != null) {
-            showSignIn = false
         }
     }
 
-    // Swallow back presses while sync is blocking the screen
-    PlatformBackHandler(enabled = showSettings || showSignIn || isSyncing) {
-        when {
-            isSyncing -> { /* block navigation during DB sync */ }
-            showSignIn -> showSignIn = false
-            else -> { showSettings = false; categoryFilterVM.refreshCategories() }
-        }
-    }
+    // Block back navigation during metadata sync
+    PlatformBackHandler(enabled = isSyncing) { /* block */ }
 
     CompositionLocalProvider(LocalCategoryFilter provides categoryFilterVM) {
     Scaffold(
@@ -150,64 +147,49 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                             )
                         }
                         IconButton(
-                            enabled = !isSyncing && !showSignIn,
-                            onClick = {
-                                if (showSettings) {
-                                    showSettings = false
-                                    categoryFilterVM.refreshCategories()
-                                } else {
-                                    showSettings = true
-                                }
-                            }
+                            enabled = !isSyncing,
+                            onClick = onSettingsClick
                         ) {
                             Icon(Icons.Default.Settings, contentDescription = stringResource(Res.string.cd_settings))
                         }
                     }
                 )
-                if (!showSettings) {
-                    PrimaryTabRow(
-                        selectedTabIndex = selectedTab.ordinal,
-                        containerColor = if (isPolaroid)
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            TabRowDefaults.primaryContainerColor,
-                        contentColor = if (isPolaroid)
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        else
-                            TabRowDefaults.primaryContentColor,
-                        indicator = {
-                            TabRowDefaults.PrimaryIndicator(
-                                modifier = Modifier.tabIndicatorOffset(selectedTab.ordinal),
-                                color = if (isPolaroid) MaterialTheme.colorScheme.onPrimary else LocalContentColor.current
-                            )
-                        }
-                    ) {
-                        Tab(
-                            selected = selectedTab == MainTab.MAP,
-                            enabled = !isSyncing,
-                            onClick = {
-                                if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
-                                selectedTabName = MainTab.MAP.name
-                            },
-                            text = { Text(stringResource(Res.string.tab_map), style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)) },
-                            icon = { Icon(Icons.Default.LocationOn, contentDescription = null) }
-                        )
-                        Tab(
-                            selected = selectedTab == MainTab.LIST,
-                            enabled = !isSyncing,
-                            onClick = {
-                                if (showSettings) { showSettings = false; categoryFilterVM.refreshCategories() }
-                                selectedTabName = MainTab.LIST.name
-                            },
-                            text = { Text(stringResource(Res.string.tab_list), style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)) },
-                            icon = { Icon(Icons.Default.List, contentDescription = null) }
+                PrimaryTabRow(
+                    selectedTabIndex = selectedTab.ordinal,
+                    containerColor = if (isPolaroid)
+                        MaterialTheme.colorScheme.primaryContainer
+                    else
+                        TabRowDefaults.primaryContainerColor,
+                    contentColor = if (isPolaroid)
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else
+                        TabRowDefaults.primaryContentColor,
+                    indicator = {
+                        TabRowDefaults.PrimaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(selectedTab.ordinal),
+                            color = if (isPolaroid) MaterialTheme.colorScheme.onPrimary else LocalContentColor.current
                         )
                     }
+                ) {
+                    Tab(
+                        selected = selectedTab == MainTab.MAP,
+                        enabled = !isSyncing,
+                        onClick = { selectedTabName = MainTab.MAP.name },
+                        text = { Text(stringResource(Res.string.tab_map), style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)) },
+                        icon = { Icon(Icons.Default.LocationOn, contentDescription = null) }
+                    )
+                    Tab(
+                        selected = selectedTab == MainTab.LIST,
+                        enabled = !isSyncing,
+                        onClick = { selectedTabName = MainTab.LIST.name },
+                        text = { Text(stringResource(Res.string.tab_list), style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)) },
+                        icon = { Icon(Icons.Default.List, contentDescription = null) }
+                    )
                 }
             }
         },
         floatingActionButton = {
-            if (!showSettings && !isSyncing) {
+            if (!isSyncing) {
                 ExtendedFloatingActionButton(onClick = onAddClick) {
                     Text(stringResource(Res.string.fab_add_item))
                 }
@@ -222,15 +204,9 @@ fun MainScreen(onAddClick: () -> Unit, onItemClick: (Long) -> Unit) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (showSignIn) {
-                SignInScreen()
-            } else if (showSettings) {
-                SettingsScreen(onSignInClick = { showSignIn = true })
-            } else {
-                when (selectedTab) {
-                    MainTab.MAP -> PlatformMapContent(onPinClick = onItemClick, onAddClick = onAddClick)
-                    MainTab.LIST -> ListScreen(onItemClick = onItemClick, onAddClick = onAddClick)
-                }
+            when (selectedTab) {
+                MainTab.MAP -> PlatformMapContent(onPinClick = onItemClick, onAddClick = onAddClick)
+                MainTab.LIST -> ListScreen(onItemClick = onItemClick, onAddClick = onAddClick)
             }
 
             // Full-screen lock during DB sync — prevents all interaction

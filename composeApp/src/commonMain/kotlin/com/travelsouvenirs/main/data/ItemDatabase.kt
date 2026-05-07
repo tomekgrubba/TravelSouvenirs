@@ -10,10 +10,11 @@ import androidx.sqlite.execSQL
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.sync.SyncStatus
 
-@Database(entities = [ItemEntity::class], version = 4, exportSchema = true)
+@Database(entities = [ItemEntity::class, CategoryEntity::class], version = 5, exportSchema = true)
 @ConstructedBy(ItemDatabaseConstructor::class)
 abstract class ItemDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
+    abstract fun categoryDao(): CategoryDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
@@ -49,7 +50,15 @@ private val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+private val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "CREATE TABLE IF NOT EXISTS `categories` (`name` TEXT NOT NULL, `updatedAtMillis` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`name`))"
+        )
+    }
+}
+
 fun buildItemDatabase(): ItemDatabase =
     createItemDatabaseBuilder()
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
         .build()

@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -25,17 +26,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.auth.isGoogleSignInAvailable
-import com.travelsouvenirs.main.di.LocalAuthRepository
-import com.travelsouvenirs.main.di.LocalGoogleSignInHelper
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun SignInScreen() {
-    val authRepository = LocalAuthRepository.current
-    val googleSignInHelper = LocalGoogleSignInHelper.current
-    val vm: SignInViewModel = viewModel { SignInViewModel(authRepository, googleSignInHelper) }
+fun SignInScreen(onSignedIn: () -> Unit = {}) {
+    val vm: SignInViewModel = koinViewModel()
+    val authRepository: AuthRepository = koinInject()
     val state by vm.uiState.collectAsState()
+    val currentUser by authRepository.currentUser.collectAsState()
+
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) onSignedIn()
+    }
 
     Box(
         modifier = Modifier.fillMaxSize().padding(24.dp),
