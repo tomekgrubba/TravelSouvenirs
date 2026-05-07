@@ -51,8 +51,9 @@ class SyncCoordinator(
         val userId = authRepository.currentUser.value?.uid ?: return
         _isSyncing.value = true
         try {
-            metadataSync.downloadRemoteMetadata(userId)
+            // Categories must be synced first so every item's category FK parent exists locally.
             categorySync.sync(userId)
+            metadataSync.downloadRemoteMetadata(userId)
         } catch (_: Exception) {
             _errors.tryEmit("Sync failed. Check your connection.")
         } finally {

@@ -10,7 +10,7 @@ import androidx.sqlite.execSQL
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.sync.SyncStatus
 
-@Database(entities = [ItemEntity::class, CategoryEntity::class], version = 5, exportSchema = true)
+@Database(entities = [ItemEntity::class, CategoryEntity::class], version = 6, exportSchema = true)
 @ConstructedBy(ItemDatabaseConstructor::class)
 abstract class ItemDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
@@ -58,7 +58,51 @@ private val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+private val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "INSERT OR IGNORE INTO categories (name, updatedAtMillis) VALUES ('$DEFAULT_CATEGORY', 0)"
+        )
+        connection.execSQL(
+            "INSERT OR IGNORE INTO categories (name, updatedAtMillis) SELECT DISTINCT category, 0 FROM items WHERE category != '$DEFAULT_CATEGORY'"
+        )
+        connection.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `items_new` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `notes` TEXT NOT NULL,
+                `photoPath` TEXT NOT NULL,
+                `latitude` REAL NOT NULL,
+                `longitude` REAL NOT NULL,
+                `placeName` TEXT NOT NULL,
+                `dateAcquiredMillis` INTEGER NOT NULL,
+                `category` TEXT NOT NULL DEFAULT '$DEFAULT_CATEGORY',
+                `firebaseId` TEXT NOT NULL DEFAULT '',
+                `syncStatus` TEXT NOT NULL DEFAULT 'PENDING_UPLOAD',
+                `updatedAtMillis` INTEGER NOT NULL DEFAULT 0,
+                `photoStoragePath` TEXT NOT NULL DEFAULT '',
+                `photoStorageUrl` TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY(`category`) REFERENCES `categories`(`name`) ON DELETE SET DEFAULT
+            )
+            """.trimIndent()
+        )
+        connection.execSQL("INSERT INTO items_new SELECT * FROM items")
+        connection.execSQL("DROP TABLE items")
+        connection.execSQL("ALTER TABLE items_new RENAME TO items")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_items_category` ON `items` (`category`)")
+    }
+}
+
 fun buildItemDatabase(): ItemDatabase =
     createItemDatabaseBuilder()
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+        .addCallback(object : RoomDatabase.Callback() {
+            override fun onCreate(connection: SQLiteConnection) {
+                connection.execSQL("INSERT OR IGNORE INTO `categories` (name, updatedAtMillis) VALUES ('$DEFAULT_CATEGORY', 0)")
+            }
+            override fun onOpen(connection: SQLiteConnection) {
+                connection.execSQL("PRAGMA foreign_keys = ON")
+            }
+        })
         .build()

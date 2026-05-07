@@ -1,5 +1,7 @@
 package com.travelsouvenirs.main.sync
 
+import com.travelsouvenirs.main.data.CategoryDao
+import com.travelsouvenirs.main.data.CategoryEntity
 import com.travelsouvenirs.main.data.ItemDao
 import com.travelsouvenirs.main.data.ItemEntity
 import com.travelsouvenirs.main.util.AppSettings
@@ -10,6 +12,7 @@ import kotlin.random.Random
 /** Downloads item metadata from Firestore and uploads pending local changes. */
 class MetadataSyncService(
     private val dao: ItemDao,
+    private val categoryDao: CategoryDao,
     private val firestore: FirebaseFirestore,
     private val appSettings: AppSettings,
 ) {
@@ -30,6 +33,9 @@ class MetadataSyncService(
             val local = dao.getItemByFirebaseId(fbId)
             if (local == null || remote.updatedAtMillis > local.updatedAtMillis) {
                 val localPhotoPath = local?.photoPath ?: ""
+                // Ensure the category FK parent exists — categorySync runs first but remote data
+                // may contain categories absent from the categories list (e.g. backend inconsistency).
+                categoryDao.insertCategory(CategoryEntity(remote.category))
                 dao.insertItem(buildEntity(fbId, remote, localPhotoPath, local?.id ?: 0))
             }
         }

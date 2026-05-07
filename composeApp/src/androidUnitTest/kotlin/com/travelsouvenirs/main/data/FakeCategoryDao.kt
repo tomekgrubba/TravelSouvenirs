@@ -30,5 +30,10 @@ class FakeCategoryDao : CategoryDao {
         publish()
     }
 
+    override suspend fun deleteAllCustom(defaultName: String) {
+        store.removeIf { it.name != defaultName }
+        publish()
+    }
+
     override suspend fun count(): Int = store.size
 }

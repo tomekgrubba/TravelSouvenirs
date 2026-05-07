@@ -33,4 +33,9 @@ class IosImageStorage : ImageStorage {
         )
         return "$dir/item_$firebaseId.jpg"
     }
+
+    override suspend fun deleteAllImages() {
+        val dir = "${NSHomeDirectory()}/Documents/item_photos"
+        NSFileManager.defaultManager.removeItemAtPath(dir, error = null)
+    }
 }

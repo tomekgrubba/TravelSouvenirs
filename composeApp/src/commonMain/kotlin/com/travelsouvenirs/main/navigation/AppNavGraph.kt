@@ -79,7 +79,11 @@ fun AppNavGraph(navController: NavHostController) {
                 )
             }
             composable(Screen.SignIn.route) {
-                SignInScreen(onSignedIn = { navController.popBackStack() })
+                // Pop all the way to Main so the sync loading overlay is visible immediately.
+                SignInScreen(
+                    onBack = { navController.popBackStack() },
+                    onSignedIn = { navController.popBackStack(Screen.Main.route, inclusive = false) },
+                )
             }
         }
     }

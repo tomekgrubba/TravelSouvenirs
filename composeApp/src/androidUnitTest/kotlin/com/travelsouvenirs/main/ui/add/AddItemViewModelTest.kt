@@ -44,6 +44,7 @@ private class FakeImageStorage : ImageStorage {
     override suspend fun copyToInternalStorage(sourcePath: String): String = sourcePath
     override suspend fun deleteImage(path: String) {}
     override fun localPathForDownload(firebaseId: String): String = "/cache/$firebaseId.jpg"
+    override suspend fun deleteAllImages() {}
 }
 
 

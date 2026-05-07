@@ -51,4 +51,7 @@ interface ItemDao {
     /** Items that have a remote photo URL but no local image file yet. */
     @Query("SELECT * FROM items WHERE photoStorageUrl != '' AND photoPath = '' AND syncStatus != 'PENDING_DELETE'")
     suspend fun getItemsWithMissingLocalPhotos(): List<ItemEntity>
+
+    @Query("DELETE FROM items")
+    suspend fun deleteAll()
 }

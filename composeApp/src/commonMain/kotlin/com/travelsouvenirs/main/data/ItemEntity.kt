@@ -1,6 +1,8 @@
 package com.travelsouvenirs.main.data
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.Item
@@ -9,7 +11,16 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 
-@Entity(tableName = "items")
+@Entity(
+    tableName = "items",
+    foreignKeys = [ForeignKey(
+        entity = CategoryEntity::class,
+        parentColumns = ["name"],
+        childColumns = ["category"],
+        onDelete = ForeignKey.SET_DEFAULT,
+    )],
+    indices = [Index("category")],
+)
 data class ItemEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

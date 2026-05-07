@@ -49,7 +49,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,8 +79,6 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
     val authRepository: AuthRepository = koinInject()
     val repository: ItemRepository = koinInject()
     val currentUser by authRepository.currentUser.collectAsState()
-    val scope = rememberCoroutineScope()
-
     val customCategories by vm.customCategories.collectAsState()
     val appStyle by vm.appStyle.collectAsState()
     val mapProvider by vm.mapProvider.collectAsState()
@@ -155,7 +152,7 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 OutlinedButton(
-                    onClick = { scope.launch { authRepository.signOut() } },
+                    onClick = { vm.signOut() },
                     shape = buttonShape,
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.fillMaxWidth()

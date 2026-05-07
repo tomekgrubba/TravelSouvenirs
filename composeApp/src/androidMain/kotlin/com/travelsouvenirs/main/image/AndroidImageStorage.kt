@@ -23,4 +23,8 @@ class AndroidImageStorage(private val context: Context) : ImageStorage {
         val dir = File(context.filesDir, "item_photos").also { it.mkdirs() }
         return File(dir, "item_$firebaseId.jpg").absolutePath
     }
+
+    override suspend fun deleteAllImages() {
+        File(context.filesDir, "item_photos").deleteRecursively()
+    }
 }

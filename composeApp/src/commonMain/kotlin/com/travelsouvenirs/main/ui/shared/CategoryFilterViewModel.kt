@@ -3,29 +3,35 @@ package com.travelsouvenirs.main.ui.shared
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.travelsouvenirs.main.data.CategoryRepository
+import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.Item
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
  * Shared ViewModel that holds category filter state used by both the List and Map screens.
  * Scoped to MainScreen so both tabs observe the same selection.
- * Category list comes from the Room categories table, not from items.
+ * Only categories assigned to at least one active item are shown.
  */
 class CategoryFilterViewModel(
     private val categoryRepository: CategoryRepository,
+    private val itemRepository: ItemRepository,
 ) : ViewModel() {
 
-    /** Categories from the Room table — DEFAULT_CATEGORY prepended, then custom in alphabetical order. */
-    val availableCategories: StateFlow<List<String>> = categoryRepository.categories
-        .map { custom -> listOf(DEFAULT_CATEGORY) + custom }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, listOf(DEFAULT_CATEGORY))
+    /** Categories that have at least one item — DEFAULT_CATEGORY first, then custom alphabetically. */
+    val availableCategories: StateFlow<List<String>> = combine(
+        itemRepository.allItems,
+        categoryRepository.categories,
+    ) { items, customCategories ->
+        val usedInItems = items.map { it.category }.toSet()
+        (listOf(DEFAULT_CATEGORY) + customCategories).filter { it in usedInItems }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Snapshot set of all known categories. */
     val allCategoriesSet: Set<String> get() = availableCategories.value.toSet()

@@ -11,12 +11,15 @@ import coil3.SingletonImageLoader
 import coil3.asImage
 import coil3.test.FakeImageLoaderEngine
 import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.data.FakeCategoryDao
 import com.travelsouvenirs.main.data.FakeItemDao
 import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.ui.settings.SettingsViewModel
 import com.travelsouvenirs.main.util.AppSettings
+import org.mockito.kotlin.mock
 import com.travelsouvenirs.main.domain.Item
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -172,7 +175,9 @@ class RememberGroupIconsSmokeTest {
                 single { fakeAppSettings }
                 single { fakeRepository }
                 single { CategoryRepository(FakeCategoryDao()) }
-                viewModel { SettingsViewModel(get(), get(), get()) }
+                single<AuthRepository> { mock() }
+                single<ImageStorage> { mock() }
+                viewModel { SettingsViewModel(get(), get(), get(), get(), get()) }
             })
         }
 

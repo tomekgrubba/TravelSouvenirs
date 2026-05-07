@@ -57,4 +57,6 @@ class ItemRepository(private val dao: ItemDao) {
 
     suspend fun reassignCategory(fromCategory: String, toCategory: String) =
         dao.reassignCategory(fromCategory, toCategory)
+
+    suspend fun deleteAll() = dao.deleteAll()
 }

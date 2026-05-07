@@ -2,10 +2,12 @@ package com.travelsouvenirs.main.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
+import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.MapTheme
 import com.travelsouvenirs.main.theme.AppStyle
@@ -31,6 +33,8 @@ class SettingsViewModel(
     private val appSettings: AppSettings,
     private val repository: ItemRepository,
     private val categoryRepository: CategoryRepository,
+    private val authRepository: AuthRepository,
+    private val imageStorage: ImageStorage,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -103,6 +107,17 @@ class SettingsViewModel(
         viewModelScope.launch {
             categoryRepository.delete(name)
             repository.reassignCategory(fromCategory = name, toCategory = DEFAULT_CATEGORY)
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            repository.deleteAll()
+            categoryRepository.setAll(emptyList())
+            imageStorage.deleteAllImages()
+            appSettings.lastSyncMillis = 0L
+            appSettings.categoriesUpdatedAt = 0L
+            authRepository.signOut()
         }
     }
 }

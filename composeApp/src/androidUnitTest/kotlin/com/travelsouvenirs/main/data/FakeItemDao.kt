@@ -44,4 +44,5 @@ class FakeItemDao : ItemDao {
     override suspend fun getItemByFirebaseId(fbId: String): ItemEntity? = null
     override suspend fun hardDeleteByFirebaseId(fbId: String) { store.entries.removeIf { it.value.firebaseId == fbId }; publish() }
     override suspend fun getItemsWithMissingLocalPhotos(): List<ItemEntity> = emptyList()
+    override suspend fun deleteAll() { store.clear(); publish() }
 }

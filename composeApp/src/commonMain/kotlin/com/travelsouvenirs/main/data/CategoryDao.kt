@@ -24,6 +24,9 @@ interface CategoryDao {
     @Query("DELETE FROM categories")
     suspend fun deleteAll()
 
+    @Query("DELETE FROM categories WHERE name != :defaultName")
+    suspend fun deleteAllCustom(defaultName: String)
+
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun count(): Int
 }

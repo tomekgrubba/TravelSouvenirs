@@ -39,7 +39,7 @@ val dataModule = module {
 val syncModule = module {
     single { Firebase.firestore }
     single { ImageSyncHelper(Firebase.storage) }
-    single { MetadataSyncService(get(), get(), get()) }
+    single { MetadataSyncService(get(), get(), get(), get()) }
     single { ImageSyncService(get(), get()) }
     single { CategorySyncService(get(), get(), get()) }
     single {
@@ -68,8 +68,8 @@ val useCaseModule = module {
 val viewModelModule = module {
     viewModel { AppViewModel() }
     viewModel { ListViewModel(get(), get()) }
-    viewModel { SettingsViewModel(get(), get(), get()) }
-    viewModel { CategoryFilterViewModel(get()) }
+    viewModel { SettingsViewModel(get(), get(), get(), get(), get()) }
+    viewModel { CategoryFilterViewModel(get(), get()) }
     viewModel { MapViewModel(get()) }
     viewModel { SignInViewModel(get(), get()) }
     viewModel { (editId: Long?) ->

@@ -16,4 +16,7 @@ interface ImageStorage {
 
     /** Returns the absolute local path where an image for [firebaseId] should be stored when downloaded. */
     fun localPathForDownload(firebaseId: String): String
+
+    /** Deletes all locally stored item photos (used on sign-out to clear account data). */
+    suspend fun deleteAllImages()
 }

@@ -1,14 +1,17 @@
 package com.travelsouvenirs.main.data
 
+import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.util.nowEpochMillis
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class CategoryRepository(private val dao: CategoryDao) {
 
-    val categories: Flow<List<String>> = dao.getAllCategories().map { list -> list.map { it.name } }
+    // "Default" lives in the DB for FK integrity but is never exposed — callers prepend it manually.
+    val categories: Flow<List<String>> = dao.getAllCategories()
+        .map { list -> list.map { it.name }.filter { it != DEFAULT_CATEGORY } }
 
-    suspend fun getAll(): List<String> = dao.getAllNames()
+    suspend fun getAll(): List<String> = dao.getAllNames().filter { it != DEFAULT_CATEGORY }
 
     suspend fun add(name: String) = dao.insertCategory(CategoryEntity(name, nowEpochMillis()))
 
@@ -16,9 +19,7 @@ class CategoryRepository(private val dao: CategoryDao) {
 
     suspend fun setAll(names: List<String>) {
         val ts = nowEpochMillis()
-        dao.deleteAll()
-        names.forEach { dao.insertCategory(CategoryEntity(it, ts)) }
+        dao.deleteAllCustom(DEFAULT_CATEGORY)
+        names.filter { it != DEFAULT_CATEGORY }.forEach { dao.insertCategory(CategoryEntity(it, ts)) }
     }
-
-    suspend fun isEmpty(): Boolean = dao.count() == 0
 }

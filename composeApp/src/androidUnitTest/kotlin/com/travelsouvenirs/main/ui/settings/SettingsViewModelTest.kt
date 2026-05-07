@@ -1,11 +1,14 @@
 package com.travelsouvenirs.main.ui.settings
 
 import com.russhwolf.settings.Settings
+import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.FakeCategoryDao
 import com.travelsouvenirs.main.data.FakeItemDao
 import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.util.AppSettings
+import org.mockito.kotlin.mock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -70,6 +73,8 @@ class SettingsViewModelTest {
         AppSettings(settings),
         ItemRepository(FakeItemDao()),
         CategoryRepository(categoryDao),
+        mock<AuthRepository>(),
+        mock<ImageStorage>(),
     )
 
     @Test
