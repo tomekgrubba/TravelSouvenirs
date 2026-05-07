@@ -102,17 +102,6 @@ fun MainScreen(
     val categoryFilterVM: CategoryFilterViewModel = koinViewModel()
     val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
 
-    // Trigger sync when user signs in (currentUser transitions from null → non-null)
-    var prevUser by remember { mutableStateOf(currentUser) }
-    LaunchedEffect(currentUser) {
-        val prev = prevUser
-        prevUser = currentUser
-        if (currentUser != null && prev == null) {
-            syncRepository.syncData()
-            syncRepository.syncImages()
-        }
-    }
-
     // Block back navigation during metadata sync
     PlatformBackHandler(enabled = isSyncing) { /* block */ }
 

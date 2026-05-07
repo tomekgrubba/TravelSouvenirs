@@ -3,12 +3,16 @@ package com.travelsouvenirs.main.sync
 import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.network.NetworkMonitor
 import com.travelsouvenirs.main.util.AppSettings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Orchestrates the two-phase sync: metadata first, then images.
@@ -23,6 +27,24 @@ class SyncCoordinator(
     private val imageSync: ImageSyncService,
     private val categorySync: CategorySyncService,
 ) {
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    init {
+        // Trigger sync whenever the signed-in user changes from null → non-null.
+        // Lives in a singleton scope so it catches sign-in regardless of which screen is active.
+        scope.launch {
+            var prevUid: String? = null
+            authRepository.currentUser.collect { user ->
+                val uid = user?.uid
+                if (uid != null && prevUid == null) {
+                    syncData()
+                    launch { syncImages() }
+                }
+                prevUid = uid
+            }
+        }
+    }
+
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
