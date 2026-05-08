@@ -307,7 +307,7 @@ private fun PolaroidSectionCard(
             ) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleSmall.copy(letterSpacing = 0.5.sp),
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, letterSpacing = 0.5.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
                 )
