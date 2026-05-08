@@ -45,7 +45,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -217,119 +216,45 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     modifier = Modifier.fillMaxSize().clickable { onAddClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (true) {
-                        Card(
-                            modifier = Modifier.padding(32.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
-                        ) {
-                            Text(stringResource(Res.string.empty_state_no_items), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
-                        }
-                    } else {
-                        Text(stringResource(Res.string.empty_state_no_items))
+                    Card(
+                        modifier = Modifier.padding(32.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                    ) {
+                        Text(stringResource(Res.string.empty_state_no_items), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
                     }
                 }
             }
             items.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    if (true) {
-                        Card(
-                            modifier = Modifier.padding(32.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
-                        ) {
-                            Text(stringResource(Res.string.empty_state_no_results), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
-                        }
-                    } else {
-                        Text(stringResource(Res.string.empty_state_no_results))
+                    Card(
+                        modifier = Modifier.padding(32.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                    ) {
+                        Text(stringResource(Res.string.empty_state_no_results), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
                     }
                 }
             }
             viewMode == ViewMode.GRID -> {
-                if (true) {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
-                    ) {
-                        items(items, key = { it.id }) { item ->
-                            PolaroidTileCard(item = item, onClick = { onItemClick(item.id) })
-                        }
-                    }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(items, key = { it.id }) { item ->
-                            TileCard(item = item, onClick = { onItemClick(item.id) })
-                        }
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    items(items, key = { it.id }) { item ->
+                        PolaroidTileCard(item = item, onClick = { onItemClick(item.id) })
                     }
                 }
             }
             else -> {
-                if (true) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(items, key = { it.id }) { item ->
-                            PolaroidListCard(item = item, onClick = { onItemClick(item.id) })
-                        }
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(items, key = { it.id }) { item ->
-                            Card(
-                                onClick = { onItemClick(item.id) },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    AsyncImage(
-                                        model = item.photoPath,
-                                        contentDescription = item.name,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(60.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                    )
-                                    Spacer(Modifier.width(14.dp))
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = item.name,
-                                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp),
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
-                                        val date = item.dateAcquired.formatDisplay()
-                                        Text(
-                                            text = "$place · $date",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(items, key = { it.id }) { item ->
+                        PolaroidListCard(item = item, onClick = { onItemClick(item.id) })
                     }
                 }
             }
@@ -480,50 +405,3 @@ private fun PolaroidTileCard(item: Item, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun TileCard(item: Item, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    ) {
-        Column {
-            AsyncImage(
-                model = item.photoPath,
-                contentDescription = item.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-            )
-            Column(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
-                val month = item.dateAcquired.month.name.lowercase()
-                    .replaceFirstChar { it.uppercase() }.take(3)
-                val year2d = item.dateAcquired.year % 100
-                val tileDate = "$month '${year2d.toString().padStart(2, '0')}"
-                Text(
-                    text = "$place · $tileDate",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
