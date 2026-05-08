@@ -130,7 +130,7 @@ fun MainScreen(
                             CircularProgressIndicator(
                                 modifier = Modifier.padding(end = 4.dp).size(20.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                         }
                         IconButton(
