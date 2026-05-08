@@ -39,6 +39,9 @@ actual suspend fun downloadUrlToFile(url: String, localPath: String) {
     NSFileManager.defaultManager.createFileAtPath(localPath, contents = data, attributes = null)
 }
 
+actual fun fileFromPath(path: String): dev.gitlive.firebase.storage.File =
+    dev.gitlive.firebase.storage.File(NSURL.fileURLWithPath(path))
+
 actual fun ByteArray.toFirebaseData(): dev.gitlive.firebase.storage.Data {
     val tempPath = "${NSTemporaryDirectory()}fb_${time(null)}_$size.bin"
     usePinned { pinned ->

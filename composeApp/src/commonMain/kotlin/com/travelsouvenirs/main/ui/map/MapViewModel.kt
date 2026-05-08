@@ -58,23 +58,33 @@ class MapViewModel(repository: ItemRepository) : ViewModel() {
     companion object {
         private const val SPREAD_RADIUS = 0.0004
 
-        /** Clusters items that would visually overlap at [zoom]; threshold ≈ 100 px of map space. */
+        /**
+         * Clusters items that would visually overlap at [zoom]; threshold ≈ 100 px of map space.
+         *
+         * Sorting by latitude allows the inner loop to break early once the latitude gap exceeds
+         * the threshold, giving O(N log N) average behaviour instead of O(N²).
+         */
         fun groupByZoom(items: List<Item>, zoom: Float): List<ItemGroup> {
             if (items.isEmpty()) return emptyList()
             val threshold = 60.0 * 360.0 / (256.0 * 2.0.pow(zoom.toDouble()))
             val thresholdSq = threshold * threshold
-            val remaining = items.toMutableList()
+            val sorted = items.sortedBy { it.latitude }
+            val assigned = BooleanArray(sorted.size)
             val groups = mutableListOf<ItemGroup>()
-            while (remaining.isNotEmpty()) {
-                val seed = remaining.removeAt(0)
+            for (i in sorted.indices) {
+                if (assigned[i]) continue
+                val seed = sorted[i]
                 val group = mutableListOf(seed)
-                val it = remaining.iterator()
-                while (it.hasNext()) {
-                    val m = it.next()
+                assigned[i] = true
+                for (j in i + 1 until sorted.size) {
+                    if (sorted[j].latitude - seed.latitude > threshold) break
+                    if (assigned[j]) continue
+                    val m = sorted[j]
                     val dLat = m.latitude - seed.latitude
                     val dLng = m.longitude - seed.longitude
                     if (dLat * dLat + dLng * dLng <= thresholdSq) {
-                        group.add(m); it.remove()
+                        group.add(m)
+                        assigned[j] = true
                     }
                 }
                 groups.add(ItemGroup(

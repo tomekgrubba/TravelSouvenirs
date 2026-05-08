@@ -11,3 +11,6 @@ expect suspend fun downloadUrlToFile(url: String, localPath: String)
 
 /** Converts a [ByteArray] to the platform-specific Firebase Storage [Data] type. */
 expect fun ByteArray.toFirebaseData(): dev.gitlive.firebase.storage.Data
+
+/** Wraps a local file path in the platform-specific Firebase Storage [File] type. */
+expect fun fileFromPath(path: String): dev.gitlive.firebase.storage.File
