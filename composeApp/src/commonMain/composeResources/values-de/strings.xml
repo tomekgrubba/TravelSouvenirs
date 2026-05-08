@@ -74,7 +74,7 @@
     <string name="app_version">Version 1.0.0</string>
 
     <string name="syncing_data">Daten werden synchronisiert…</string>
-    <string name="section_sync">Login</string>
+    <string name="section_sync">Account</string>
     <string name="label_wifi_only_sync">Nur über WLAN synchronisieren</string>
     <string name="hint_wifi_only_sync">Wenn aktiviert, werden Elemente nur über WLAN synchronisiert, um mobile Daten zu sparen.</string>
 </resources>
