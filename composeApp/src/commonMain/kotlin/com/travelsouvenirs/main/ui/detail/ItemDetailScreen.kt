@@ -21,7 +21,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -187,6 +189,20 @@ fun ItemDetailScreen(
                                             modifier = Modifier.fillMaxWidth().height(260.dp),
                                             contentScale = ContentScale.Crop
                                         )
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(8.dp)
+                                                .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                                                .padding(7.5.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.ZoomIn,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(27.dp)
+                                            )
+                                        }
                                     }
                                     Box(
                                         modifier = Modifier

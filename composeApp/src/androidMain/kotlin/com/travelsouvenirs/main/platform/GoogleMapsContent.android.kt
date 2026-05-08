@@ -153,8 +153,9 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             scope.launch {
                 try {
                     locationService.getCurrentLocation()?.let { loc ->
+                        val targetZoom = maxOf(LOCATION_ZOOM, cameraPositionState.position.zoom)
                         cameraPositionState.animate(
-                            CameraUpdateFactory.newLatLngZoom(LatLng(loc.lat, loc.lng), LOCATION_ZOOM), 600
+                            CameraUpdateFactory.newLatLngZoom(LatLng(loc.lat, loc.lng), targetZoom), 600
                         )
                     }
                 } catch (_: Exception) { }
