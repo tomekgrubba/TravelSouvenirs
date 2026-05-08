@@ -3,34 +3,57 @@ package com.travelsouvenirs.main.image
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.exifinterface.media.ExifInterface
 import java.io.File
 import java.util.UUID
 
 /** Manages photo files in app-private internal storage. */
 object ImageStorageHelper {
 
-    /** Decodes, resizes to ≤[IMAGE_MAX_SIDE_PX]px on the longest side, and saves as [IMAGE_JPEG_QUALITY]% JPEG. */
+    /** Decodes, rotates per EXIF orientation, resizes to ≤[IMAGE_MAX_SIDE_PX]px on the longest side, and saves as [IMAGE_JPEG_QUALITY]% JPEG. */
     fun copyToInternalStorage(context: Context, sourceUri: Uri): String? {
         val filename = "item_${UUID.randomUUID()}.jpg"
         val dir = File(context.filesDir, "item_photos")
         dir.mkdirs()
         val destFile = File(dir, filename)
         return try {
+            val orientation = context.contentResolver.openInputStream(sourceUri)?.use { stream ->
+                ExifInterface(stream).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } ?: ExifInterface.ORIENTATION_NORMAL
+
             context.contentResolver.openInputStream(sourceUri)?.use { input ->
                 val original = BitmapFactory.decodeStream(input) ?: return null
-                val resized = scaledDown(original)
+                val rotated = rotateForOrientation(original, orientation)
+                val resized = scaledDown(rotated)
                 destFile.outputStream().use { out ->
                     resized.compress(Bitmap.CompressFormat.JPEG, IMAGE_JPEG_QUALITY, out)
                 }
-                if (resized !== original) resized.recycle()
+                if (resized !== rotated) resized.recycle()
+                if (rotated !== original) rotated.recycle()
                 original.recycle()
             }
             destFile.absolutePath
         } catch (_: Exception) {
             null
         }
+    }
+
+    private fun rotateForOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
+        val degrees = when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+            else -> return bitmap
+        }
+        val matrix = Matrix()
+        matrix.postRotate(degrees)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     private fun scaledDown(src: Bitmap): Bitmap {
