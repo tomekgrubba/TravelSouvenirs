@@ -11,8 +11,5 @@ actual fun PlatformMapLocationPicker(
     onLocationPicked: (Double, Double) -> Unit,
     modifier: Modifier
 ) {
-    when (rememberMapProvider()) {
-        MapProviderType.NATIVE -> GoogleMapsLocationPicker(selectedLat, selectedLng, cameraMoveId, onLocationPicked, modifier)
-        MapProviderType.OPEN_STREET_MAP -> OsmMapLocationPicker(selectedLat, selectedLng, cameraMoveId, onLocationPicked, modifier)
-    }
+    GoogleMapsLocationPicker(selectedLat, selectedLng, cameraMoveId, onLocationPicked, modifier)
 }

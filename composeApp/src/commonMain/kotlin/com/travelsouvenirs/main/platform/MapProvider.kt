@@ -8,13 +8,6 @@ import com.travelsouvenirs.main.ui.settings.SettingsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun rememberMapProvider(): MapProviderType {
-    val vm: SettingsViewModel = koinViewModel()
-    val provider by vm.mapProvider.collectAsState()
-    return provider
-}
-
-@Composable
 fun rememberMapTheme(): MapTheme {
     val vm: SettingsViewModel = koinViewModel()
     val theme by vm.mapTheme.collectAsState()

@@ -5,8 +5,5 @@ import androidx.compose.ui.Modifier
 
 @Composable
 actual fun PlatformMapPreview(latitude: Double, longitude: Double, label: String, modifier: Modifier) {
-    when (rememberMapProvider()) {
-        MapProviderType.NATIVE -> NativeMapPreview(latitude, longitude, label, modifier)
-        MapProviderType.OPEN_STREET_MAP -> OsmMapPreview(latitude, longitude, label, modifier)
-    }
+    NativeMapPreview(latitude, longitude, label, modifier)
 }

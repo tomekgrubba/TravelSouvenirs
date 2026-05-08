@@ -105,12 +105,6 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val categoryFilter = LocalCategoryFilter.current
     val viewModel: MapViewModel = koinViewModel()
 
-    if (viewModel.lastProvider != MapProviderType.NATIVE.name) {
-        viewModel.lastProvider = MapProviderType.NATIVE.name
-        viewModel.initialCameraSet = false
-        viewModel.nativeMapView = null
-    }
-
     val allItems by viewModel.items.collectAsState()
     val allPins  by viewModel.itemPins.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()

@@ -25,19 +25,11 @@ class MapViewModel(repository: ItemRepository) : ViewModel() {
 
     /** True once the map has been given its initial camera position; prevents re-zoom on back-nav. */
     var initialCameraSet: Boolean = false
-    /** Tracks the last-active provider key; triggers camera reset when the provider changes. */
-    var lastProvider: String? = null
 
-    // iOS-only: caches the WKWebView/MKMapView across recompositions so the native view
-    // is not recreated on every recomposition. Android avoids this by storing primitives below.
+    // iOS-only: caches the MKMapView across recompositions so the native view
+    // is not recreated on every recomposition.
     var nativeMapView: Any? = null
     var onClearNativeView: (() -> Unit)? = null
-
-    // Android OSM camera state stored as primitives to survive navigation without holding
-    // any Android View reference (which would leak the Activity context).
-    var osmZoom: Double? = null
-    var osmCenterLat: Double? = null
-    var osmCenterLng: Double? = null
 
     override fun onCleared() {
         super.onCleared()

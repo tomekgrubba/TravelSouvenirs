@@ -8,7 +8,6 @@ import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.image.ImageStorage
-import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.MapTheme
 import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.util.AppSettings
@@ -22,7 +21,6 @@ import kotlinx.coroutines.launch
 
 data class SettingsUiState(
     val appStyle: AppStyle = AppStyle.DEFAULT,
-    val mapProvider: MapProviderType = MapProviderType.DEFAULT,
     val mapTheme: MapTheme = MapTheme.DEFAULT,
     val wifiOnlySync: Boolean = false,
     val notes: String = "",
@@ -40,7 +38,6 @@ class SettingsViewModel(
     private val _uiState = MutableStateFlow(
         SettingsUiState(
             appStyle = appSettings.appStyle,
-            mapProvider = appSettings.mapProvider,
             mapTheme = appSettings.mapTheme,
             wifiOnlySync = appSettings.wifiOnlySync,
             notes = appSettings.notes,
@@ -51,8 +48,6 @@ class SettingsViewModel(
     // Eagerly (not WhileSubscribed) so unit tests can read .value without an active collector.
     val appStyle: StateFlow<AppStyle> = _uiState.map { it.appStyle }
         .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.appStyle)
-    val mapProvider: StateFlow<MapProviderType> = _uiState.map { it.mapProvider }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.mapProvider)
     val mapTheme: StateFlow<MapTheme> = _uiState.map { it.mapTheme }
         .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.mapTheme)
     val wifiOnlySync: StateFlow<Boolean> = _uiState.map { it.wifiOnlySync }
@@ -68,11 +63,6 @@ class SettingsViewModel(
     fun setAppStyle(style: AppStyle) {
         _uiState.update { it.copy(appStyle = style) }
         appSettings.appStyle = style
-    }
-
-    fun setMapProvider(provider: MapProviderType) {
-        _uiState.update { it.copy(mapProvider = provider) }
-        appSettings.mapProvider = provider
     }
 
     fun setMapTheme(theme: MapTheme) {

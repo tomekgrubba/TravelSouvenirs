@@ -62,9 +62,7 @@ import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.data.ItemRepository
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import com.travelsouvenirs.main.platform.MapProviderType
 import com.travelsouvenirs.main.platform.MapTheme
-import com.travelsouvenirs.main.platform.nativeMapProviderName
 import com.travelsouvenirs.main.theme.AppStyle
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -81,7 +79,6 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
     val currentUser by authRepository.currentUser.collectAsState()
     val customCategories by vm.customCategories.collectAsState()
     val appStyle by vm.appStyle.collectAsState()
-    val mapProvider by vm.mapProvider.collectAsState()
     val mapTheme by vm.mapTheme.collectAsState()
     val wifiOnlySync by vm.wifiOnlySync.collectAsState()
     val allItems by repository.allItems.collectAsState(initial = emptyList())
@@ -294,21 +291,6 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    stringResource(Res.string.section_map_provider),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MapProviderType.entries.forEach { provider ->
-                        FilterChip(
-                            selected = provider == mapProvider,
-                            onClick = { vm.setMapProvider(provider) },
-                            label = { Text(mapProviderLabel(provider), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                Text(
                     stringResource(Res.string.section_map_theme),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -371,17 +353,6 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
                         )
                     }
                 }
-                Text(
-                    stringResource(Res.string.section_map_provider),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-                )
-                Text(
-                    stringResource(Res.string.text_map_provider_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
                 Card(
                     shape = sectionCardShape,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -389,16 +360,6 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MapProviderType.entries.forEach { provider ->
-                                FilterChip(
-                                    selected = provider == mapProvider,
-                                    onClick = { vm.setMapProvider(provider) },
-                                    label = { Text(mapProviderLabel(provider), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
                         Text(
                             stringResource(Res.string.section_map_theme),
                             style = MaterialTheme.typography.labelMedium,
@@ -649,12 +610,6 @@ private fun appStyleLabel(style: AppStyle): String = when (style) {
     AppStyle.GATEWAY  -> "Gateway"
     AppStyle.EMBER    -> "Ember"
     AppStyle.POLAROID -> "Polaroid"
-}
-
-@Composable
-private fun mapProviderLabel(provider: MapProviderType): String = when (provider) {
-    MapProviderType.NATIVE -> nativeMapProviderName()
-    MapProviderType.OPEN_STREET_MAP -> stringResource(Res.string.map_provider_osm)
 }
 
 @Composable
