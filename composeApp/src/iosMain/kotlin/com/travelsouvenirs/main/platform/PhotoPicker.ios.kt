@@ -136,7 +136,7 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
                     val image = (didFinishPickingMediaWithInfo[UIImagePickerControllerEditedImage]
                         ?: didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage])
                             as? UIImage
-                    val data = image?.let { UIImageJPEGRepresentation(it, 0.85) }
+                    val data = image?.let { UIImageJPEGRepresentation(resizeUIImage(it), IMAGE_JPEG_QUALITY / 100.0) }
                     if (data != null) {
                         val dir = "${NSHomeDirectory()}/Documents/item_photos"
                         val destPath = saveJpegToDir(data, dir)

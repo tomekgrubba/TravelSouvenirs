@@ -4,4 +4,4 @@ package com.travelsouvenirs.main.image
 const val IMAGE_MAX_SIDE_PX = 1200
 
 /** JPEG compression quality (0–100 on Android, 0.0–1.0 on iOS). */
-const val IMAGE_JPEG_QUALITY = 75
+const val IMAGE_JPEG_QUALITY = 70
