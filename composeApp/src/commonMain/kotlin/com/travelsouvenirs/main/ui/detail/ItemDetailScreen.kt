@@ -58,8 +58,6 @@ import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.travelsouvenirs.main.platform.PlatformMapPreview
-import com.travelsouvenirs.main.platform.rememberAppStyle
-import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.util.formatDisplay
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -121,7 +119,7 @@ fun ItemDetailScreen(
         )
     }
 
-    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
+    val isPolaroid = true
 
     Scaffold(
         topBar = {

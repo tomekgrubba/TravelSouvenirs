@@ -12,7 +12,6 @@ import com.travelsouvenirs.main.auth.AndroidGoogleSignInHelper
 import com.travelsouvenirs.main.auth.GoogleSignInHelper
 import com.travelsouvenirs.main.navigation.AppNavGraph
 import com.travelsouvenirs.main.network.NetworkMonitor
-import com.travelsouvenirs.main.platform.rememberAppStyle
 import com.travelsouvenirs.main.sync.SyncCoordinator
 import com.travelsouvenirs.main.theme.AppTheme
 import kotlinx.coroutines.launch
@@ -35,8 +34,7 @@ class MainActivity : ComponentActivity() {
         observeAndSync()
 
         setContent {
-            val appStyle = rememberAppStyle()
-            AppTheme(style = appStyle) {
+            AppTheme {
                 AppNavGraph(rememberNavController())
             }
         }

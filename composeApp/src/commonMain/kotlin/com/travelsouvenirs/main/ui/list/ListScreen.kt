@@ -59,8 +59,6 @@ import com.travelsouvenirs.main.ui.shared.CategoryFilterMenuSection
 import org.koin.compose.viewmodel.koinViewModel
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.SortOption
-import com.travelsouvenirs.main.platform.rememberAppStyle
-import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.util.formatDisplay
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -71,7 +69,6 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val categoryFilter = LocalCategoryFilter.current
     val viewModel: ListViewModel = koinViewModel()
 
-    val appStyle = rememberAppStyle()
     val uiState by viewModel.uiState.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
@@ -220,7 +217,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     modifier = Modifier.fillMaxSize().clickable { onAddClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (appStyle == AppStyle.POLAROID) {
+                    if (true) {
                         Card(
                             modifier = Modifier.padding(32.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -234,7 +231,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
             }
             items.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    if (appStyle == AppStyle.POLAROID) {
+                    if (true) {
                         Card(
                             modifier = Modifier.padding(32.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -247,7 +244,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 }
             }
             viewMode == ViewMode.GRID -> {
-                if (appStyle == AppStyle.POLAROID) {
+                if (true) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         modifier = Modifier.fillMaxSize(),
@@ -274,7 +271,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 }
             }
             else -> {
-                if (appStyle == AppStyle.POLAROID) {
+                if (true) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),

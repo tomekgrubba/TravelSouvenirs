@@ -8,7 +8,6 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
-import com.travelsouvenirs.main.theme.AppStyle
 import com.google.maps.android.compose.DragState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
@@ -31,7 +30,6 @@ internal fun GoogleMapsLocationPicker(
     val initialZoom = if (selectedLat != null) MAP_ZOOM_LOCATION.toFloat() else MAP_ZOOM_MIN.toFloat()
 
     val mapTheme = rememberMapTheme()
-    val appStyle = rememberAppStyle()
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initialLatLng, initialZoom)
@@ -73,9 +71,8 @@ internal fun GoogleMapsLocationPicker(
         properties = MapProperties(
             minZoomPreference = 2f,
             mapStyleOptions = when {
-                mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle(appStyle))
-                appStyle == AppStyle.POLAROID -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
-                else -> null
+                mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle())
+                else -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
             }
         ),
         uiSettings = MapUiSettings(zoomControlsEnabled = true, myLocationButtonEnabled = false, mapToolbarEnabled = false),

@@ -1,10 +1,9 @@
 package com.travelsouvenirs.main.theme
 
 enum class AppStyle {
-    COSMIC, GATEWAY, EMBER, POLAROID;
+    POLAROID;
 
     companion object {
-        val DEFAULT = COSMIC
-        fun fromString(value: String?) = entries.firstOrNull { it.name == value } ?: DEFAULT
+        val DEFAULT = POLAROID
     }
 }

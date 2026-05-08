@@ -68,9 +68,7 @@ import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
-import com.travelsouvenirs.main.platform.rememberAppStyle
 import com.travelsouvenirs.main.platform.rememberCameraCapture
-import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
 import com.travelsouvenirs.main.util.formatDisplay
@@ -122,9 +120,9 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = kotlin.time.Clock.System.now().toEpochMilliseconds()
     )
-    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
-    val fieldShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(16.dp)
-    val buttonShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(50.dp)
+    val isPolaroid = true
+    val fieldShape = RoundedCornerShape(2.dp)
+    val buttonShape = RoundedCornerShape(2.dp)
 
     if (showDatePicker) {
         DatePickerDialog(

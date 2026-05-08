@@ -6,8 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
-import com.travelsouvenirs.main.platform.rememberAppStyle
-import com.travelsouvenirs.main.theme.AppStyle
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
@@ -45,16 +43,13 @@ import platform.UIKit.sizeWithAttributes
 /** Builds and caches photo map markers for individual items, keyed by item id. */
 @Composable
 fun rememberIndividualIosIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, UIImage> {
-    val borderColor = MaterialTheme.colorScheme.onPrimaryContainer
-    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
-    val icons = remember(isPolaroid) { mutableStateMapOf<Long, UIImage>() }
-    LaunchedEffect(pins, borderColor, isPolaroid) {
+    val icons = remember { mutableStateMapOf<Long, UIImage>() }
+    LaunchedEffect(pins) {
         pins.forEach { pin ->
             if (!icons.containsKey(pin.item.id)) {
                 launch {
                     val img = withContext(Dispatchers.Default) {
-                        if (isPolaroid) buildPolaroidUIImage(pin.item.photoPath, 0, sizePx)
-                        else buildCircularUIImage(pin.item.photoPath, 0, sizePx, borderColor = borderColor)
+                        buildPolaroidUIImage(pin.item.photoPath, 0, sizePx)
                     }
                     if (img != null) icons[pin.item.id] = img
                 }
@@ -67,18 +62,15 @@ fun rememberIndividualIosIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long
 /** Builds and caches photo map markers for clusters; shows a count badge when group size > 1. */
 @Composable
 fun rememberGroupIosIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<Int, UIImage> {
-    val badgeColor  = MaterialTheme.colorScheme.primaryContainer
-    val borderColor = MaterialTheme.colorScheme.onPrimaryContainer
-    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
-    val icons = remember(isPolaroid) { mutableStateMapOf<Int, UIImage>() }
-    LaunchedEffect(groups, badgeColor, borderColor, isPolaroid) {
+    val badgeColor = MaterialTheme.colorScheme.primaryContainer
+    val icons = remember { mutableStateMapOf<Int, UIImage>() }
+    LaunchedEffect(groups, badgeColor) {
         icons.clear()
         groups.forEachIndexed { idx, group ->
             launch {
                 val count = if (group.items.size > 1) group.items.size else 0
                 val img = withContext(Dispatchers.Default) {
-                    if (isPolaroid) buildPolaroidUIImage(group.items.first().photoPath, count, sizePx, badgeColor)
-                    else buildCircularUIImage(group.items.first().photoPath, count, sizePx, badgeColor, borderColor)
+                    buildPolaroidUIImage(group.items.first().photoPath, count, sizePx, badgeColor)
                 }
                 if (img != null) icons[idx] = img
             }

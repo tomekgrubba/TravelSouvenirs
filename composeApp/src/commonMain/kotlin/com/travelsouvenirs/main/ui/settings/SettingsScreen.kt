@@ -63,7 +63,6 @@ import com.travelsouvenirs.main.data.ItemRepository
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import com.travelsouvenirs.main.platform.MapTheme
-import com.travelsouvenirs.main.theme.AppStyle
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -78,20 +77,17 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
     val repository: ItemRepository = koinInject()
     val currentUser by authRepository.currentUser.collectAsState()
     val customCategories by vm.customCategories.collectAsState()
-    val appStyle by vm.appStyle.collectAsState()
     val mapTheme by vm.mapTheme.collectAsState()
     val wifiOnlySync by vm.wifiOnlySync.collectAsState()
     val allItems by repository.allItems.collectAsState(initial = emptyList())
 
-    val isPolaroid = appStyle == AppStyle.POLAROID
-    val buttonShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(50.dp)
-    val fieldShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(16.dp)
+    val buttonShape = RoundedCornerShape(2.dp)
+    val fieldShape = RoundedCornerShape(2.dp)
 
     var newCategoryInput by remember { mutableStateOf("") }
     var duplicateCategoryError by remember { mutableStateOf(false) }
     var commaError by remember { mutableStateOf(false) }
     var pendingDeleteCategory by remember { mutableStateOf<String?>(null) }
-    var devOptionsExpanded by remember { mutableStateOf(false) }
 
     pendingDeleteCategory?.let { categoryToDelete ->
         val affectedCount = allItems.count { it.category == categoryToDelete }
@@ -172,25 +168,12 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
     val categoriesContent: @Composable () -> Unit = {
         Column {
             allRows.forEachIndexed { index, (name, deletable) ->
-                if (isPolaroid) {
-                    PolaroidCategoryRow(
-                        name = name,
-                        index = index,
-                        deletable = deletable,
-                        onDeleteRequest = { pendingDeleteCategory = name }
-                    )
-                } else {
-                    val rowBg = if (index % 2 == 0)
-                        MaterialTheme.colorScheme.surfaceContainer
-                    else
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    CategoryRow(
-                        name = name,
-                        deletable = deletable,
-                        background = rowBg,
-                        onDeleteRequest = { pendingDeleteCategory = name }
-                    )
-                }
+                PolaroidCategoryRow(
+                    name = name,
+                    index = index,
+                    deletable = deletable,
+                    onDeleteRequest = { pendingDeleteCategory = name }
+                )
             }
             if (vm.canAddCategory) {
                 Row(
@@ -250,132 +233,16 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
         }
     }
 
-    val devOptionsContent: @Composable () -> Unit = {
-        if (isPolaroid) {
-            // Flat layout inside the photo area — no nested cards
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    stringResource(Res.string.label_appearance),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    stringResource(Res.string.label_theme),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                AppStyle.entries.chunked(2).forEach { rowStyles ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        rowStyles.forEach { style ->
-                            FilterChip(
-                                selected = style == appStyle,
-                                onClick = { vm.setAppStyle(style) },
-                                label = {
-                                    Text(appStyleLabel(style), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        repeat(2 - rowStyles.size) { Spacer(modifier = Modifier.weight(1f)) }
-                    }
-                }
-                Text(
-                    when (appStyle) {
-                        AppStyle.COSMIC   -> stringResource(Res.string.text_theme_cosmic)
-                        AppStyle.GATEWAY  -> stringResource(Res.string.text_theme_gateway)
-                        AppStyle.EMBER    -> stringResource(Res.string.text_theme_ember)
-                        AppStyle.POLAROID -> stringResource(Res.string.text_theme_polaroid)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    stringResource(Res.string.section_map_theme),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MapTheme.entries.forEach { theme ->
-                        FilterChip(
-                            selected = theme == mapTheme,
-                            onClick = { vm.setMapTheme(theme) },
-                            label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
-        } else {
-            Column {
-                Text(
-                    stringResource(Res.string.label_appearance),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-                )
-                Card(
-                    shape = sectionCardShape,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(Res.string.label_theme),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        AppStyle.entries.chunked(2).forEach { rowStyles ->
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                rowStyles.forEach { style ->
-                                    FilterChip(
-                                        selected = style == appStyle,
-                                        onClick = { vm.setAppStyle(style) },
-                                        label = {
-                                            Text(appStyleLabel(style), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                                repeat(2 - rowStyles.size) { Spacer(modifier = Modifier.weight(1f)) }
-                            }
-                        }
-                        Text(
-                            when (appStyle) {
-                                AppStyle.COSMIC   -> stringResource(Res.string.text_theme_cosmic)
-                                AppStyle.GATEWAY  -> stringResource(Res.string.text_theme_gateway)
-                                AppStyle.EMBER    -> stringResource(Res.string.text_theme_ember)
-                                AppStyle.POLAROID -> stringResource(Res.string.text_theme_polaroid)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Card(
-                    shape = sectionCardShape,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            stringResource(Res.string.section_map_theme),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MapTheme.entries.forEach { theme ->
-                                FilterChip(
-                                    selected = theme == mapTheme,
-                                    onClick = { vm.setMapTheme(theme) },
-                                    label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
+    val mapThemeContent: @Composable () -> Unit = {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MapTheme.entries.forEach { theme ->
+                    FilterChip(
+                        selected = theme == mapTheme,
+                        onClick = { vm.setMapTheme(theme) },
+                        label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }
@@ -386,12 +253,12 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
-                colors = if (isPolaroid) TopAppBarDefaults.topAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ) else TopAppBarDefaults.topAppBarColors(),
+                ),
                 title = { Text(stringResource(Res.string.title_settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -407,85 +274,26 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(if (isPolaroid) 20.dp else 8.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            if (isPolaroid) {
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                PolaroidSectionCard(
-                    title = stringResource(Res.string.section_sync),
-                    rotation = -0.5f
-                ) { syncContent() }
+            PolaroidSectionCard(
+                title = stringResource(Res.string.section_sync),
+                rotation = -0.5f
+            ) { syncContent() }
 
-                PolaroidSectionCard(
-                    title = stringResource(Res.string.section_categories),
-                    rotation = 0.4f
-                ) { categoriesContent() }
+            PolaroidSectionCard(
+                title = stringResource(Res.string.section_categories),
+                rotation = 0.4f
+            ) { categoriesContent() }
 
-                PolaroidSectionCard(
-                    title = stringResource(Res.string.section_developer_options),
-                    rotation = -0.3f,
-                    collapsible = true,
-                    expanded = devOptionsExpanded,
-                    onExpandToggle = { devOptionsExpanded = !devOptionsExpanded }
-                ) { devOptionsContent() }
+            PolaroidSectionCard(
+                title = stringResource(Res.string.section_map_theme),
+                rotation = -0.3f
+            ) { mapThemeContent() }
 
-                Spacer(modifier = Modifier.height(8.dp))
-            } else {
-                // ── Sync & Account ──────────────────────────────────────────────
-                Text(
-                    stringResource(Res.string.section_sync),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 2.dp)
-                )
-                Card(
-                    shape = sectionCardShape,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) { syncContent() }
-
-                // ── Categories ──────────────────────────────────────────────────
-                Text(
-                    stringResource(Res.string.section_categories),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-                )
-                Text(
-                    stringResource(Res.string.text_categories_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Card(
-                    shape = sectionCardShape,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) { categoriesContent() }
-
-                // ── Developer Options ───────────────────────────────────────────
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { devOptionsExpanded = !devOptionsExpanded }
-                        .padding(top = 16.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        stringResource(Res.string.section_developer_options),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        imageVector = if (devOptionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                if (devOptionsExpanded) { devOptionsContent() }
-
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -602,14 +410,6 @@ private fun PolaroidCategoryRow(
             }
         }
     }
-}
-
-@Composable
-private fun appStyleLabel(style: AppStyle): String = when (style) {
-    AppStyle.COSMIC   -> "Cosmic"
-    AppStyle.GATEWAY  -> "Gateway"
-    AppStyle.EMBER    -> "Ember"
-    AppStyle.POLAROID -> "Polaroid"
 }
 
 @Composable

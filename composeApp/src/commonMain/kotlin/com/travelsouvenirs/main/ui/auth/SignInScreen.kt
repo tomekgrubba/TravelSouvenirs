@@ -35,8 +35,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.auth.isGoogleSignInAvailable
-import com.travelsouvenirs.main.platform.rememberAppStyle
-import com.travelsouvenirs.main.theme.AppStyle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -51,7 +49,7 @@ fun SignInScreen(onBack: () -> Unit = {}, onSignedIn: () -> Unit = {}) {
     val state by vm.uiState.collectAsState()
     val currentUser by authRepository.currentUser.collectAsState()
 
-    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
+    val isPolaroid = true
     val buttonShape = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(50.dp)
     val fieldShape  = if (isPolaroid) RoundedCornerShape(2.dp) else RoundedCornerShape(16.dp)
 

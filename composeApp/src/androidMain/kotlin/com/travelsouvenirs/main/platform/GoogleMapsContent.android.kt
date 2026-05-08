@@ -49,7 +49,6 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.location.LocationService
-import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.ui.map.ItemGroup
 import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
 import com.travelsouvenirs.main.ui.map.MapViewModel
@@ -73,7 +72,6 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val categoryFilter = LocalCategoryFilter.current
 
     val mapTheme = rememberMapTheme()
-    val appStyle = rememberAppStyle()
     val viewModel: MapViewModel = koinViewModel()
     val allItems by viewModel.items.collectAsState()
     val allPins by viewModel.itemPins.collectAsState()
@@ -196,9 +194,8 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                 isMyLocationEnabled = hasLocationPermission,
                 minZoomPreference = 2f,
                 mapStyleOptions = when {
-                    mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle(appStyle))
-                    appStyle == AppStyle.POLAROID -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
-                    else -> null
+                    mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle())
+                    else -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
                 }
             ),
             uiSettings = MapUiSettings(
@@ -275,10 +272,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                     .align(Alignment.Center)
                     .padding(32.dp)
                     .clickable { onAddClick() },
-                colors = if (appStyle == AppStyle.POLAROID)
-                    CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
-                else
-                    CardDefaults.cardColors()
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
             ) {
                 Text(
                     if (allItems.isEmpty())

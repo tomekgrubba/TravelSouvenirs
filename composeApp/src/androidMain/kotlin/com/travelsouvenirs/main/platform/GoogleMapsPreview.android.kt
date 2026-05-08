@@ -2,7 +2,6 @@ package com.travelsouvenirs.main.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.travelsouvenirs.main.theme.AppStyle
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -16,7 +15,6 @@ import com.google.maps.android.compose.rememberCameraPositionState
 @Composable
 internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: String, modifier: Modifier) {
     val mapTheme = rememberMapTheme()
-    val appStyle = rememberAppStyle()
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 5f)
     }
@@ -26,9 +24,8 @@ internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: Strin
         properties = MapProperties(
             minZoomPreference = 2f,
             mapStyleOptions = when {
-                mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle(appStyle))
-                appStyle == AppStyle.POLAROID -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
-                else -> null
+                mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle())
+                else -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
             }
         ),
         uiSettings = MapUiSettings(

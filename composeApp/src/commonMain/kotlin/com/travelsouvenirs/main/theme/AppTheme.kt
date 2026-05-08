@@ -4,12 +4,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 
 @Composable
-fun AppTheme(style: AppStyle = AppStyle.DEFAULT, content: @Composable () -> Unit) {
-    val colorScheme = when (style) {
-        AppStyle.COSMIC   -> CosmicColorScheme
-        AppStyle.GATEWAY  -> GatewayColorScheme
-        AppStyle.EMBER    -> EmberColorScheme
-        AppStyle.POLAROID -> PolaroidColorScheme
-    }
-    MaterialTheme(colorScheme = colorScheme, content = content)
+fun AppTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = PolaroidColorScheme, content = content)
 }

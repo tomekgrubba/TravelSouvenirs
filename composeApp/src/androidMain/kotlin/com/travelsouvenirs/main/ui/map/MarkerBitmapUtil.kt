@@ -22,8 +22,6 @@ import coil3.request.SuccessResult
 import coil3.toBitmap
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.travelsouvenirs.main.platform.rememberAppStyle
-import com.travelsouvenirs.main.theme.AppStyle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -38,17 +36,12 @@ internal fun groupIconKey(group: ItemGroup): String {
 @Composable
 fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, BitmapDescriptor> {
     val context = LocalContext.current
-    val borderColor = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
-    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
-    val icons = remember(isPolaroid) { mutableStateMapOf<Long, BitmapDescriptor>() }
-    LaunchedEffect(pins, borderColor, isPolaroid) {
+    val icons = remember { mutableStateMapOf<Long, BitmapDescriptor>() }
+    LaunchedEffect(pins) {
         pins.forEach { pin ->
             if (!icons.containsKey(pin.item.id)) {
                 launch {
-                    val bmp = if (isPolaroid)
-                        buildPolaroidBitmap(context, pin.item.photoPath, 0, sizePx)
-                    else
-                        buildCircularBitmap(context, pin.item.photoPath, 0, sizePx, borderColor = borderColor)
+                    val bmp = buildPolaroidBitmap(context, pin.item.photoPath, 0, sizePx)
                     if (bmp != null) icons[pin.item.id] = BitmapDescriptorFactory.fromBitmap(bmp)
                 }
             }
@@ -62,10 +55,8 @@ fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, B
 fun rememberGroupIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<String, BitmapDescriptor> {
     val context = LocalContext.current
     val primaryColor = MaterialTheme.colorScheme.primaryContainer.toArgb()
-    val borderColor = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
-    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
-    val icons = remember(isPolaroid) { mutableStateMapOf<String, BitmapDescriptor>() }
-    LaunchedEffect(groups, primaryColor, borderColor, isPolaroid) {
+    val icons = remember { mutableStateMapOf<String, BitmapDescriptor>() }
+    LaunchedEffect(groups, primaryColor) {
         val newKeys = groups.map { groupIconKey(it) }.toSet()
         icons.keys.toList().forEach { if (it !in newKeys) icons.remove(it) }
         groups.forEach { group ->
@@ -73,10 +64,7 @@ fun rememberGroupIcons(groups: List<ItemGroup>, sizePx: Int = 120): Map<String, 
             val count = if (group.items.size > 1) group.items.size else 0
             if (!icons.containsKey(key)) {
                 launch {
-                    val bmp = if (isPolaroid)
-                        buildPolaroidBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor)
-                    else
-                        buildCircularBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor, borderColor)
+                    val bmp = buildPolaroidBitmap(context, group.items.first().photoPath, count, sizePx, primaryColor)
                     if (bmp != null) icons[key] = BitmapDescriptorFactory.fromBitmap(bmp)
                 }
             }

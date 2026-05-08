@@ -52,9 +52,7 @@ import com.travelsouvenirs.main.di.LocalAppViewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.platform.PlatformBackHandler
 import com.travelsouvenirs.main.platform.PlatformMapContent
-import com.travelsouvenirs.main.platform.rememberAppStyle
 import com.travelsouvenirs.main.sync.SyncCoordinator
-import com.travelsouvenirs.main.theme.AppStyle
 import com.travelsouvenirs.main.ui.list.ListScreen
 import com.travelsouvenirs.main.ui.shared.CategoryFilterViewModel
 import kotlinx.coroutines.launch
@@ -100,7 +98,7 @@ fun MainScreen(
     val isSyncing by syncRepository.isSyncing.collectAsState()
     val isSyncingImages by syncRepository.isSyncingImages.collectAsState()
     val categoryFilterVM: CategoryFilterViewModel = koinViewModel()
-    val isPolaroid = rememberAppStyle() == AppStyle.POLAROID
+    val isPolaroid = true
 
     // Block back navigation during metadata sync
     PlatformBackHandler(enabled = isSyncing) { /* block */ }

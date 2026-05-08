@@ -2,14 +2,9 @@ package com.travelsouvenirs.main.util
 
 import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.platform.MapTheme
-import com.travelsouvenirs.main.theme.AppStyle
 
 /** Single source of truth for all SharedPreferences keys and typed accessors. */
 class AppSettings(private val settings: Settings) {
-
-    var appStyle: AppStyle
-        get() = AppStyle.fromString(settings.getStringOrNull(KEY_APP_STYLE))
-        set(value) { settings.putString(KEY_APP_STYLE, value.name) }
 
     var mapTheme: MapTheme
         get() = MapTheme.fromString(settings.getStringOrNull(KEY_MAP_THEME))
@@ -36,7 +31,6 @@ class AppSettings(private val settings: Settings) {
         set(value) { settings.putLong(KEY_LAST_SYNC_MILLIS, value) }
 
     companion object {
-        private const val KEY_APP_STYLE = "app_style"
         private const val KEY_MAP_THEME = "map_theme"
         private const val KEY_VIEW_MODE = "list_view_mode"
         private const val KEY_WIFI_ONLY_SYNC = "wifi_only_sync"
