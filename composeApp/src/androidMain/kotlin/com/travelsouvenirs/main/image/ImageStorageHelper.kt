@@ -44,7 +44,7 @@ object ImageStorageHelper {
         }
     }
 
-    private fun rotateForOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
+    internal fun rotateForOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
         val degrees = when (orientation) {
             ExifInterface.ORIENTATION_ROTATE_90 -> 90f
             ExifInterface.ORIENTATION_ROTATE_180 -> 180f
@@ -56,7 +56,7 @@ object ImageStorageHelper {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
-    private fun scaledDown(src: Bitmap): Bitmap {
+    internal fun scaledDown(src: Bitmap): Bitmap {
         val longest = maxOf(src.width, src.height)
         if (longest <= IMAGE_MAX_SIDE_PX) return src
         val scale = IMAGE_MAX_SIDE_PX.toFloat() / longest
