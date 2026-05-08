@@ -1,6 +1,10 @@
 package com.travelsouvenirs.main.platform
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -14,6 +18,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: String, modifier: Modifier) {
+    var showZoomControls by remember { mutableStateOf(false) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 5f)
     }
@@ -26,10 +31,11 @@ internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: Strin
         ),
         uiSettings = MapUiSettings(
             scrollGesturesEnabled = false,
-            zoomGesturesEnabled = true,
-            zoomControlsEnabled = true,
+            zoomGesturesEnabled = false,
+            zoomControlsEnabled = showZoomControls,
             rotationGesturesEnabled = false
-        )
+        ),
+        onMapClick = { showZoomControls = true }
     ) {
         Marker(
             state = MarkerState(LatLng(latitude, longitude)),
