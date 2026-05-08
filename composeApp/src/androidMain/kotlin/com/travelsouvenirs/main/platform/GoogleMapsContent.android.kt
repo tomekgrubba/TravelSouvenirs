@@ -71,7 +71,6 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
 
-    val mapTheme = rememberMapTheme()
     val viewModel: MapViewModel = koinViewModel()
     val allItems by viewModel.items.collectAsState()
     val allPins by viewModel.itemPins.collectAsState()
@@ -193,10 +192,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission,
                 minZoomPreference = 2f,
-                mapStyleOptions = when {
-                    mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle())
-                    else -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
-                }
+                mapStyleOptions = MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
             ),
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,

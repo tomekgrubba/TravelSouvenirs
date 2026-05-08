@@ -29,8 +29,6 @@ internal fun GoogleMapsLocationPicker(
         LatLng(selectedLat, selectedLng) else LatLng(20.0, 0.0)
     val initialZoom = if (selectedLat != null) MAP_ZOOM_LOCATION.toFloat() else MAP_ZOOM_MIN.toFloat()
 
-    val mapTheme = rememberMapTheme()
-
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initialLatLng, initialZoom)
     }
@@ -70,10 +68,7 @@ internal fun GoogleMapsLocationPicker(
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             minZoomPreference = 2f,
-            mapStyleOptions = when {
-                mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle())
-                else -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
-            }
+            mapStyleOptions = MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
         ),
         uiSettings = MapUiSettings(zoomControlsEnabled = true, myLocationButtonEnabled = false, mapToolbarEnabled = false),
         onMapClick = { latLng -> onLocationPicked(latLng.latitude, latLng.longitude) }

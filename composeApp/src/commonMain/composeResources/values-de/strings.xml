@@ -73,10 +73,6 @@
     <string name="section_about">Über</string>
     <string name="app_version">Version 1.0.0</string>
 
-    <string name="section_map_theme">Kartenstil</string>
-    <string name="map_theme_light">Hell</string>
-    <string name="map_theme_dark">Dunkel</string>
-
     <string name="syncing_data">Daten werden synchronisiert…</string>
     <string name="section_sync">Synchronisierung</string>
     <string name="label_wifi_only_sync">Nur über WLAN synchronisieren</string>

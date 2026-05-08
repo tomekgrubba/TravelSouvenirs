@@ -35,8 +35,6 @@ actual fun PlatformMapLocationPicker(
     modifier: Modifier
 ) {
     val onLocationPickedState = rememberUpdatedState(onLocationPicked)
-    val mapTheme = rememberMapTheme()
-
     val annotation = remember { MKPointAnnotation() }
 
     val delegate = remember {
@@ -124,11 +122,8 @@ actual fun PlatformMapLocationPicker(
         }
     }
 
-    LaunchedEffect(mapTheme) {
-        mapView.overrideUserInterfaceStyle = if (mapTheme == MapTheme.DARK)
-            UIUserInterfaceStyle.UIUserInterfaceStyleDark
-        else
-            UIUserInterfaceStyle.UIUserInterfaceStyleLight
+    LaunchedEffect(Unit) {
+        mapView.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
     }
 
     UIKitView(factory = { mapView }, modifier = modifier)

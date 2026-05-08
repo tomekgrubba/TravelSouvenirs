@@ -100,7 +100,6 @@ private class MapDelegateHelper(
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
-    val mapTheme = rememberMapTheme()
     val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
     val viewModel: MapViewModel = koinViewModel()
@@ -163,11 +162,8 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         mapView.delegate = delegate
     }
 
-    LaunchedEffect(mapTheme) {
-        mapView.overrideUserInterfaceStyle = if (mapTheme == MapTheme.DARK)
-            UIUserInterfaceStyle.UIUserInterfaceStyleDark
-        else
-            UIUserInterfaceStyle.UIUserInterfaceStyleLight
+    LaunchedEffect(Unit) {
+        mapView.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
     }
 
     // Initial camera — fire only once per provider switch

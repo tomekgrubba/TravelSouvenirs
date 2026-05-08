@@ -14,7 +14,6 @@ import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: String, modifier: Modifier) {
-    val mapTheme = rememberMapTheme()
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 5f)
     }
@@ -23,10 +22,7 @@ internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: Strin
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             minZoomPreference = 2f,
-            mapStyleOptions = when {
-                mapTheme == MapTheme.DARK -> MapStyleOptions(darkMapStyle())
-                else -> MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
-            }
+            mapStyleOptions = MapStyleOptions(GOOGLE_MAPS_LIGHT_STYLE_POLAROID)
         ),
         uiSettings = MapUiSettings(
             scrollGesturesEnabled = false,

@@ -8,7 +8,6 @@ import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.image.ImageStorage
-import com.travelsouvenirs.main.platform.MapTheme
 import com.travelsouvenirs.main.util.AppSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,7 +18,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
-    val mapTheme: MapTheme = MapTheme.DEFAULT,
     val wifiOnlySync: Boolean = false,
     val notes: String = "",
 )
@@ -35,7 +33,6 @@ class SettingsViewModel(
 
     private val _uiState = MutableStateFlow(
         SettingsUiState(
-            mapTheme = appSettings.mapTheme,
             wifiOnlySync = appSettings.wifiOnlySync,
             notes = appSettings.notes,
         )
@@ -43,8 +40,6 @@ class SettingsViewModel(
     val uiState: StateFlow<SettingsUiState> = _uiState
 
     // Eagerly (not WhileSubscribed) so unit tests can read .value without an active collector.
-    val mapTheme: StateFlow<MapTheme> = _uiState.map { it.mapTheme }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.mapTheme)
     val wifiOnlySync: StateFlow<Boolean> = _uiState.map { it.wifiOnlySync }
         .stateIn(viewModelScope, SharingStarted.Eagerly, appSettings.wifiOnlySync)
     val notes: StateFlow<String> = _uiState.map { it.notes }
@@ -54,11 +49,6 @@ class SettingsViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val canAddCategory: Boolean get() = customCategories.value.size < MAX_CUSTOM_CATEGORIES
-
-    fun setMapTheme(theme: MapTheme) {
-        _uiState.update { it.copy(mapTheme = theme) }
-        appSettings.mapTheme = theme
-    }
 
     fun setWifiOnlySync(enabled: Boolean) {
         _uiState.update { it.copy(wifiOnlySync = enabled) }

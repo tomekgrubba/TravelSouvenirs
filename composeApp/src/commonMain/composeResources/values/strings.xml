@@ -85,10 +85,6 @@
     <string name="section_about">About</string>
     <string name="app_version">Version 1.0.0</string>
 
-    <string name="section_map_theme">Map Style</string>
-    <string name="map_theme_light">Light</string>
-    <string name="map_theme_dark">Dark</string>
-
     <string name="syncing_data">Syncing your data…</string>
     <string name="section_sync">Sync</string>
     <string name="label_wifi_only_sync">Sync on Wi-Fi only</string>

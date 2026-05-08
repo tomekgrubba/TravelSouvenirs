@@ -16,7 +16,6 @@ import platform.UIKit.UIUserInterfaceStyle
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 internal fun NativeMapPreview(latitude: Double, longitude: Double, label: String, modifier: Modifier) {
-    val mapTheme = rememberMapTheme()
     val mapView = remember {
         MKMapView().apply {
             setScrollEnabled(false)
@@ -32,11 +31,8 @@ internal fun NativeMapPreview(latitude: Double, longitude: Double, label: String
             addAnnotation(pin as MKAnnotationProtocol)
         }
     }
-    LaunchedEffect(mapTheme) {
-        mapView.overrideUserInterfaceStyle = if (mapTheme == MapTheme.DARK)
-            UIUserInterfaceStyle.UIUserInterfaceStyleDark
-        else
-            UIUserInterfaceStyle.UIUserInterfaceStyleLight
+    LaunchedEffect(Unit) {
+        mapView.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
     }
     UIKitView(factory = { mapView }, modifier = modifier)
 }

@@ -62,7 +62,6 @@ import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.data.ItemRepository
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import com.travelsouvenirs.main.platform.MapTheme
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -77,7 +76,6 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
     val repository: ItemRepository = koinInject()
     val currentUser by authRepository.currentUser.collectAsState()
     val customCategories by vm.customCategories.collectAsState()
-    val mapTheme by vm.mapTheme.collectAsState()
     val wifiOnlySync by vm.wifiOnlySync.collectAsState()
     val allItems by repository.allItems.collectAsState(initial = emptyList())
 
@@ -233,21 +231,6 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
         }
     }
 
-    val mapThemeContent: @Composable () -> Unit = {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MapTheme.entries.forEach { theme ->
-                    FilterChip(
-                        selected = theme == mapTheme,
-                        onClick = { vm.setMapTheme(theme) },
-                        label = { Text(mapThemeLabel(theme), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-
     // ── Layout ───────────────────────────────────────────────────────────────
 
     Scaffold(
@@ -287,11 +270,6 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
                 title = stringResource(Res.string.section_categories),
                 rotation = 0.4f
             ) { categoriesContent() }
-
-            PolaroidSectionCard(
-                title = stringResource(Res.string.section_map_theme),
-                rotation = -0.3f
-            ) { mapThemeContent() }
 
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -410,12 +388,6 @@ private fun PolaroidCategoryRow(
             }
         }
     }
-}
-
-@Composable
-private fun mapThemeLabel(theme: MapTheme): String = when (theme) {
-    MapTheme.LIGHT -> stringResource(Res.string.map_theme_light)
-    MapTheme.DARK -> stringResource(Res.string.map_theme_dark)
 }
 
 @Composable
