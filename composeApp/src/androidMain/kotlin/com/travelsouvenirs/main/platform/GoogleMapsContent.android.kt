@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -201,44 +202,48 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         ) {
             if (showIndividual) {
                 itemPins.forEach { pin ->
-                    Marker(
-                        state = rememberUpdatedMarkerState(
-                            position = LatLng(pin.position.lat, pin.position.lng)
-                        ),
-                        title = pin.item.name,
-                        snippet = pin.item.placeName,
-                        icon = individualIcons[pin.item.id],
-                        onClick = { onPinClick(pin.item.id); true }
-                    )
+                    key(pin.item.id) {
+                        Marker(
+                            state = rememberUpdatedMarkerState(
+                                position = LatLng(pin.position.lat, pin.position.lng)
+                            ),
+                            title = pin.item.name,
+                            snippet = pin.item.placeName,
+                            icon = individualIcons[pin.item.id],
+                            onClick = { onPinClick(pin.item.id); true }
+                        )
+                    }
                 }
             } else {
                 itemGroups.forEach { group ->
-                    val center = LatLng(group.centerLat, group.centerLng)
-                    Marker(
-                        state = rememberUpdatedMarkerState(position = center),
-                        title = group.items.first().name,
-                        snippet = if (group.items.size > 1)
-                            stringResource(Res.string.items_here, group.items.size) else group.items.first().placeName,
-                        icon = groupIcons["${group.items.first().photoPath}_${if (group.items.size > 1) group.items.size else 0}"],
-                        onClick = {
-                            if (group.items.size == 1) {
-                                onPinClick(group.items.first().id)
-                            } else {
-                                val groupIds = group.items.map { it.id }.toSet()
-                                val groupPins = itemPins.filter { it.item.id in groupIds }
-                                scope.launch {
-                                    val boundsBuilder = LatLngBounds.Builder()
-                                    groupPins.forEach { boundsBuilder.include(LatLng(it.position.lat, it.position.lng)) }
-                                    if (groupPins.isEmpty()) boundsBuilder.include(center)
-                                    cameraPositionState.animate(
-                                        CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 200),
-                                        600
-                                    )
+                    key(group.items.first().id, group.items.size) {
+                        val center = LatLng(group.centerLat, group.centerLng)
+                        Marker(
+                            state = rememberUpdatedMarkerState(position = center),
+                            title = group.items.first().name,
+                            snippet = if (group.items.size > 1)
+                                stringResource(Res.string.items_here, group.items.size) else group.items.first().placeName,
+                            icon = groupIcons["${group.items.first().photoPath}_${if (group.items.size > 1) group.items.size else 0}"],
+                            onClick = {
+                                if (group.items.size == 1) {
+                                    onPinClick(group.items.first().id)
+                                } else {
+                                    val groupIds = group.items.map { it.id }.toSet()
+                                    val groupPins = itemPins.filter { it.item.id in groupIds }
+                                    scope.launch {
+                                        val boundsBuilder = LatLngBounds.Builder()
+                                        groupPins.forEach { boundsBuilder.include(LatLng(it.position.lat, it.position.lng)) }
+                                        if (groupPins.isEmpty()) boundsBuilder.include(center)
+                                        cameraPositionState.animate(
+                                            CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 200),
+                                            600
+                                        )
+                                    }
                                 }
+                                true
                             }
-                            true
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

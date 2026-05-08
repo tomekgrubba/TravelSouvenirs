@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.LatLon
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlin.math.PI
@@ -40,11 +42,13 @@ class MapViewModel(repository: ItemRepository) : ViewModel() {
     /** Individual pin positions with overlapping items spread in a small circle. */
     val itemPins: StateFlow<List<ItemPin>> = repository.allItems
         .map(::spreadOverlapping)
+        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** Pre-computed exact-location groups used at low zoom. */
     val itemGroups: StateFlow<List<ItemGroup>> = repository.allItems
         .map(::computeGroups)
+        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** Raw list of all items, used for initial camera bounds and empty-state detection. */

@@ -32,6 +32,18 @@ internal fun groupIconKey(group: ItemGroup): String {
     return "${group.items.first().photoPath}_$count"
 }
 
+private object MarkerDimens {
+    const val POLAROID_BORDER_RATIO = 0.10f
+    const val POLAROID_BOTTOM_STRIP_RATIO = 0.30f
+    const val POLAROID_BADGE_RADIUS_RATIO = 0.24f
+    const val POLAROID_BADGE_TEXT_RATIO = 1.1f
+    const val POLAROID_CORNER_RADIUS = 6f
+    const val CIRCULAR_BORDER_WIDTH_RATIO = 0.055f
+    const val CIRCULAR_BADGE_RADIUS_RATIO = 0.27f
+    const val CIRCULAR_BADGE_TEXT_RATIO = 1.15f
+    const val BADGE_BORDER_STROKE = 3f
+}
+
 /** Builds and caches photo map markers for individual items, keyed by item id. */
 @Composable
 fun rememberIndividualIcons(pins: List<ItemPin>, sizePx: Int = 120): Map<Long, BitmapDescriptor> {
@@ -82,34 +94,34 @@ internal suspend fun buildPolaroidBitmap(
     badgeColor: Int? = null,
 ): Bitmap? = withContext(Dispatchers.IO) {
     try {
-        val request = ImageRequest.Builder(context).data(photoPath).size(sizePx, sizePx).build()
+        val border = (sizePx * MarkerDimens.POLAROID_BORDER_RATIO).coerceAtLeast(5f).toInt()
+        val bottomStrip = (sizePx * MarkerDimens.POLAROID_BOTTOM_STRIP_RATIO).toInt()
+        val imgSize = sizePx - 2 * border
+        val totalH = border + imgSize + bottomStrip
+
+        val request = ImageRequest.Builder(context).data(photoPath).size(imgSize, imgSize).build()
         val result = SingletonImageLoader.get(context).execute(request) as? SuccessResult
             ?: return@withContext null
         val decoded = try { result.image.toBitmap() } catch (_: Exception) { return@withContext null }
         val source = if (decoded.config == Bitmap.Config.HARDWARE)
             decoded.copy(Bitmap.Config.ARGB_8888, false) else decoded
 
-        val border = (sizePx * 0.10f).coerceAtLeast(5f).toInt()
-        val bottomStrip = (sizePx * 0.30f).toInt()
-        val imgSize = sizePx - 2 * border
-        val totalH = border + imgSize + bottomStrip
-
         // Badge geometry: straddles the top-right corner, overflowing by br*0.5 on right and top.
         // Expand canvas and shift polaroid content inward so the badge is fully visible.
-        val br = sizePx * 0.24f
+        val br = sizePx * MarkerDimens.POLAROID_BADGE_RADIUS_RATIO
         val overflow = if (count > 1) (br * 0.5f + 1f).toInt() else 0
         val yOff = overflow
 
         val out = Bitmap.createBitmap(sizePx + overflow, totalH + yOff, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)
 
-        canvas.drawRoundRect(RectF(0f, yOff.toFloat(), sizePx.toFloat(), (totalH + yOff).toFloat()), 6f, 6f,
+        canvas.drawRoundRect(RectF(0f, yOff.toFloat(), sizePx.toFloat(), (totalH + yOff).toFloat()), MarkerDimens.POLAROID_CORNER_RADIUS, MarkerDimens.POLAROID_CORNER_RADIUS,
             Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE })
 
         canvas.drawBitmap(Bitmap.createScaledBitmap(source, imgSize, imgSize, true),
             border.toFloat(), (border + yOff).toFloat(), null)
 
-        canvas.drawRoundRect(RectF(1f, yOff + 1f, sizePx - 1f, totalH + yOff - 1f), 6f, 6f,
+        canvas.drawRoundRect(RectF(1f, yOff + 1f, sizePx - 1f, totalH + yOff - 1f), MarkerDimens.POLAROID_CORNER_RADIUS, MarkerDimens.POLAROID_CORNER_RADIUS,
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
                 color = Color.argb(70, 0, 0, 0)
@@ -123,10 +135,10 @@ internal suspend fun buildPolaroidBitmap(
                 color = badgeColor ?: Color.argb(255, 25, 118, 210)
             })
             canvas.drawCircle(bx, by, br - 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE; color = Color.WHITE; strokeWidth = 3f
+                style = Paint.Style.STROKE; color = Color.WHITE; strokeWidth = MarkerDimens.BADGE_BORDER_STROKE
             })
             val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.WHITE; textSize = br * 1.1f
+                color = Color.WHITE; textSize = br * MarkerDimens.POLAROID_BADGE_TEXT_RATIO
                 textAlign = Paint.Align.CENTER; typeface = Typeface.DEFAULT_BOLD
             }
             canvas.drawText(count.toString(), bx, by - (tp.descent() + tp.ascent()) / 2, tp)
@@ -168,7 +180,7 @@ internal suspend fun buildCircularBitmap(
         }
         canvas.drawCircle(r, r, r, photoPaint)
 
-        val borderWidth = (sizePx * 0.055f).coerceAtLeast(3f)
+        val borderWidth = (sizePx * MarkerDimens.CIRCULAR_BORDER_WIDTH_RATIO).coerceAtLeast(3f)
         canvas.drawCircle(r, r, r - borderWidth / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             color = borderColor
@@ -176,7 +188,7 @@ internal suspend fun buildCircularBitmap(
         })
 
         if (count > 1) {
-            val br = sizePx * 0.27f
+            val br = sizePx * MarkerDimens.CIRCULAR_BADGE_RADIUS_RATIO
             val bx = sizePx - br + 2f
             val by = br - 2f
             canvas.drawCircle(bx, by, br, Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -185,11 +197,11 @@ internal suspend fun buildCircularBitmap(
             canvas.drawCircle(bx, by, br - 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
                 color = Color.WHITE
-                strokeWidth = 3f
+                strokeWidth = MarkerDimens.BADGE_BORDER_STROKE
             })
             val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.WHITE
-                textSize = br * 1.15f
+                textSize = br * MarkerDimens.CIRCULAR_BADGE_TEXT_RATIO
                 textAlign = Paint.Align.CENTER
                 typeface = Typeface.DEFAULT_BOLD
             }

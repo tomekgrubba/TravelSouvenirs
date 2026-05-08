@@ -6,10 +6,12 @@ import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.SortOption
 import com.travelsouvenirs.main.util.AppSettings
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
@@ -45,7 +47,8 @@ class ListViewModel(private val appSettings: AppSettings, repository: ItemReposi
             SortOption.DATE -> filtered.sortedByDescending { it.dateAcquired }
             SortOption.LOCATION -> filtered.sortedBy { it.placeName.lowercase() }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onQueryChange(q: String) { _uiState.update { it.copy(searchQuery = q) } }
     fun onSortChange(option: SortOption) { _uiState.update { it.copy(sortOption = option) } }

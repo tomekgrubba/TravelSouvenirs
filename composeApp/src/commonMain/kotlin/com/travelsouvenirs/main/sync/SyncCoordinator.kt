@@ -76,7 +76,8 @@ class SyncCoordinator(
             // Categories must be synced first so every item's category FK parent exists locally.
             categorySync.sync(userId)
             metadataSync.downloadRemoteMetadata(userId)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            println("SyncCoordinator: metadata sync failed: $e")
             _errors.tryEmit("Sync failed. Check your connection.")
         } finally {
             _isSyncing.value = false
@@ -95,7 +96,8 @@ class SyncCoordinator(
         try {
             metadataSync.uploadPending(userId, imageSyncHelper)
             imageSync.downloadMissingImages()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            println("SyncCoordinator: image sync failed: $e")
             _errors.tryEmit("Sync failed. Check your connection.")
         } finally {
             _isSyncingImages.value = false
