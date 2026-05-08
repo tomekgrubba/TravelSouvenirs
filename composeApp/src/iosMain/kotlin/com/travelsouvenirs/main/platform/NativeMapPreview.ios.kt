@@ -19,7 +19,7 @@ internal fun NativeMapPreview(latitude: Double, longitude: Double, label: String
     val mapView = remember {
         MKMapView().apply {
             setScrollEnabled(false)
-            setZoomEnabled(false)
+            setZoomEnabled(true)
             setPitchEnabled(false)
             setRotateEnabled(false)
             val coord = CLLocationCoordinate2DMake(latitude, longitude)

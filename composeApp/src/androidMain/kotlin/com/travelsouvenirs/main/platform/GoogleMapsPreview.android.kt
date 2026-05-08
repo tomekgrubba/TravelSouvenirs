@@ -26,8 +26,8 @@ internal fun GoogleMapsPreview(latitude: Double, longitude: Double, label: Strin
         ),
         uiSettings = MapUiSettings(
             scrollGesturesEnabled = false,
-            zoomGesturesEnabled = false,
-            zoomControlsEnabled = false,
+            zoomGesturesEnabled = true,
+            zoomControlsEnabled = true,
             rotationGesturesEnabled = false
         )
     ) {
