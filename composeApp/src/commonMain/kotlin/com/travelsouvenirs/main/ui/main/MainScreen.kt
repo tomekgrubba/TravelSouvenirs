@@ -174,15 +174,15 @@ fun MainScreen(
                         selected = selectedTab == MainTab.MAP,
                         enabled = !isSyncing,
                         onClick = { selectedTabName = MainTab.MAP.name },
-                        text = { Text(stringResource(Res.string.tab_map), style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 18.sp else 16.sp)) },
-                        icon = { Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(if (isTablet) 28.dp else 24.dp)) }
+                        text = { Text(stringResource(Res.string.tab_map), style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 21.sp else 16.sp)) },
+                        icon = { Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(if (isTablet) 32.dp else 24.dp)) }
                     )
                     Tab(
                         selected = selectedTab == MainTab.LIST,
                         enabled = !isSyncing,
                         onClick = { selectedTabName = MainTab.LIST.name },
-                        text = { Text(stringResource(Res.string.tab_list), style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 18.sp else 16.sp)) },
-                        icon = { Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(if (isTablet) 28.dp else 24.dp)) }
+                        text = { Text(stringResource(Res.string.tab_list), style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 21.sp else 16.sp)) },
+                        icon = { Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(if (isTablet) 32.dp else 24.dp)) }
                     )
                 }
             }

@@ -130,7 +130,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     val density = LocalDensity.current
     val screenWidthPt = UIScreen.mainScreen.bounds.useContents { size.width }
-    val markerSizeDp = if (screenWidthPt >= 600.0) 48 else 40
+    val markerSizeDp = if (screenWidthPt >= 600.0) 56 else 40
     val markerSizePx = with(density) { markerSizeDp.dp.roundToPx() }
     val individualIcons = rememberIndividualIosIcons(itemPins, markerSizePx)
     val groupIcons      = rememberGroupIosIcons(itemGroups, markerSizePx)

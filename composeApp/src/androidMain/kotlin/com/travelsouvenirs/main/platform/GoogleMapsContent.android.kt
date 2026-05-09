@@ -115,7 +115,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
-    val markerSizeDp = if (configuration.screenWidthDp >= 600) 48 else 40
+    val markerSizeDp = if (configuration.screenWidthDp >= 600) 56 else 40
     val markerSizePx = with(density) { markerSizeDp.dp.roundToPx() }
 
     val individualIcons = rememberIndividualIcons(itemPins, sizePx = markerSizePx)
