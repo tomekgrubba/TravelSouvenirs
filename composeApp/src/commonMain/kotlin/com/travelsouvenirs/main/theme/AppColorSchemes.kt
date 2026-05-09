@@ -5,7 +5,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 val PolaroidColorScheme: ColorScheme = lightColorScheme(
-    primary                = Color(0xFF3D2008),
+    primary                = Color(0xFF7A4520),
     onPrimary              = Color(0xFFFFFFFF),
     primaryContainer       = Color(0xFF7A4520),
     onPrimaryContainer     = Color(0xFFFFECDE),

@@ -520,7 +520,11 @@ private fun LocationPickerDialog(
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .fillMaxWidth()
-                                .padding(8.dp)
+                                .padding(8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -540,7 +544,7 @@ private fun LocationPickerDialog(
                                                 onClick = { viewModel.onPlaceSelected(place) },
                                                 shape = RoundedCornerShape(16.dp),
                                                 colors = CardDefaults.cardColors(
-                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                                                 ),
                                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                                 modifier = Modifier.fillMaxWidth()
