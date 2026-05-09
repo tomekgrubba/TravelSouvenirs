@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.travelsouvenirs.main.di.LocalCategoryFilter
@@ -39,6 +40,7 @@ import platform.CoreLocation.CLLocationCoordinate2DMake
 import platform.MapKit.MKAnnotationProtocol
 import platform.MapKit.MKAnnotationView
 import platform.MapKit.MKCoordinateRegionMake
+import platform.UIKit.UIScreen
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
 import platform.MapKit.MKCoordinateSpanMake
 import platform.MapKit.MKMapView
@@ -126,8 +128,12 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         else withContext(Dispatchers.Default) { MapViewModel.groupByZoom(items, zoomLevel) }
     }
 
-    val individualIcons = rememberIndividualIosIcons(itemPins)
-    val groupIcons      = rememberGroupIosIcons(itemGroups)
+    val density = LocalDensity.current
+    val screenWidthPt = UIScreen.mainScreen.bounds.useContents { size.width }
+    val markerSizeDp = if (screenWidthPt >= 600.0) 48 else 40
+    val markerSizePx = with(density) { markerSizeDp.dp.roundToPx() }
+    val individualIcons = rememberIndividualIosIcons(itemPins, markerSizePx)
+    val groupIcons      = rememberGroupIosIcons(itemGroups, markerSizePx)
 
     // rememberUpdatedState so the delegate lambda always sees the latest items
     val latestItems = rememberUpdatedState(items)

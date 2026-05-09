@@ -3,6 +3,7 @@ package com.travelsouvenirs.main.ui.main
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -112,6 +113,8 @@ fun MainScreen(
     // Block back navigation during metadata sync
     PlatformBackHandler(enabled = isSyncing) { /* block */ }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val isTablet = maxWidth >= 600.dp
     CompositionLocalProvider(LocalCategoryFilter provides categoryFilterVM) {
     Scaffold(
         topBar = {
@@ -171,15 +174,15 @@ fun MainScreen(
                         selected = selectedTab == MainTab.MAP,
                         enabled = !isSyncing,
                         onClick = { selectedTabName = MainTab.MAP.name },
-                        text = { Text(stringResource(Res.string.tab_map), style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)) },
-                        icon = { Icon(Icons.Default.LocationOn, contentDescription = null) }
+                        text = { Text(stringResource(Res.string.tab_map), style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 18.sp else 16.sp)) },
+                        icon = { Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(if (isTablet) 28.dp else 24.dp)) }
                     )
                     Tab(
                         selected = selectedTab == MainTab.LIST,
                         enabled = !isSyncing,
                         onClick = { selectedTabName = MainTab.LIST.name },
-                        text = { Text(stringResource(Res.string.tab_list), style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)) },
-                        icon = { Icon(Icons.Default.List, contentDescription = null) }
+                        text = { Text(stringResource(Res.string.tab_list), style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 18.sp else 16.sp)) },
+                        icon = { Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(if (isTablet) 28.dp else 24.dp)) }
                     )
                 }
             }
@@ -219,4 +222,5 @@ fun MainScreen(
         }
     }
     } // CompositionLocalProvider
+    } // BoxWithConstraints
 }
