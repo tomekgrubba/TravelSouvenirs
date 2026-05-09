@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -189,8 +190,14 @@ fun MainScreen(
         },
         floatingActionButton = {
             if (!isSyncing) {
-                ExtendedFloatingActionButton(onClick = onAddClick) {
-                    Text(stringResource(Res.string.fab_add_item))
+                ExtendedFloatingActionButton(
+                    modifier = if (isTablet) Modifier.height(64.dp) else Modifier,
+                    onClick = onAddClick,
+                ) {
+                    Text(
+                        stringResource(Res.string.fab_add_item),
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 18.sp else 16.sp),
+                    )
                 }
             }
         },

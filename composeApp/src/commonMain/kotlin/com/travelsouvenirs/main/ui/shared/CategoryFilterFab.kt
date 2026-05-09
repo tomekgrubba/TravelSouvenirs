@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -31,24 +32,32 @@ fun CategoryFilterFab(
     availableCategories: List<String>,
     selectedCategories: Set<String>,
     onToggleCategory: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isTablet: Boolean = false,
 ) {
     var showFilterMenu by remember { mutableStateOf(false) }
     val isFilterActive = selectedCategories.size < availableCategories.size
+    val containerColor = if (isFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = if (isFilterActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    val iconSize = if (isTablet) 28.dp else 24.dp
 
     Box(modifier = modifier) {
-        SmallFloatingActionButton(
-            onClick = { showFilterMenu = true },
-            containerColor = if (isFilterActive)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = if (isFilterActive)
-                MaterialTheme.colorScheme.onPrimary
-            else
-                MaterialTheme.colorScheme.onSurfaceVariant
-        ) {
-            Icon(Icons.Default.FilterList, contentDescription = stringResource(Res.string.cd_filter_category))
+        if (isTablet) {
+            FloatingActionButton(
+                onClick = { showFilterMenu = true },
+                containerColor = containerColor,
+                contentColor = contentColor,
+            ) {
+                Icon(Icons.Default.FilterList, contentDescription = stringResource(Res.string.cd_filter_category), modifier = Modifier.size(iconSize))
+            }
+        } else {
+            SmallFloatingActionButton(
+                onClick = { showFilterMenu = true },
+                containerColor = containerColor,
+                contentColor = contentColor,
+            ) {
+                Icon(Icons.Default.FilterList, contentDescription = stringResource(Res.string.cd_filter_category))
+            }
         }
 
         DropdownMenu(

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -114,8 +115,9 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     }
 
     val configuration = LocalConfiguration.current
+    val isTablet = configuration.screenWidthDp >= 600
     val density = LocalDensity.current
-    val markerSizeDp = if (configuration.screenWidthDp >= 600) 56 else 40
+    val markerSizeDp = if (isTablet) 56 else 40
     val markerSizePx = with(density) { markerSizeDp.dp.roundToPx() }
 
     val individualIcons = rememberIndividualIcons(itemPins, sizePx = markerSizePx)
@@ -262,14 +264,21 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            SmallFloatingActionButton(onClick = { jumpToMyLocation() }) {
-                Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.cd_my_location))
+            if (isTablet) {
+                FloatingActionButton(onClick = { jumpToMyLocation() }) {
+                    Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.cd_my_location), modifier = Modifier.size(28.dp))
+                }
+            } else {
+                SmallFloatingActionButton(onClick = { jumpToMyLocation() }) {
+                    Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.cd_my_location))
+                }
             }
 
             CategoryFilterFab(
                 availableCategories = availableCategories,
                 selectedCategories = selectedCategories,
-                onToggleCategory = { categoryFilter.toggleCategoryFilter(it) }
+                onToggleCategory = { categoryFilter.toggleCategoryFilter(it) },
+                isTablet = isTablet,
             )
         }
 

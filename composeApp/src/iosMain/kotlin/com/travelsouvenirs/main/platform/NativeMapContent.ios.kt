@@ -130,7 +130,8 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     val density = LocalDensity.current
     val screenWidthPt = UIScreen.mainScreen.bounds.useContents { size.width }
-    val markerSizeDp = if (screenWidthPt >= 600.0) 56 else 40
+    val isTablet = screenWidthPt >= 600.0
+    val markerSizeDp = if (isTablet) 56 else 40
     val markerSizePx = with(density) { markerSizeDp.dp.roundToPx() }
     val individualIcons = rememberIndividualIosIcons(itemPins, markerSizePx)
     val groupIcons      = rememberGroupIosIcons(itemGroups, markerSizePx)
@@ -234,7 +235,8 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             availableCategories = availableCategories,
             selectedCategories = selectedCategories,
             onToggleCategory = { categoryFilter.toggleCategoryFilter(it) },
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
+            isTablet = isTablet,
         )
 
         // Empty state
