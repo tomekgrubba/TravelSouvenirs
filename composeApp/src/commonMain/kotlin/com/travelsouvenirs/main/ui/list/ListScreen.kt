@@ -279,7 +279,7 @@ private fun ViewModeButton(
     else
         MaterialTheme.colorScheme.surfaceContainerHighest
     val contentColor = if (selected)
-        MaterialTheme.colorScheme.primary
+        MaterialTheme.colorScheme.onPrimaryContainer
     else
         MaterialTheme.colorScheme.onSurfaceVariant
 
