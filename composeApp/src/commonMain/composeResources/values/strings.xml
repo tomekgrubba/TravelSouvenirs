@@ -25,7 +25,7 @@
     <string name="sort_location">Location name</string>
     <string name="view_as">View as</string>
     <string name="view_list">List</string>
-    <string name="view_tile">Tile</string>
+    <string name="view_tile">Grid</string>
     <string name="filter_by_category">Filter by category</string>
     <string name="empty_state_no_items">No items yet.\nTap here to add your first!</string>
     <string name="empty_state_no_results">No results.</string>
