@@ -3,6 +3,7 @@ package com.travelsouvenirs.main.ui.list
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -235,15 +236,18 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                 }
             }
             viewMode == ViewMode.GRID -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    items(items, key = { it.id }) { item ->
-                        PolaroidTileCard(item = item, onClick = { onItemClick(item.id) })
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val columns = if (maxWidth >= 600.dp) 3 else 2
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(columns),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        items(items, key = { it.id }) { item ->
+                            PolaroidTileCard(item = item, onClick = { onItemClick(item.id) })
+                        }
                     }
                 }
             }

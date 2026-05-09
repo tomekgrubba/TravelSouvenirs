@@ -31,7 +31,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -111,8 +113,13 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         else withContext(Dispatchers.Default) { MapViewModel.groupByZoom(items, zoom) }
     }
 
-    val individualIcons = rememberIndividualIcons(itemPins)
-    val groupIcons = rememberGroupIcons(itemGroups)
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val markerSizeDp = if (configuration.screenWidthDp >= 600) 48 else 40
+    val markerSizePx = with(density) { markerSizeDp.dp.roundToPx() }
+
+    val individualIcons = rememberIndividualIcons(itemPins, sizePx = markerSizePx)
+    val groupIcons = rememberGroupIcons(itemGroups, sizePx = markerSizePx)
 
     val scope = rememberCoroutineScope()
 
