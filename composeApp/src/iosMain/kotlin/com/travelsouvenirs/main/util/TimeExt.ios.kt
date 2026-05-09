@@ -1,7 +1,5 @@
-@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
-
 package com.travelsouvenirs.main.util
 
-import platform.posix.time
+import platform.Foundation.NSDate
 
-actual fun nowEpochMillis(): Long = time(null) * 1000L
+actual fun nowEpochMillis(): Long = (NSDate.date().timeIntervalSince1970() * 1000.0).toLong()

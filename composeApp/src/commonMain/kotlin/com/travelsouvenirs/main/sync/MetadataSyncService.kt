@@ -20,8 +20,11 @@ class MetadataSyncService(
         val lastSync = appSettings.lastSyncMillis
         val now = nowEpochMillis()
         val collectionRef = firestore.collection("users").document(userId).collection("items")
+        // Use a 5-second lookback buffer so items whose timestamps land at or just before
+        // lastSync (due to cross-device clock skew) are still fetched. The local
+        // updatedAtMillis comparison below prevents overwriting newer local edits.
         val snapshot = if (lastSync == 0L) collectionRef.get()
-        else collectionRef.where { "updatedAtMillis" greaterThan lastSync }.get()
+        else collectionRef.where { "updatedAtMillis" greaterThan (lastSync - 5_000L) }.get()
 
         for (doc in snapshot.documents) {
             val remote = doc.data<FirebaseItem>()
