@@ -101,12 +101,10 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     }
 
     val launchPhotoPicker = rememberPhotoPicker { path, exifLat, exifLng, exifDate ->
-        path?.let { viewModel.onPhotoSelected(it) }
-        if (exifLat != null && exifLng != null) viewModel.prefillLocationFromExif(exifLat, exifLng)
-        exifDate?.let { viewModel.prefillDateFromExif(it) }
+        path?.let { viewModel.onPhotoSelected(it, exifLat, exifLng, exifDate) }
     }
-    val launchCamera = rememberCameraCapture { path ->
-        path?.let { viewModel.onPhotoSelected(it) }
+    val launchCamera = rememberCameraCapture { path, exifLat, exifLng ->
+        path?.let { viewModel.onPhotoSelected(it, exifLat, exifLng) }
     }
     val requestLocationPermission = rememberLocationPermissionLauncher(
         onGranted = { viewModel.fetchCurrentLocation() }
@@ -123,6 +121,21 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     val isPolaroid = true
     val fieldShape = RoundedCornerShape(2.dp)
     val buttonShape = RoundedCornerShape(2.dp)
+
+    val aiSuggestedPlace = uiState.aiSuggestedPlace
+    if (aiSuggestedPlace != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissAiSuggestion() },
+            title = { Text("Location detected") },
+            text = { Text("This looks like $aiSuggestedPlace to me. Do you want me to prefill the fields?") },
+            confirmButton = {
+                Button(onClick = { viewModel.onAcceptAiSuggestion() }) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onDismissAiSuggestion() }) { Text("No, enter manually") }
+            }
+        )
+    }
 
     if (showDatePicker) {
         DatePickerDialog(
@@ -217,7 +230,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                     }
                 }
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier

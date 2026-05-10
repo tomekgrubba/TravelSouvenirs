@@ -11,9 +11,13 @@ import kotlinx.datetime.LocalDate
 @Composable
 expect fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifLng: Double?, exifDate: LocalDate?) -> Unit): () -> Unit
 
-/** Returns a launcher that opens the camera; result is the internal-storage path after cropping. */
+/**
+ * Returns a launcher that opens the camera.
+ * [onResult] receives the internal-storage path after cropping, plus GPS coordinates extracted
+ * from the original EXIF before UCrop strips them (null when unavailable).
+ */
 @Composable
-expect fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit
+expect fun rememberCameraCapture(onResult: (path: String?, exifLat: Double?, exifLng: Double?) -> Unit): () -> Unit
 
 /** Returns a launcher that requests fine-location permission, then calls [onGranted] if approved. */
 @Composable

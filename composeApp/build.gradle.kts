@@ -54,6 +54,7 @@ kotlin {
             implementation(libs.androidx.credentials)
             implementation(libs.androidx.credentials.play)
             implementation(libs.googleid)
+            implementation("com.google.mlkit:genai-prompt:1.0.0-beta2")
         }
         iosMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)

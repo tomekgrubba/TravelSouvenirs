@@ -8,6 +8,7 @@ import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.usecase.SaveItemUseCase
+import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.location.PlaceResult
@@ -42,6 +43,9 @@ data class AddItemUiState(
     val locationError: String? = null,
     // Category state
     val availableCategories: List<String> = listOf(DEFAULT_CATEGORY),
+    // AI suggestion dialog
+    val aiSuggestedPlace: String? = null,
+    val pendingExifDate: LocalDate? = null,
 )
 
 /**
@@ -54,6 +58,7 @@ class AddItemViewModel(
     imageStorage: ImageStorage,
     private val editId: Long? = null,
     private val categoryRepository: CategoryRepository,
+    private val imageLocationAnalyzer: ImageLocationAnalyzer,
 ) : ViewModel() {
 
     private val saveItem = SaveItemUseCase(repository)
@@ -105,10 +110,46 @@ class AddItemViewModel(
         }
     }
 
-    fun onPhotoSelected(sourcePath: String) {
+    fun onPhotoSelected(sourcePath: String, exifLat: Double? = null, exifLng: Double? = null, exifDate: LocalDate? = null) {
         imagePicker.onPhotoSelected(sourcePath) { path ->
             _uiState.update { it.copy(photoPath = path) }
+            if (path != null) {
+                viewModelScope.launch {
+                    val result = imageLocationAnalyzer.analyze(path, exifLat, exifLng)
+                    if (result != null) {
+                        _uiState.update { it.copy(aiSuggestedPlace = result, pendingExifDate = exifDate) }
+                    } else {
+                        if (exifLat != null && exifLng != null) prefillLocationFromExif(exifLat, exifLng)
+                        exifDate?.let { prefillDateFromExif(it) }
+                    }
+                }
+            }
         }
+    }
+
+    fun onAcceptAiSuggestion() {
+        val state = _uiState.value
+        val place = state.aiSuggestedPlace ?: return
+        _uiState.update { it.copy(
+            name = if (it.name.isBlank()) place.split(", ").first() else it.name,
+            aiSuggestedPlace = null,
+            pendingExifDate = null,
+        ) }
+        state.pendingExifDate?.let { prefillDateFromExif(it) }
+        viewModelScope.launch {
+            val results = runCatching { locationService.searchByName(place) }.getOrNull()
+            val first = results?.firstOrNull()
+            if (first != null) {
+                val resolved = runCatching { locationService.reverseGeocode(first.latitude, first.longitude) }.getOrElse { first.name }
+                _uiState.update { it.copy(latitude = first.latitude, longitude = first.longitude, placeName = resolved) }
+            } else if (state.placeName.isBlank()) {
+                _uiState.update { it.copy(placeName = place) }
+            }
+        }
+    }
+
+    fun onDismissAiSuggestion() {
+        _uiState.update { it.copy(aiSuggestedPlace = null, pendingExifDate = null) }
     }
 
     fun prefillLocationFromExif(lat: Double, lng: Double) {

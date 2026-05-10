@@ -3,7 +3,9 @@ package com.travelsouvenirs.main.di
 import com.russhwolf.settings.NSUserDefaultsSettings
 import com.travelsouvenirs.main.auth.GoogleSignInHelper
 import com.travelsouvenirs.main.auth.IosGoogleSignInHelper
+import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
+import com.travelsouvenirs.main.image.IosImageLocationAnalyzer
 import com.travelsouvenirs.main.image.IosImageStorage
 import com.travelsouvenirs.main.location.IosLocationService
 import com.travelsouvenirs.main.location.LocationService
@@ -18,4 +20,5 @@ val platformModule = module {
     single<ImageStorage> { IosImageStorage() }
     single<NetworkMonitor> { IosNetworkMonitor() }
     single<GoogleSignInHelper> { IosGoogleSignInHelper() }
+    single<ImageLocationAnalyzer> { IosImageLocationAnalyzer() }
 }

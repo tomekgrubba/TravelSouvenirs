@@ -122,10 +122,12 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
 }
 
 @Composable
-actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
+actual fun rememberCameraCapture(onResult: (path: String?, exifLat: Double?, exifLng: Double?) -> Unit): () -> Unit {
     val context = LocalContext.current
     val currentOnResult = rememberUpdatedState(onResult)
     var cameraOutputUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingExifLat by remember { mutableStateOf<Double?>(null) }
+    var pendingExifLng by remember { mutableStateOf<Double?>(null) }
 
     val cropLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -133,10 +135,12 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             result.data?.let { data ->
                 UCrop.getOutput(data)?.let { uri ->
-                    currentOnResult.value(uri.toString())
+                    currentOnResult.value(uri.toString(), pendingExifLat, pendingExifLng)
                 }
-            } ?: currentOnResult.value(null)
-        } else currentOnResult.value(null)
+            } ?: currentOnResult.value(null, null, null)
+        } else currentOnResult.value(null, null, null)
+        pendingExifLat = null
+        pendingExifLng = null
     }
 
     fun launchCrop(sourceUri: Uri) {
@@ -159,7 +163,14 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
     val takePictureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success) cameraOutputUri?.let { launchCrop(it) } else currentOnResult.value(null)
+        if (success) {
+            cameraOutputUri?.let { uri ->
+                val exif = readExif(context, uri)
+                pendingExifLat = exif.lat
+                pendingExifLng = exif.lng
+                launchCrop(uri)
+            }
+        } else currentOnResult.value(null, null, null)
         cameraOutputUri = null
     }
 
@@ -170,7 +181,7 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
             val (uri, _) = ImageStorageHelper.createTempUri(context)
             cameraOutputUri = uri
             takePictureLauncher.launch(uri)
-        } else currentOnResult.value(null)
+        } else currentOnResult.value(null, null, null)
     }
 
     return remember {

@@ -73,7 +73,7 @@ val viewModelModule = module {
     viewModel { MapViewModel(get()) }
     viewModel { SignInViewModel(get(), get()) }
     viewModel { (editId: Long?) ->
-        AddItemViewModel(get(), get(), get(), editId, get())
+        AddItemViewModel(get(), get(), get(), editId, get(), get())
     }
     viewModel { (itemId: Long) ->
         ItemDetailViewModel(get(), itemId, get())

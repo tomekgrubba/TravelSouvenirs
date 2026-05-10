@@ -2,7 +2,9 @@ package com.travelsouvenirs.main.di
 
 import android.content.Context
 import com.russhwolf.settings.SharedPreferencesSettings
+import com.travelsouvenirs.main.image.AndroidImageLocationAnalyzer
 import com.travelsouvenirs.main.image.AndroidImageStorage
+import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.AndroidLocationService
 import com.travelsouvenirs.main.location.LocationService
@@ -23,4 +25,5 @@ val platformModule = module {
     single<LocationService> { AndroidLocationService(androidContext()) }
     single<ImageStorage> { AndroidImageStorage(androidContext()) }
     single<NetworkMonitor> { AndroidNetworkMonitor(androidContext()) }
+    single<ImageLocationAnalyzer> { AndroidImageLocationAnalyzer() }
 }

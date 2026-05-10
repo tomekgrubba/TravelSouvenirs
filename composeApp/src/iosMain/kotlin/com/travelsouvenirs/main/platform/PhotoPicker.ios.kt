@@ -116,7 +116,7 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
-actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
+actual fun rememberCameraCapture(onResult: (path: String?, exifLat: Double?, exifLng: Double?) -> Unit): () -> Unit {
     val currentOnResult = rememberUpdatedState(onResult)
     val retainedDelegates = remember { mutableSetOf<Any>() }
     return remember {
@@ -140,16 +140,16 @@ actual fun rememberCameraCapture(onResult: (String?) -> Unit): () -> Unit {
                     if (data != null) {
                         val dir = "${NSHomeDirectory()}/Documents/item_photos"
                         val destPath = saveJpegToDir(data, dir)
-                        currentOnResult.value(destPath)
+                        currentOnResult.value(destPath, null, null)
                     } else {
-                        currentOnResult.value(null)
+                        currentOnResult.value(null, null, null)
                     }
                 }
 
                 override fun imagePickerControllerDidCancel(picker: UIImagePickerController) {
                     retainedDelegates.remove(this)
                     picker.dismissViewControllerAnimated(true, null)
-                    currentOnResult.value(null)
+                    currentOnResult.value(null, null, null)
                 }
             }
             retainedDelegates.add(delegate)
