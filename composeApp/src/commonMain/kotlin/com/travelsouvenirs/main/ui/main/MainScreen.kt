@@ -139,7 +139,7 @@ fun MainScreen(
                         }
                     },
                     actions = {
-                        if (isSyncingImages) {
+                        if (isSyncing || isSyncingImages) {
                             CircularProgressIndicator(
                                 modifier = Modifier.padding(end = 4.dp).size(20.dp),
                                 strokeWidth = 2.dp,
@@ -189,16 +189,14 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            if (!isSyncing) {
-                ExtendedFloatingActionButton(
-                    modifier = if (isTablet) Modifier.height(64.dp) else Modifier,
-                    onClick = onAddClick,
-                ) {
-                    Text(
-                        stringResource(Res.string.fab_add_item),
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 18.sp else 16.sp),
-                    )
-                }
+            ExtendedFloatingActionButton(
+                modifier = if (isTablet) Modifier.height(64.dp) else Modifier,
+                onClick = onAddClick,
+            ) {
+                Text(
+                    stringResource(Res.string.fab_add_item),
+                    style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 18.sp else 16.sp),
+                )
             }
         },
         snackbarHost = {
@@ -215,17 +213,6 @@ fun MainScreen(
                 MainTab.LIST -> ListScreen(onItemClick = onItemClick, onAddClick = onAddClick)
             }
 
-            // Full-screen lock during DB sync — prevents all interaction
-            if (isSyncing) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
         }
     }
     } // CompositionLocalProvider
