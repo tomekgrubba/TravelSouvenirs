@@ -57,6 +57,9 @@ class AddItemViewModelTest {
     private lateinit var repository: ItemRepository
     private val fakeLocationService = FakeLocationService()
     private val fakeImageStorage = FakeImageStorage()
+    private val fakeImageLocationAnalyzer = object : com.travelsouvenirs.main.image.ImageLocationAnalyzer {
+        override suspend fun analyze(imagePath: String, lat: Double?, lng: Double?): String? = null
+    }
 
     @Before
     fun setup() {
@@ -81,6 +84,7 @@ class AddItemViewModelTest {
         fakeImageStorage,
         editId,
         CategoryRepository(categoryDaoOverride),
+        fakeImageLocationAnalyzer,
     )
 
     private val AddItemViewModel.state get() = uiState.value
