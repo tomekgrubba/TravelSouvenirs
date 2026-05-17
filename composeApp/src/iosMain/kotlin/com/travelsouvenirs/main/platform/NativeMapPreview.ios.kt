@@ -24,6 +24,7 @@ import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
 import platform.UIKit.UITapGestureRecognizer
 import platform.UIKit.UIUserInterfaceStyle
+import kotlinx.cinterop.ObjCAction
 import platform.darwin.NSObject
 import platform.objc.sel_registerName
 
@@ -46,8 +47,8 @@ internal fun NativeMapPreview(latitude: Double, longitude: Double, label: String
             pin.setTitle(label)
             addAnnotation(pin as MKAnnotationProtocol)
             val tap = UITapGestureRecognizer().apply {
-                addTargetAction(object : NSObject() {
-                    @Suppress("unused")
+                addTarget(object : NSObject() {
+                    @ObjCAction
                     fun handleTap(r: UITapGestureRecognizer) {
                         showZoomButtons.value = true
                     }

@@ -19,7 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.travelsouvenirs.main.di.LocalCategoryFilter
@@ -28,7 +27,8 @@ import com.travelsouvenirs.main.ui.map.ItemGroup
 import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.shared.CategoryFilterFab
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.currentKoinScope
 import com.travelsouvenirs.main.ui.map.rememberGroupIosIcons
 import com.travelsouvenirs.main.ui.map.rememberIndividualIosIcons
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -104,7 +104,8 @@ private class MapDelegateHelper(
 internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
-    val viewModel: MapViewModel = koinViewModel()
+    val koinScope = currentKoinScope()
+    val viewModel: MapViewModel = viewModel { koinScope.get<MapViewModel>() }
 
     val allItems by viewModel.items.collectAsState()
     val allPins  by viewModel.itemPins.collectAsState()
@@ -128,13 +129,12 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         else withContext(Dispatchers.Default) { MapViewModel.groupByZoom(items, zoomLevel) }
     }
 
-    val density = LocalDensity.current
     val screenWidthPt = UIScreen.mainScreen.bounds.useContents { size.width }
     val isTablet = screenWidthPt >= 600.0
     val markerSizeDp = if (isTablet) 56 else 40
-    val markerSizePx = with(density) { markerSizeDp.dp.roundToPx() }
-    val individualIcons = rememberIndividualIosIcons(itemPins, markerSizePx)
-    val groupIcons      = rememberGroupIosIcons(itemGroups, markerSizePx)
+    // UIGraphicsBeginImageContextWithOptions sizes are in UIKit points (1pt ≈ 1dp on iOS)
+    val individualIcons = rememberIndividualIosIcons(itemPins, markerSizeDp)
+    val groupIcons      = rememberGroupIosIcons(itemGroups, markerSizeDp)
 
     // rememberUpdatedState so the delegate lambda always sees the latest items
     val latestItems = rememberUpdatedState(items)

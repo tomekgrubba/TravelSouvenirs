@@ -20,6 +20,7 @@ import platform.MapKit.MKPointAnnotation
 import platform.UIKit.UIGestureRecognizerStateBegan
 import platform.UIKit.UITapGestureRecognizer
 import platform.UIKit.UIUserInterfaceStyle
+import kotlinx.cinterop.ObjCAction
 import platform.darwin.NSObject
 
 private const val PICKER_ZOOM_DISTANCE = 50_000.0   // metres for "zoom in" flyTo equivalent
@@ -69,19 +70,22 @@ actual fun PlatformMapLocationPicker(
     val mapView = remember {
         MKMapView().apply {
             this.delegate = delegate as MKMapViewDelegateProtocol
+            val mapViewRef = this
             val tap = UITapGestureRecognizer().apply {
-                addTargetAction(object : NSObject() {
-                    @Suppress("unused")
+                addTarget(object : NSObject() {
+                    @ObjCAction
                     fun handleTap(recognizer: UITapGestureRecognizer) {
                         if (recognizer.state != UIGestureRecognizerStateBegan) return
-                        val point = recognizer.locationInView(this@apply)
-                        val coord = this@apply.convertPoint(point, toCoordinateFromView = this@apply)
+                        val point = recognizer.locationInView(mapViewRef)
+                        val coord = mapViewRef.convertPoint(point, toCoordinateFromView = mapViewRef)
                         coord.useContents {
-                            annotation.setCoordinate(this)
-                            if (!this@apply.annotations.contains(annotation as MKAnnotationProtocol)) {
-                                this@apply.addAnnotation(annotation as MKAnnotationProtocol)
+                            val lat = latitude
+                            val lng = longitude
+                            annotation.setCoordinate(CLLocationCoordinate2DMake(lat, lng))
+                            if (!mapViewRef.annotations.contains(annotation as MKAnnotationProtocol)) {
+                                mapViewRef.addAnnotation(annotation as MKAnnotationProtocol)
                             }
-                            onLocationPickedState.value(latitude, longitude)
+                            onLocationPickedState.value(lat, lng)
                         }
                     }
                 }, action = platform.objc.sel_registerName("handleTap:"))
