@@ -25,6 +25,7 @@ import platform.CoreGraphics.CGPointMake
 import platform.CoreGraphics.CGRectInset
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSizeMake
+import platform.Foundation.NSHomeDirectory
 import platform.Foundation.NSString
 import platform.Foundation.base64EncodedStringWithOptions
 import platform.UIKit.NSFontAttributeName
@@ -90,7 +91,7 @@ internal suspend fun buildCircularUIImage(
 ): UIImage? = withContext(Dispatchers.Default) {
     if (photoPath.isBlank()) return@withContext null
     try {
-        val source = UIImage.imageWithContentsOfFile(photoPath) ?: return@withContext null
+        val source = UIImage.imageWithContentsOfFile(resolvePhotoPath(photoPath)) ?: return@withContext null
         val sz = sizePx.toDouble()
         UIGraphicsBeginImageContextWithOptions(CGSizeMake(sz, sz), false, 0.0)
         val ctx = UIGraphicsGetCurrentContext()
@@ -160,7 +161,7 @@ internal suspend fun buildPolaroidUIImage(
 ): UIImage? = withContext(Dispatchers.Default) {
     if (photoPath.isBlank()) return@withContext null
     try {
-        val source = UIImage.imageWithContentsOfFile(photoPath) ?: return@withContext null
+        val source = UIImage.imageWithContentsOfFile(resolvePhotoPath(photoPath)) ?: return@withContext null
         val sz = sizePx.toDouble()
         val border = (sz * 0.10).coerceAtLeast(5.0)
         val bottomStrip = sz * 0.30
@@ -233,7 +234,7 @@ internal suspend fun buildCircularDataUrl(photoPath: String, sizePx: Int = 80): 
     withContext(Dispatchers.Default) {
         if (photoPath.isBlank()) return@withContext null
         try {
-            val source = UIImage.imageWithContentsOfFile(photoPath) ?: return@withContext null
+            val source = UIImage.imageWithContentsOfFile(resolvePhotoPath(photoPath)) ?: return@withContext null
             val sz = sizePx.toDouble()
             UIGraphicsBeginImageContextWithOptions(CGSizeMake(sz, sz), false, 1.0)
             val ctx = UIGraphicsGetCurrentContext()
@@ -254,6 +255,11 @@ internal suspend fun buildCircularDataUrl(photoPath: String, sizePx: Int = 80): 
             null
         }
     }
+
+private fun resolvePhotoPath(storedPath: String): String {
+    val filename = storedPath.substringAfterLast("/")
+    return "${NSHomeDirectory()}/Documents/item_photos/$filename"
+}
 
 private fun uiColor(color: Color): UIColor = UIColor(
     red   = color.red.toDouble(),

@@ -77,4 +77,8 @@
     <string name="section_sync">Account</string>
     <string name="label_wifi_only_sync">Nur über WLAN synchronisieren</string>
     <string name="hint_wifi_only_sync">Wenn aktiviert, werden Elemente nur über WLAN synchronisiert, um mobile Daten zu sparen.</string>
+
+    <string name="section_ai">KI-Funktionen</string>
+    <string name="hint_download_ai_model">KI-Modell herunterladen - Ermöglicht die Bilderkennung von Orten und Sehenswürdigkeiten auf dem Gerät. Kann das Hinzufügen von Elementen beschleunigen. Erfordert einen einmaligen Download – es können Mobilfunkgebühren anfallen.</string>
+    <string name="btn_download">Herunterladen</string>
 </resources>

@@ -93,6 +93,10 @@
     <string name="btn_sign_in">Sign in</string>
     <string name="btn_sign_out">Sign out</string>
     <string name="text_sync_sign_in_prompt">Sign in to sync your items across devices.</string>
+    <string name="section_ai">AI Features</string>
+    <string name="hint_download_ai_model">Download AI model - Enables on-device image recognition for locations and landmarks. May help speed up adding items. Requires a one-time download — mobile data charges may apply.</string>
+    <string name="btn_download">Download</string>
+
     <string name="dialog_delete_category_no_items">No items are currently using "%1$s".</string>
     <string name="dialog_delete_category_one_item">1 item is currently assigned to "%1$s" and will be moved to Default.</string>
     <string name="dialog_delete_category_many_items">%1$d items are currently assigned to "%2$s" and will all be moved to Default.</string>

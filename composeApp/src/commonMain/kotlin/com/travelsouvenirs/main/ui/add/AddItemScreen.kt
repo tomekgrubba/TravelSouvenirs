@@ -65,13 +65,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
-import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.currentKoinScope
 import org.koin.core.parameter.parametersOf
 import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
 import com.travelsouvenirs.main.platform.rememberCameraCapture
 import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
 import com.travelsouvenirs.main.util.formatDisplay
+import com.travelsouvenirs.main.util.localImageModel
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -80,10 +82,10 @@ import travelsouvenirs.composeapp.generated.resources.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null) {
-    val viewModel: AddItemViewModel = koinViewModel(
-        key = itemId?.toString() ?: "add",
-        parameters = { parametersOf(itemId) },
-    )
+    val koinScope = currentKoinScope()
+    val viewModel: AddItemViewModel = viewModel(key = itemId?.toString() ?: "add") {
+        koinScope.get<AddItemViewModel>(parameters = { parametersOf(itemId) })
+    }
 
     val uiState by viewModel.uiState.collectAsState()
     val photoPath = uiState.photoPath
@@ -258,7 +260,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                         ) {
                             if (photoPath != null) {
                                 AsyncImage(
-                                    model = photoPath,
+                                    model = localImageModel(photoPath),
                                     contentDescription = stringResource(Res.string.cd_item_photo),
                                     modifier = Modifier.fillMaxWidth().height(200.dp),
                                     contentScale = ContentScale.Crop
@@ -291,7 +293,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                     )
                     if (photoPath != null) {
                         AsyncImage(
-                            model = photoPath,
+                            model = localImageModel(photoPath),
                             contentDescription = stringResource(Res.string.cd_item_photo),
                             modifier = Modifier
                                 .fillMaxWidth()

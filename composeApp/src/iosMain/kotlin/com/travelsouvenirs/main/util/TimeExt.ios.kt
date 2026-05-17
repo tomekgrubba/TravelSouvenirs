@@ -1,5 +1,15 @@
 package com.travelsouvenirs.main.util
 
-import platform.Foundation.NSDate
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import platform.posix.gettimeofday
+import platform.posix.timeval
 
-actual fun nowEpochMillis(): Long = (NSDate.date().timeIntervalSince1970() * 1000.0).toLong()
+@OptIn(ExperimentalForeignApi::class)
+actual fun nowEpochMillis(): Long = memScoped {
+    val tv = alloc<timeval>()
+    gettimeofday(tv.ptr, null)
+    tv.tv_sec * 1000L + tv.tv_usec / 1000L
+}

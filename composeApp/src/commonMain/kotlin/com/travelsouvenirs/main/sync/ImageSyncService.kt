@@ -12,9 +12,10 @@ class ImageSyncService(
         val items = dao.getItemsWithMissingLocalPhotos()
         for (entity in items) {
             try {
-                val localPath = imageStorage.localPathForDownload(entity.firebaseId)
-                downloadUrlToFile(entity.photoStorageUrl, localPath)
-                dao.insertItem(entity.copy(photoPath = localPath))
+                val storedPath = imageStorage.localPathForDownload(entity.firebaseId)
+                val fullPath = imageStorage.resolvedLocalPath(storedPath)
+                downloadUrlToFile(entity.photoStorageUrl, fullPath)
+                dao.insertItem(entity.copy(photoPath = storedPath))
             } catch (_: Exception) { }
         }
     }

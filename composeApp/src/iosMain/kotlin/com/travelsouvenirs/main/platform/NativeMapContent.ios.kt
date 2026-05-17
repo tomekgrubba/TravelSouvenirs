@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,8 +34,10 @@ import org.koin.compose.currentKoinScope
 import com.travelsouvenirs.main.ui.map.rememberGroupIosIcons
 import com.travelsouvenirs.main.ui.map.rememberIndividualIosIcons
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import platform.CoreLocation.CLLocationCoordinate2DMake
@@ -46,9 +50,14 @@ import platform.MapKit.MKCoordinateSpanMake
 import platform.MapKit.MKMapView
 import platform.MapKit.MKMapViewDelegateProtocol
 import platform.MapKit.MKPointAnnotation
+import platform.MapKit.MKStandardMapConfiguration
+import platform.MapKit.MKStandardMapEmphasisStyleMuted
+import platform.UIKit.UIGestureRecognizer
 import platform.UIKit.UIImage
+import platform.UIKit.UITapGestureRecognizer
 import platform.UIKit.UIUserInterfaceStyle
 import platform.darwin.NSObject
+import platform.objc.sel_registerName
 import travelsouvenirs.composeapp.generated.resources.*
 import kotlin.math.log2
 
@@ -73,17 +82,24 @@ private class MapDelegateHelper(
     override fun mapView(mapView: MKMapView, viewForAnnotation: MKAnnotationProtocol): MKAnnotationView? {
         val ann = viewForAnnotation as? ItemAnnotation ?: return null
         val reuseId = if (ann.groupIndex >= 0) "g${ann.groupIndex}" else "i${ann.itemId}"
-        val view = (mapView.dequeueReusableAnnotationViewWithIdentifier(reuseId) as? MKAnnotationView)
-            ?: MKAnnotationView(annotation = viewForAnnotation, reuseIdentifier = reuseId)
+        val dequeued = mapView.dequeueReusableAnnotationViewWithIdentifier(reuseId) as? MKAnnotationView
+        val view = dequeued ?: MKAnnotationView(annotation = viewForAnnotation, reuseIdentifier = reuseId)
         view.annotation = viewForAnnotation
-        view.canShowCallout = true
+        view.canShowCallout = false
         view.image = if (ann.groupIndex >= 0) groupIconCache[ann.groupIndex] else iconCache[ann.itemId]
+        // Attach tap handler once per newly created view; reuseId is per-itemId so dequeued views
+        // already carry the correct handler.
+        if (ann.groupIndex < 0 && dequeued == null) {
+            val itemId = ann.itemId
+            val tap = UITapGestureRecognizer().apply {
+                addTarget(object : NSObject() {
+                    @ObjCAction
+                    fun handleTap(r: UITapGestureRecognizer) { onPinClick(itemId) }
+                }, action = sel_registerName("handleTap:"))
+            }
+            view.addGestureRecognizer(tap)
+        }
         return view
-    }
-
-    override fun mapView(mapView: MKMapView, didSelectAnnotationView: MKAnnotationView) {
-        val ann = didSelectAnnotationView.annotation as? ItemAnnotation ?: return
-        if (ann.groupIndex < 0) onPinClick(ann.itemId)
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -136,14 +152,16 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val individualIcons = rememberIndividualIosIcons(itemPins, markerSizeDp)
     val groupIcons      = rememberGroupIosIcons(itemGroups, markerSizeDp)
 
-    // rememberUpdatedState so the delegate lambda always sees the latest items
-    val latestItems = rememberUpdatedState(items)
+    // rememberUpdatedState so delegate lambdas always see the latest values
+    val latestItems    = rememberUpdatedState(items)
+    val latestOnPinClick = rememberUpdatedState(onPinClick)
+    val coroutineScope = rememberCoroutineScope()
 
     val delegate = remember {
         MapDelegateHelper(
             iconCache      = mutableMapOf(),
             groupIconCache = mutableMapOf(),
-            onPinClick     = onPinClick,
+            onPinClick     = { id -> coroutineScope.launch { latestOnPinClick.value(id) } },
             onRegionChange = { zoom, s, w, n, e ->
                 zoomLevel = zoom
                 offScreen = computeEdgeCounts(latestItems.value, s, w, n, e)
@@ -171,6 +189,9 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     LaunchedEffect(Unit) {
         mapView.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
+        mapView.preferredConfiguration = MKStandardMapConfiguration().also {
+            it.emphasisStyle = MKStandardMapEmphasisStyleMuted
+        }
     }
 
     // Initial camera — fire only once per provider switch
@@ -246,7 +267,11 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp)
-                    .then(if (noItems) Modifier.clickable { onAddClick() } else Modifier)
+                    .then(if (noItems) Modifier.clickable { onAddClick() } else Modifier),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             ) {
                 Text(
                     if (noItems)

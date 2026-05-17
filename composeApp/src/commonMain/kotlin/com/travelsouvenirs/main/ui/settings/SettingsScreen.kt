@@ -29,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,7 +62,8 @@ import androidx.compose.ui.unit.sp
 import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.data.ItemRepository
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.currentKoinScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -71,10 +73,12 @@ private val sectionCardShape = RoundedCornerShape(16.dp)
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
-    val vm: SettingsViewModel = koinViewModel()
+    val koinScope = currentKoinScope()
+    val vm: SettingsViewModel = viewModel { koinScope.get<SettingsViewModel>() }
     val authRepository: AuthRepository = koinInject()
     val repository: ItemRepository = koinInject()
     val currentUser by authRepository.currentUser.collectAsState()
+    val uiState by vm.uiState.collectAsState()
     val customCategories by vm.customCategories.collectAsState()
     val wifiOnlySync by vm.wifiOnlySync.collectAsState()
     val allItems by repository.allItems.collectAsState(initial = emptyList())
@@ -265,6 +269,32 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
                 title = stringResource(Res.string.section_sync),
                 rotation = -0.5f
             ) { syncContent() }
+
+            if (uiState.modelDownloadable || uiState.isDownloadingModel) {
+                PolaroidSectionCard(
+                    title = stringResource(Res.string.section_ai),
+                    rotation = -0.3f
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            stringResource(Res.string.hint_download_ai_model),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Button(
+                                onClick = vm::downloadAiModel,
+                                enabled = !uiState.isDownloadingModel,
+                                shape = RoundedCornerShape(2.dp),
+                                modifier = Modifier.weight(1f)
+                            ) { Text(stringResource(Res.string.btn_download)) }
+                            if (uiState.isDownloadingModel) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            }
+                        }
+                    }
+                }
+            }
 
             PolaroidSectionCard(
                 title = stringResource(Res.string.section_categories),

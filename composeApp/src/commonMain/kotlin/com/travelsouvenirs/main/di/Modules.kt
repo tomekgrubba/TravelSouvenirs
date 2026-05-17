@@ -68,7 +68,7 @@ val useCaseModule = module {
 val viewModelModule = module {
     viewModel { AppViewModel() }
     viewModel { ListViewModel(get(), get()) }
-    viewModel { SettingsViewModel(get(), get(), get(), get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { CategoryFilterViewModel(get(), get()) }
     viewModel { MapViewModel(get()) }
     viewModel { SignInViewModel(get(), get()) }

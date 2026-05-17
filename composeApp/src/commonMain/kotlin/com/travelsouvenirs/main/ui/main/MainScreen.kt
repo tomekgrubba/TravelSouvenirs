@@ -63,7 +63,8 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.currentKoinScope
 import travelsouvenirs.composeapp.generated.resources.*
 
 /** The two available content tabs. Settings and SignIn are separate NavGraph destinations. */
@@ -108,7 +109,8 @@ fun MainScreen(
     val currentUser by authRepository.currentUser.collectAsState()
     val isSyncing by syncRepository.isSyncing.collectAsState()
     val isSyncingImages by syncRepository.isSyncingImages.collectAsState()
-    val categoryFilterVM: CategoryFilterViewModel = koinViewModel()
+    val koinScope = currentKoinScope()
+    val categoryFilterVM: CategoryFilterViewModel = viewModel { koinScope.get<CategoryFilterViewModel>() }
     val isPolaroid = true
 
     // Block back navigation during metadata sync

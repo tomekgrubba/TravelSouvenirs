@@ -56,10 +56,12 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.ui.shared.CategoryFilterMenuSection
-import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.currentKoinScope
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.SortOption
 import com.travelsouvenirs.main.util.formatDisplay
+import com.travelsouvenirs.main.util.localImageModel
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
@@ -67,7 +69,8 @@ import travelsouvenirs.composeapp.generated.resources.*
 @Composable
 fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val categoryFilter = LocalCategoryFilter.current
-    val viewModel: ListViewModel = koinViewModel()
+    val koinScope = currentKoinScope()
+    val viewModel: ListViewModel = viewModel { koinScope.get<ListViewModel>() }
 
     val uiState by viewModel.uiState.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
@@ -330,7 +333,7 @@ private fun PolaroidListCard(item: Item, onClick: () -> Unit) {
             // Mini-polaroid thumbnail: equal frame on sides/top, thicker at bottom
             Box(modifier = Modifier.padding(top = 3.dp, start = 3.dp, end = 3.dp, bottom = 8.dp)) {
                 AsyncImage(
-                    model = item.photoPath,
+                    model = localImageModel(item.photoPath),
                     contentDescription = item.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(64.dp)
@@ -372,7 +375,7 @@ private fun PolaroidTileCard(item: Item, onClick: () -> Unit) {
         Column {
             Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, start = 8.dp, end = 8.dp)) {
                 AsyncImage(
-                    model = item.photoPath,
+                    model = localImageModel(item.photoPath),
                     contentDescription = item.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth().aspectRatio(1f)

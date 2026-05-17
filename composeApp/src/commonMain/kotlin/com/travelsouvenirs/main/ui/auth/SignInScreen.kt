@@ -37,14 +37,16 @@ import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.auth.isGoogleSignInAvailable
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.currentKoinScope
 import travelsouvenirs.composeapp.generated.resources.Res
 import travelsouvenirs.composeapp.generated.resources.cd_back
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignInScreen(onBack: () -> Unit = {}, onSignedIn: () -> Unit = {}) {
-    val vm: SignInViewModel = koinViewModel()
+    val koinScope = currentKoinScope()
+    val vm: SignInViewModel = viewModel { koinScope.get<SignInViewModel>() }
     val authRepository: AuthRepository = koinInject()
     val state by vm.uiState.collectAsState()
     val currentUser by authRepository.currentUser.collectAsState()

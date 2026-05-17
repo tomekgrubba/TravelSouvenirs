@@ -3,11 +3,9 @@ package com.travelsouvenirs.main.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.savedstate.read
+import androidx.navigation.toRoute
 import com.travelsouvenirs.main.di.LocalAppViewModel
 import com.travelsouvenirs.main.ui.add.AddItemScreen
 import com.travelsouvenirs.main.ui.auth.SignInScreen
@@ -15,32 +13,30 @@ import com.travelsouvenirs.main.ui.detail.ItemDetailScreen
 import com.travelsouvenirs.main.ui.main.AppViewModel
 import com.travelsouvenirs.main.ui.main.MainScreen
 import com.travelsouvenirs.main.ui.settings.SettingsScreen
-import org.koin.compose.viewmodel.koinViewModel
+import kotlinx.serialization.Serializable
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.currentKoinScope
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
     object AddItem : Screen("add_item")
-    object ItemDetail : Screen("item_detail/{itemId}") {
-        fun createRoute(itemId: Long) = "item_detail/$itemId"
-    }
-    object EditItem : Screen("edit_item/{itemId}") {
-        fun createRoute(itemId: Long) = "edit_item/$itemId"
-    }
     object Settings : Screen("settings")
     object SignIn : Screen("sign_in")
 }
 
+@Serializable data class ItemDetailRoute(val itemId: Long)
+@Serializable data class EditItemRoute(val itemId: Long)
+
 @Composable
 fun AppNavGraph(navController: NavHostController) {
-    val appViewModel: AppViewModel = koinViewModel()
+    val koinScope = currentKoinScope()
+    val appViewModel: AppViewModel = viewModel { koinScope.get<AppViewModel>() }
     CompositionLocalProvider(LocalAppViewModel provides appViewModel) {
         NavHost(navController = navController, startDestination = Screen.Main.route) {
             composable(Screen.Main.route) {
                 MainScreen(
                     onAddClick = { navController.navigate(Screen.AddItem.route) },
-                    onItemClick = { itemId ->
-                        navController.navigate(Screen.ItemDetail.createRoute(itemId))
-                    },
+                    onItemClick = { itemId -> navController.navigate(ItemDetailRoute(itemId)) },
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 )
             }
@@ -50,26 +46,20 @@ fun AppNavGraph(navController: NavHostController) {
                     onBack = { navController.popBackStack() }
                 )
             }
-            composable(
-                route = Screen.ItemDetail.route,
-                arguments = listOf(navArgument("itemId") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val itemId = backStackEntry.arguments?.read { getLong("itemId") } ?: 0L
+            composable<ItemDetailRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<ItemDetailRoute>()
                 ItemDetailScreen(
-                    itemId = itemId,
+                    itemId = route.itemId,
                     onBack = { navController.popBackStack() },
-                    onEdit = { navController.navigate(Screen.EditItem.createRoute(itemId)) }
+                    onEdit = { navController.navigate(EditItemRoute(route.itemId)) }
                 )
             }
-            composable(
-                route = Screen.EditItem.route,
-                arguments = listOf(navArgument("itemId") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val itemId = backStackEntry.arguments?.read { getLong("itemId") } ?: 0L
+            composable<EditItemRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<EditItemRoute>()
                 AddItemScreen(
                     onSaved = { navController.popBackStack() },
                     onBack = { navController.popBackStack() },
-                    itemId = itemId
+                    itemId = route.itemId
                 )
             }
             composable(Screen.Settings.route) {

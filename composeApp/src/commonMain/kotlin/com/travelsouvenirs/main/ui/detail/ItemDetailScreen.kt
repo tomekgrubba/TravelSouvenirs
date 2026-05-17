@@ -57,10 +57,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
-import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.currentKoinScope
 import org.koin.core.parameter.parametersOf
 import com.travelsouvenirs.main.platform.PlatformMapPreview
 import com.travelsouvenirs.main.util.formatDisplay
+import com.travelsouvenirs.main.util.localImageModel
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
@@ -72,10 +74,10 @@ fun ItemDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit = {}
 ) {
-    val viewModel: ItemDetailViewModel = koinViewModel(
-        key = itemId.toString(),
-        parameters = { parametersOf(itemId) },
-    )
+    val koinScope = currentKoinScope()
+    val viewModel: ItemDetailViewModel = viewModel(key = itemId.toString()) {
+        koinScope.get<ItemDetailViewModel>(parameters = { parametersOf(itemId) })
+    }
     val item by viewModel.item.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showFullscreenPhoto by remember { mutableStateOf(false) }
@@ -94,7 +96,7 @@ fun ItemDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
-                        model = m.photoPath,
+                        model = localImageModel(m.photoPath),
                         contentDescription = stringResource(Res.string.cd_item_photo),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Fit
@@ -184,7 +186,7 @@ fun ItemDetailScreen(
                                             .clickable { showFullscreenPhoto = true }
                                     ) {
                                         AsyncImage(
-                                            model = m.photoPath,
+                                            model = localImageModel(m.photoPath),
                                             contentDescription = stringResource(Res.string.cd_item_photo),
                                             modifier = Modifier.fillMaxWidth().height(260.dp),
                                             contentScale = ContentScale.Crop
@@ -280,7 +282,7 @@ fun ItemDetailScreen(
                                     .padding(horizontal = 16.dp)
                             ) {
                                 AsyncImage(
-                                    model = m.photoPath,
+                                    model = localImageModel(m.photoPath),
                                     contentDescription = stringResource(Res.string.cd_item_photo),
                                     modifier = Modifier
                                         .fillMaxSize()

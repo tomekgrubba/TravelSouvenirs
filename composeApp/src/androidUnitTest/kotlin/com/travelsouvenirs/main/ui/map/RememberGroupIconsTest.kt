@@ -16,6 +16,7 @@ import com.travelsouvenirs.main.data.FakeCategoryDao
 import com.travelsouvenirs.main.data.FakeItemDao
 import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.ui.settings.SettingsViewModel
 import com.travelsouvenirs.main.util.AppSettings
@@ -177,7 +178,8 @@ class RememberGroupIconsSmokeTest {
                 single { CategoryRepository(FakeCategoryDao()) }
                 single<AuthRepository> { mock() }
                 single<ImageStorage> { mock() }
-                viewModel { SettingsViewModel(get(), get(), get(), get(), get()) }
+                single<ImageLocationAnalyzer> { mock() }
+                viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get()) }
             })
         }
 

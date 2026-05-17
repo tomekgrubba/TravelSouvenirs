@@ -6,6 +6,7 @@ import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.FakeCategoryDao
 import com.travelsouvenirs.main.data.FakeItemDao
 import com.travelsouvenirs.main.data.ItemRepository
+import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.util.AppSettings
 import org.mockito.kotlin.mock
@@ -58,6 +59,10 @@ private class FakeSettings(initial: Map<String, String> = emptyMap()) : Settings
     override fun getBooleanOrNull(key: String): Boolean? = store[key] as? Boolean
 }
 
+private class FakeImageLocationAnalyzer : ImageLocationAnalyzer {
+    override suspend fun analyze(imagePath: String, lat: Double?, lng: Double?): String? = null
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
@@ -75,6 +80,7 @@ class SettingsViewModelTest {
         CategoryRepository(categoryDao),
         mock<AuthRepository>(),
         mock<ImageStorage>(),
+        FakeImageLocationAnalyzer(),
     )
 
     @Test

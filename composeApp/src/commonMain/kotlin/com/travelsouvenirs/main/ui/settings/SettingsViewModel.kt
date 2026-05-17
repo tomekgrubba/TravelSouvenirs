@@ -7,6 +7,7 @@ import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
+import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.util.AppSettings
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,8 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
     val wifiOnlySync: Boolean = false,
     val notes: String = "",
+    val modelDownloadable: Boolean = false,
+    val isDownloadingModel: Boolean = false,
 )
 
 /** Persists appearance and sync settings; delegates category management to CategoryRepository. */
@@ -29,6 +32,7 @@ class SettingsViewModel(
     private val categoryRepository: CategoryRepository,
     private val authRepository: AuthRepository,
     private val imageStorage: ImageStorage,
+    private val imageLocationAnalyzer: ImageLocationAnalyzer,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -37,6 +41,13 @@ class SettingsViewModel(
             notes = appSettings.notes,
         )
     )
+
+    init {
+        viewModelScope.launch {
+            val downloadable = imageLocationAnalyzer.isDownloadable()
+            _uiState.update { it.copy(modelDownloadable = downloadable) }
+        }
+    }
     val uiState: StateFlow<SettingsUiState> = _uiState
 
     // Eagerly (not WhileSubscribed) so unit tests can read .value without an active collector.
@@ -77,6 +88,15 @@ class SettingsViewModel(
         viewModelScope.launch {
             categoryRepository.delete(name)
             repository.reassignCategory(fromCategory = name, toCategory = DEFAULT_CATEGORY)
+        }
+    }
+
+    fun downloadAiModel() {
+        _uiState.update { it.copy(isDownloadingModel = true) }
+        viewModelScope.launch {
+            imageLocationAnalyzer.download()
+            val stillDownloadable = imageLocationAnalyzer.isDownloadable()
+            _uiState.update { it.copy(isDownloadingModel = false, modelDownloadable = stillDownloadable) }
         }
     }
 

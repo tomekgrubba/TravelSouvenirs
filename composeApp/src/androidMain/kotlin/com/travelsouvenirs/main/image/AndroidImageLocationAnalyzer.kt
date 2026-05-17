@@ -26,13 +26,7 @@ class AndroidImageLocationAnalyzer : ImageLocationAnalyzer {
         try {
             when (model.checkStatus()) {
                 FeatureStatus.UNAVAILABLE -> return@withContext null
-                FeatureStatus.DOWNLOADABLE, FeatureStatus.DOWNLOADING -> {
-                    var ok = false
-                    model.download().collect { ds ->
-                        if (ds.javaClass.simpleName == "DownloadCompleted") ok = true
-                    }
-                    if (!ok) return@withContext null
-                }
+                FeatureStatus.DOWNLOADABLE, FeatureStatus.DOWNLOADING -> return@withContext null
                 FeatureStatus.AVAILABLE -> Unit
                 else -> return@withContext null
             }
@@ -47,6 +41,22 @@ class AndroidImageLocationAnalyzer : ImageLocationAnalyzer {
         } catch (_: Exception) {
             null
         }
+    }
+
+    override suspend fun isDownloadable(): Boolean = withContext(Dispatchers.Default) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return@withContext false
+        try { model.checkStatus() == FeatureStatus.DOWNLOADABLE } catch (_: Exception) { false }
+    }
+
+    override suspend fun download(): Boolean = withContext(Dispatchers.Default) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return@withContext false
+        try {
+            var ok = false
+            model.download().collect { ds ->
+                if (ds.javaClass.simpleName == "DownloadCompleted") ok = true
+            }
+            ok
+        } catch (_: Exception) { false }
     }
 
     companion object {
