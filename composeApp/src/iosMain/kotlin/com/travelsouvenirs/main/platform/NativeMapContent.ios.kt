@@ -87,19 +87,24 @@ private class MapDelegateHelper(
         view.annotation = viewForAnnotation
         view.canShowCallout = false
         view.image = if (ann.groupIndex >= 0) groupIconCache[ann.groupIndex] else iconCache[ann.itemId]
-        // Attach tap handler once per newly created view; reuseId is per-itemId so dequeued views
-        // already carry the correct handler.
-        if (ann.groupIndex < 0 && dequeued == null) {
-            val itemId = ann.itemId
-            val tap = UITapGestureRecognizer().apply {
-                addTarget(object : NSObject() {
-                    @ObjCAction
-                    fun handleTap(r: UITapGestureRecognizer) { onPinClick(itemId) }
-                }, action = sel_registerName("handleTap:"))
-            }
-            view.addGestureRecognizer(tap)
-        }
+
         return view
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    override fun mapView(mapView: MKMapView, didSelectAnnotationView: MKAnnotationView) {
+        val ann = didSelectAnnotationView.annotation as? ItemAnnotation ?: return
+        if (ann.groupIndex < 0 || ann.itemCount == 1) {
+            onPinClick(ann.itemId)
+        } else {
+            mapView.region.useContents {
+                val newSpanLat = span.latitudeDelta / 3.0
+                val newSpanLng = span.longitudeDelta / 3.0
+                val newRegion = MKCoordinateRegionMake(ann.coordinate, MKCoordinateSpanMake(newSpanLat, newSpanLng))
+                mapView.setRegion(newRegion, animated = true)
+            }
+        }
+        mapView.deselectAnnotation(ann, animated = false)
     }
 
     @OptIn(ExperimentalForeignApi::class)
