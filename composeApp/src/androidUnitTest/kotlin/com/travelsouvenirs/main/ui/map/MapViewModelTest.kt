@@ -4,6 +4,8 @@ import com.travelsouvenirs.main.data.FakeItemDao
 import com.travelsouvenirs.main.data.ItemEntity
 import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.Item
+import com.travelsouvenirs.main.util.CoroutineDispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -21,6 +23,11 @@ import kotlin.math.abs
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+private class TestCoroutineDispatchers(override val default: CoroutineDispatcher) : CoroutineDispatchers {
+    override val main: CoroutineDispatcher get() = default
+    override val io: CoroutineDispatcher get() = default
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class MapViewModelTest {
 
@@ -32,7 +39,7 @@ class MapViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         dao = FakeItemDao()
-        viewModel = MapViewModel(ItemRepository(dao))
+        viewModel = MapViewModel(ItemRepository(dao), TestCoroutineDispatchers(testDispatcher))
     }
 
     @After

@@ -9,6 +9,7 @@ import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.MAX_CUSTOM_CATEGORIES
 import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
+import com.travelsouvenirs.main.sync.SyncCoordinator
 import com.travelsouvenirs.main.util.AppSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,6 +34,7 @@ class SettingsViewModel(
     private val authRepository: AuthRepository,
     private val imageStorage: ImageStorage,
     private val imageLocationAnalyzer: ImageLocationAnalyzer,
+    private val syncCoordinator: SyncCoordinator,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -102,6 +104,7 @@ class SettingsViewModel(
 
     fun signOut() {
         viewModelScope.launch {
+            syncCoordinator.cancelAllSyncs()
             repository.deleteAll()
             categoryRepository.setAll(emptyList())
             imageStorage.deleteAllImages()

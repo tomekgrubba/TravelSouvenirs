@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.LatLon
-import kotlinx.coroutines.Dispatchers
+import com.travelsouvenirs.main.util.CoroutineDispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOn
@@ -23,7 +23,10 @@ data class ItemPin(val item: Item, val position: LatLon)
 data class ItemGroup(val items: List<Item>, val centerLat: Double, val centerLng: Double)
 
 /** Supplies the map screen with pre-computed pin positions, groups, and raw item list. */
-class MapViewModel(repository: ItemRepository) : ViewModel() {
+class MapViewModel(
+    repository: ItemRepository,
+    private val dispatchers: CoroutineDispatchers
+) : ViewModel() {
 
     /** True once the map has been given its initial camera position; prevents re-zoom on back-nav. */
     var initialCameraSet: Boolean = false
@@ -42,13 +45,13 @@ class MapViewModel(repository: ItemRepository) : ViewModel() {
     /** Individual pin positions with overlapping items spread in a small circle. */
     val itemPins: StateFlow<List<ItemPin>> = repository.allItems
         .map(::spreadOverlapping)
-        .flowOn(Dispatchers.Default)
+        .flowOn(dispatchers.default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** Pre-computed exact-location groups used at low zoom. */
     val itemGroups: StateFlow<List<ItemGroup>> = repository.allItems
         .map(::computeGroups)
-        .flowOn(Dispatchers.Default)
+        .flowOn(dispatchers.default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** Raw list of all items, used for initial camera bounds and empty-state detection. */

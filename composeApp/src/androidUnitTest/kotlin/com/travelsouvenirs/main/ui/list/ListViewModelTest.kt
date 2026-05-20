@@ -6,6 +6,8 @@ import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.util.AppSettings
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.SortOption
+import com.travelsouvenirs.main.util.CoroutineDispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -50,6 +52,11 @@ private class FakeSettings : Settings {
     override fun getBooleanOrNull(key: String) = map[key] as? Boolean
 }
 
+private class TestCoroutineDispatchers(override val default: CoroutineDispatcher) : CoroutineDispatchers {
+    override val main: CoroutineDispatcher get() = default
+    override val io: CoroutineDispatcher get() = default
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ListViewModelTest {
 
@@ -61,7 +68,11 @@ class ListViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         dao = FakeItemDao()
-        viewModel = ListViewModel(AppSettings(FakeSettings()), ItemRepository(dao))
+        viewModel = ListViewModel(
+            AppSettings(FakeSettings()),
+            ItemRepository(dao),
+            TestCoroutineDispatchers(testDispatcher)
+        )
     }
 
     @After

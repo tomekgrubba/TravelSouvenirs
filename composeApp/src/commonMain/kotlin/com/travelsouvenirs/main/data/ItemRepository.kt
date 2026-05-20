@@ -56,7 +56,7 @@ class ItemRepository(private val dao: ItemDao) {
     }
 
     suspend fun reassignCategory(fromCategory: String, toCategory: String) =
-        dao.reassignCategory(fromCategory, toCategory)
+        dao.reassignCategory(fromCategory, toCategory, nowEpochMillis())
 
     suspend fun deleteAll() = dao.deleteAll()
 }

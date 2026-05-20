@@ -22,6 +22,8 @@ import com.travelsouvenirs.main.ui.main.AppViewModel
 import com.travelsouvenirs.main.ui.map.MapViewModel
 import com.travelsouvenirs.main.ui.settings.SettingsViewModel
 import com.travelsouvenirs.main.ui.shared.CategoryFilterViewModel
+import com.travelsouvenirs.main.util.CoroutineDispatchers
+import com.travelsouvenirs.main.util.DefaultCoroutineDispatchers
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.storage.storage
@@ -34,6 +36,7 @@ val dataModule = module {
     single { get<com.travelsouvenirs.main.data.ItemDatabase>().categoryDao() }
     single { ItemRepository(get()) }
     single { CategoryRepository(get()) }
+    single<CoroutineDispatchers> { DefaultCoroutineDispatchers() }
 }
 
 val syncModule = module {
@@ -67,10 +70,10 @@ val useCaseModule = module {
 
 val viewModelModule = module {
     viewModel { AppViewModel() }
-    viewModel { ListViewModel(get(), get()) }
-    viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { ListViewModel(get(), get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CategoryFilterViewModel(get(), get()) }
-    viewModel { MapViewModel(get()) }
+    viewModel { MapViewModel(get(), get()) }
     viewModel { SignInViewModel(get(), get()) }
     viewModel { (editId: Long?) ->
         AddItemViewModel(get(), get(), get(), editId, get(), get())

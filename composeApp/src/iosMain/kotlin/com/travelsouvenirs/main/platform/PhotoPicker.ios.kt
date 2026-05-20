@@ -32,10 +32,70 @@ import platform.UIKit.UINavigationControllerDelegateProtocol
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 import platform.darwin.NSObject
+import kotlinx.coroutines.launch
 import com.travelsouvenirs.main.image.IMAGE_JPEG_QUALITY
 import com.travelsouvenirs.main.image.IMAGE_MAX_SIDE_PX
 import kotlinx.datetime.LocalDate
 import platform.posix.time
+
+private data class ExifMetadata(
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val date: LocalDate? = null
+)
+
+@OptIn(ExperimentalForeignApi::class)
+private fun extractExif(nsData: platform.Foundation.NSData): ExifMetadata {
+    var latitude: Double? = null
+    var longitude: Double? = null
+    var date: LocalDate? = null
+
+    val cfData = platform.Foundation.CFBridgingRetain(nsData) as platform.CoreFoundation.CFDataRef
+    val source = platform.ImageIO.CGImageSourceCreateWithData(cfData, null)
+    if (source != null) {
+        val cfDict = platform.ImageIO.CGImageSourceCopyPropertiesAtIndex(source, 0UL, null)
+        val properties = cfDict?.let { platform.Foundation.CFBridgingRelease(it) as? platform.Foundation.NSDictionary }
+        if (properties != null) {
+            val gps = properties.objectForKey(platform.ImageIO.kCGImagePropertyGPSDictionary) as? platform.Foundation.NSDictionary
+            if (gps != null) {
+                val rawLat = gps.objectForKey(platform.ImageIO.kCGImagePropertyGPSLatitude) as? Double
+                val rawLng = gps.objectForKey(platform.ImageIO.kCGImagePropertyGPSLongitude) as? Double
+                val latRef = gps.objectForKey(platform.ImageIO.kCGImagePropertyGPSLatitudeRef) as? String
+                val lngRef = gps.objectForKey(platform.ImageIO.kCGImagePropertyGPSLongitudeRef) as? String
+
+                if (rawLat != null) {
+                    latitude = if (latRef == "S") -rawLat else rawLat
+                }
+                if (rawLng != null) {
+                    longitude = if (lngRef == "W") -rawLng else rawLng
+                }
+            }
+
+            val exif = properties.objectForKey(platform.ImageIO.kCGImagePropertyExifDictionary) as? platform.Foundation.NSDictionary
+            if (exif != null) {
+                val dateStr = exif.objectForKey(platform.ImageIO.kCGImagePropertyExifDateTimeOriginal) as? String
+                if (dateStr != null) {
+                    val parts = dateStr.split(" ")
+                    if (parts.isNotEmpty()) {
+                        val dateParts = parts[0].split(":")
+                        if (dateParts.size == 3) {
+                            try {
+                                val year = dateParts[0].toInt()
+                                val month = dateParts[1].toInt()
+                                val day = dateParts[2].toInt()
+                                date = LocalDate(year, month, day)
+                            } catch (_: Exception) {}
+                        }
+                    }
+                }
+            }
+        }
+        platform.CoreFoundation.CFRelease(source)
+    }
+    platform.CoreFoundation.CFRelease(cfData)
+
+    return ExifMetadata(latitude, longitude, date)
+}
 
 @OptIn(ExperimentalForeignApi::class)
 private fun resizeUIImage(image: UIImage): UIImage {
@@ -77,6 +137,7 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
     val currentOnResult = rememberUpdatedState(onResult)
     val imageStorage = remember { IosImageStorage() }
     val retainedDelegates = remember { mutableSetOf<Any>() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     return remember {
         {
             val config = PHPickerConfiguration()
@@ -93,16 +154,21 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
                         provider.loadDataRepresentationForTypeIdentifier("public.image") { nsData, _ ->
                             val image = nsData?.let { UIImage(data = it) }
                             val jpegData = image?.let { UIImageJPEGRepresentation(resizeUIImage(it), IMAGE_JPEG_QUALITY / 100.0) }
-                            if (jpegData != null) {
-                                val dir = "${NSHomeDirectory()}/Documents/item_photos"
-                                val destPath = saveJpegToDir(jpegData, dir)
-                                currentOnResult.value(destPath, null, null, null)
-                            } else {
-                                currentOnResult.value(null, null, null, null)
+                            val exif = nsData?.let { extractExif(it) }
+                            scope.launch {
+                                if (jpegData != null) {
+                                    val dir = "${NSHomeDirectory()}/Documents/item_photos"
+                                    val destPath = saveJpegToDir(jpegData, dir)
+                                    currentOnResult.value(destPath, exif?.latitude, exif?.longitude, exif?.date)
+                                } else {
+                                    currentOnResult.value(null, null, null, null)
+                                }
                             }
                         }
                     } else {
-                        currentOnResult.value(null, null, null, null)
+                        scope.launch {
+                            currentOnResult.value(null, null, null, null)
+                        }
                     }
                 }
             }

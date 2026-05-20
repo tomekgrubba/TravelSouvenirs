@@ -6,6 +6,10 @@ import com.travelsouvenirs.main.util.AppSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -28,6 +32,7 @@ class SyncCoordinator(
     private val categorySync: CategorySyncService,
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var syncJob = SupervisorJob()
 
     init {
         // Trigger sync whenever the signed-in user changes from null → non-null.
@@ -36,7 +41,9 @@ class SyncCoordinator(
             var prevUid: String? = null
             authRepository.currentUser.collect { user ->
                 val uid = user?.uid
-                if (uid != null && prevUid == null) {
+                if (uid == null) {
+                    cancelAllSyncs()
+                } else if (prevUid == null) {
                     syncData()
                     launch { syncImages() }
                 }
@@ -56,6 +63,14 @@ class SyncCoordinator(
 
     private fun canSync(): Boolean = !appSettings.wifiOnlySync || networkMonitor.isWifi.value
 
+    /** Cancels any ongoing sync operations immediately. */
+    fun cancelAllSyncs() {
+        syncJob.cancel()
+        syncJob = SupervisorJob()
+        _isSyncing.value = false
+        _isSyncingImages.value = false
+    }
+
     /** Full bidirectional sync (metadata then images). Used for periodic background sync. */
     suspend fun sync() {
         if (!canSync()) return
@@ -71,16 +86,22 @@ class SyncCoordinator(
         if (!canSync()) return
         if (_isSyncing.value) return
         val userId = authRepository.currentUser.value?.uid ?: return
-        _isSyncing.value = true
+        val currentJob = Job(syncJob)
         try {
-            // Categories must be synced first so every item's category FK parent exists locally.
-            categorySync.sync(userId)
-            metadataSync.downloadRemoteMetadata(userId)
+            withContext(currentJob) {
+                _isSyncing.value = true
+                // Categories must be synced first so every item's category FK parent exists locally.
+                categorySync.sync(userId)
+                coroutineContext.ensureActive()
+                metadataSync.downloadRemoteMetadata(userId)
+            }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             println("SyncCoordinator: metadata sync failed: $e")
             _errors.tryEmit("Sync failed. Check your connection.")
         } finally {
             _isSyncing.value = false
+            currentJob.complete()
         }
     }
 
@@ -92,15 +113,21 @@ class SyncCoordinator(
         if (!canSync()) return
         if (_isSyncingImages.value) return
         val userId = authRepository.currentUser.value?.uid ?: return
-        _isSyncingImages.value = true
+        val currentJob = Job(syncJob)
         try {
-            metadataSync.uploadPending(userId, imageSyncHelper)
-            imageSync.downloadMissingImages()
+            withContext(currentJob) {
+                _isSyncingImages.value = true
+                metadataSync.uploadPending(userId, imageSyncHelper)
+                coroutineContext.ensureActive()
+                imageSync.downloadMissingImages()
+            }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             println("SyncCoordinator: image sync failed: $e")
             _errors.tryEmit("Sync failed. Check your connection.")
         } finally {
             _isSyncingImages.value = false
+            currentJob.complete()
         }
     }
 }

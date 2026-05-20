@@ -6,7 +6,7 @@ import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.SortOption
 import com.travelsouvenirs.main.util.AppSettings
-import kotlinx.coroutines.Dispatchers
+import com.travelsouvenirs.main.util.CoroutineDispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +24,11 @@ data class ListUiState(
 )
 
 /** Drives the list screen — applies search query and sort order to the repository stream. */
-class ListViewModel(private val appSettings: AppSettings, repository: ItemRepository) : ViewModel() {
+class ListViewModel(
+    private val appSettings: AppSettings,
+    repository: ItemRepository,
+    private val dispatchers: CoroutineDispatchers
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         ListUiState(viewMode = runCatching { ViewMode.valueOf(appSettings.viewModeName) }.getOrDefault(ViewMode.LIST))
@@ -47,7 +51,7 @@ class ListViewModel(private val appSettings: AppSettings, repository: ItemReposi
             SortOption.DATE -> filtered.sortedByDescending { it.dateAcquired }
             SortOption.LOCATION -> filtered.sortedBy { it.placeName.lowercase() }
         }
-    }.flowOn(Dispatchers.Default)
+    }.flowOn(dispatchers.default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onQueryChange(q: String) { _uiState.update { it.copy(searchQuery = q) } }

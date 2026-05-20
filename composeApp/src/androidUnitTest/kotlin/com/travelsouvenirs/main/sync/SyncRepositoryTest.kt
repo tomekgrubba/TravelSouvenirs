@@ -76,7 +76,7 @@ class SyncRepositoryTest {
         override fun getItemByIdFlow(id: Long): Flow<ItemEntity?> = MutableStateFlow(null)
         override suspend fun insertItem(item: ItemEntity): Long = 0L
         override suspend fun deleteItem(item: ItemEntity) {}
-        override suspend fun reassignCategory(from: String, to: String) {}
+        override suspend fun reassignCategory(fromCategory: String, toCategory: String, ts: Long) {}
         override suspend fun getPendingItems(): List<ItemEntity> = emptyList()
         override suspend fun updateSyncMeta(id: Long, status: String, fbId: String, storagePath: String, storageUrl: String, ts: Long) {}
         override suspend fun markSynced(fbId: String) {}

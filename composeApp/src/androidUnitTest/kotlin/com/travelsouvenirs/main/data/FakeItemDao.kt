@@ -31,9 +31,13 @@ class FakeItemDao : ItemDao {
         publish()
     }
 
-    override suspend fun reassignCategory(fromCategory: String, toCategory: String) {
+    override suspend fun reassignCategory(fromCategory: String, toCategory: String, ts: Long) {
         store.values.filter { it.category == fromCategory }.forEach {
-            store[it.id] = it.copy(category = toCategory)
+            store[it.id] = it.copy(
+                category = toCategory,
+                syncStatus = "PENDING_UPLOAD",
+                updatedAtMillis = ts
+            )
         }
         publish()
     }

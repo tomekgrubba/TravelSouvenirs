@@ -20,6 +20,7 @@ import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.ui.settings.SettingsViewModel
 import com.travelsouvenirs.main.util.AppSettings
+import com.travelsouvenirs.main.sync.SyncCoordinator
 import org.mockito.kotlin.mock
 import com.travelsouvenirs.main.domain.Item
 import org.koin.core.context.startKoin
@@ -179,7 +180,8 @@ class RememberGroupIconsSmokeTest {
                 single<AuthRepository> { mock() }
                 single<ImageStorage> { mock() }
                 single<ImageLocationAnalyzer> { mock() }
-                viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get()) }
+                single { mock<SyncCoordinator>() }
+                viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get()) }
             })
         }
 

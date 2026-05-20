@@ -23,8 +23,16 @@ class CategorySyncService(
             if (snapshot.exists) {
                 val remoteUpdatedAt = snapshot.get<Long>("updatedAtMillis")
                 val remoteList = snapshot.get<List<String>>("list")
+                val remoteListFiltered = remoteList.filter { it != DEFAULT_CATEGORY }
+                val localCategories = categoryRepository.getAll()
+
+                if (localCategories == remoteListFiltered) {
+                    appSettings.categoriesUpdatedAt = remoteUpdatedAt
+                    return
+                }
+
                 if (remoteUpdatedAt > localUpdatedAt) {
-                    categoryRepository.setAll(remoteList.filter { it != DEFAULT_CATEGORY })
+                    categoryRepository.setAll(remoteListFiltered)
                     appSettings.categoriesUpdatedAt = remoteUpdatedAt
                     return
                 }

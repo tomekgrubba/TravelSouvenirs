@@ -25,8 +25,8 @@ interface ItemDao {
     @Delete
     suspend fun deleteItem(item: ItemEntity)
 
-    @Query("UPDATE items SET category = :toCategory WHERE category = :fromCategory")
-    suspend fun reassignCategory(fromCategory: String, toCategory: String)
+    @Query("UPDATE items SET category = :toCategory, syncStatus = 'PENDING_UPLOAD', updatedAtMillis = :ts WHERE category = :fromCategory AND syncStatus != 'PENDING_DELETE'")
+    suspend fun reassignCategory(fromCategory: String, toCategory: String, ts: Long)
 
     /** Items that need to be pushed to or removed from Firebase. */
     @Query("SELECT * FROM items WHERE syncStatus IN ('PENDING_UPLOAD', 'PENDING_DELETE')")

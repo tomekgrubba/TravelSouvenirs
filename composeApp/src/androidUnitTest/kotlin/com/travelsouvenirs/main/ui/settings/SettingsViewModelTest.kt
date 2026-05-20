@@ -81,6 +81,7 @@ class SettingsViewModelTest {
         mock<AuthRepository>(),
         mock<ImageStorage>(),
         FakeImageLocationAnalyzer(),
+        mock<com.travelsouvenirs.main.sync.SyncCoordinator>(),
     )
 
     @Test
