@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -60,6 +61,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -461,6 +464,13 @@ private fun LocationPickerDialog(
     val pendingLng = uiState.pendingLng
     val cameraMoveId = uiState.cameraMoveId
 
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(searchQuery)) }
+    LaunchedEffect(searchQuery) {
+        if (textFieldValue.text != searchQuery) {
+            textFieldValue = TextFieldValue(searchQuery, TextRange(searchQuery.length))
+        }
+    }
+
     Dialog(
         onDismissRequest = { viewModel.closeLocationDialog() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -470,7 +480,7 @@ private fun LocationPickerDialog(
             shape = MaterialTheme.shapes.large,
             tonalElevation = 6.dp
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
+            Column(modifier = Modifier.padding(24.dp).imePadding().verticalScroll(rememberScrollState())) {
                 Text(
                     stringResource(Res.string.dialog_set_location),
                     style = MaterialTheme.typography.titleLarge
@@ -485,8 +495,11 @@ private fun LocationPickerDialog(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = viewModel::onSearchQueryChange,
+                        value = textFieldValue,
+                        onValueChange = { newValue ->
+                            textFieldValue = newValue
+                            viewModel.onSearchQueryChange(newValue.text)
+                        },
                         label = { Text(stringResource(Res.string.label_city_or_place)) },
                         shape = dialogFieldShape,
                         modifier = Modifier.weight(1f),

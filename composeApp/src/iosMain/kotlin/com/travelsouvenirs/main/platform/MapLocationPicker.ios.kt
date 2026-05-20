@@ -17,6 +17,8 @@ import platform.MapKit.MKCoordinateRegionMakeWithDistance
 import platform.MapKit.MKMapView
 import platform.MapKit.MKMapViewDelegateProtocol
 import platform.MapKit.MKPointAnnotation
+import platform.MapKit.MKStandardMapConfiguration
+import platform.MapKit.MKStandardMapEmphasisStyleMuted
 import platform.UIKit.UIGestureRecognizerStateBegan
 import platform.UIKit.UITapGestureRecognizer
 import platform.UIKit.UIUserInterfaceStyle
@@ -128,6 +130,9 @@ actual fun PlatformMapLocationPicker(
 
     LaunchedEffect(Unit) {
         mapView.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
+        mapView.preferredConfiguration = MKStandardMapConfiguration().also {
+            it.emphasisStyle = MKStandardMapEmphasisStyleMuted
+        }
     }
 
     UIKitView(factory = { mapView }, modifier = modifier)

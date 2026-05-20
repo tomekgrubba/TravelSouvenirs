@@ -22,6 +22,8 @@ import platform.MapKit.MKAnnotationProtocol
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
 import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
+import platform.MapKit.MKStandardMapConfiguration
+import platform.MapKit.MKStandardMapEmphasisStyleMuted
 import platform.UIKit.UITapGestureRecognizer
 import platform.UIKit.UIUserInterfaceStyle
 import kotlinx.cinterop.ObjCAction
@@ -60,6 +62,9 @@ internal fun NativeMapPreview(latitude: Double, longitude: Double, label: String
 
     LaunchedEffect(Unit) {
         mapView.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
+        mapView.preferredConfiguration = MKStandardMapConfiguration().also {
+            it.emphasisStyle = MKStandardMapEmphasisStyleMuted
+        }
     }
 
     Box(modifier = modifier) {
