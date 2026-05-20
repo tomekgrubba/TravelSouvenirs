@@ -1,13 +1,20 @@
 package com.travelsouvenirs.main.platform
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -162,6 +169,24 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val latestOnPinClick = rememberUpdatedState(onPinClick)
     val coroutineScope = rememberCoroutineScope()
 
+    val mapView = remember {
+        (viewModel.nativeMapView as? MKMapView) ?: MKMapView().also { viewModel.nativeMapView = it }
+    }
+
+    fun jumpToMyLocation() {
+        coroutineScope.launch {
+            try {
+                locationService.getCurrentLocation()?.let { loc ->
+                    val coord = CLLocationCoordinate2DMake(loc.lat, loc.lng)
+                    mapView.setRegion(
+                        MKCoordinateRegionMakeWithDistance(coord, 5000.0, 5000.0),
+                        animated = true
+                    )
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     val delegate = remember {
         MapDelegateHelper(
             iconCache      = mutableMapOf(),
@@ -184,10 +209,6 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         delegate.groupIconCache.putAll(groupIcons)
     }
 
-    val mapView = remember {
-        (viewModel.nativeMapView as? MKMapView) ?: MKMapView().also { viewModel.nativeMapView = it }
-    }
-
     LaunchedEffect(Unit) {
         mapView.delegate = delegate
     }
@@ -197,6 +218,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         mapView.preferredConfiguration = MKStandardMapConfiguration().also {
             it.emphasisStyle = MKStandardMapEmphasisStyleMuted
         }
+        mapView.showsUserLocation = true
     }
 
     // Initial camera — fire only once per provider switch
@@ -257,13 +279,29 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     Box(modifier = Modifier.fillMaxSize()) {
         UIKitView(factory = { mapView }, modifier = Modifier.fillMaxSize())
 
-        CategoryFilterFab(
-            availableCategories = availableCategories,
-            selectedCategories = selectedCategories,
-            onToggleCategory = { categoryFilter.toggleCategoryFilter(it) },
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
-            isTablet = isTablet,
-        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (isTablet) {
+                FloatingActionButton(onClick = { jumpToMyLocation() }) {
+                    Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.cd_my_location), modifier = Modifier.size(28.dp))
+                }
+            } else {
+                SmallFloatingActionButton(onClick = { jumpToMyLocation() }) {
+                    Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.cd_my_location))
+                }
+            }
+
+            CategoryFilterFab(
+                availableCategories = availableCategories,
+                selectedCategories = selectedCategories,
+                onToggleCategory = { categoryFilter.toggleCategoryFilter(it) },
+                isTablet = isTablet,
+            )
+        }
 
         // Empty state
         if (items.isEmpty()) {
@@ -272,7 +310,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp)
-                    .then(if (noItems) Modifier.clickable { onAddClick() } else Modifier),
+                    .clickable { onAddClick() },
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
