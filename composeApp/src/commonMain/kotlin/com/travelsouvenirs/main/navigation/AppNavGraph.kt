@@ -38,6 +38,7 @@ fun AppNavGraph(navController: NavHostController) {
                     onAddClick = { navController.navigate(Screen.AddItem.route) },
                     onItemClick = { itemId -> navController.navigate(ItemDetailRoute(itemId)) },
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                    onSignInClick = { navController.navigate(Screen.SignIn.route) }
                 )
             }
             composable(Screen.AddItem.route) {
