@@ -25,6 +25,10 @@ class AppSettings(private val settings: Settings) {
         get() = settings.getLong(KEY_LAST_SYNC_MILLIS, 0L)
         set(value) { settings.putLong(KEY_LAST_SYNC_MILLIS, value) }
 
+    fun clear() {
+        settings.clear()
+    }
+
     companion object {
         private const val KEY_VIEW_MODE = "list_view_mode"
         private const val KEY_WIFI_ONLY_SYNC = "wifi_only_sync"

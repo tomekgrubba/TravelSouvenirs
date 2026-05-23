@@ -108,8 +108,7 @@ class SettingsViewModel(
             repository.deleteAll()
             categoryRepository.setAll(emptyList())
             imageStorage.deleteAllImages()
-            appSettings.lastSyncMillis = 0L
-            appSettings.categoriesUpdatedAt = 0L
+            appSettings.clear()
             authRepository.signOut()
         }
     }
