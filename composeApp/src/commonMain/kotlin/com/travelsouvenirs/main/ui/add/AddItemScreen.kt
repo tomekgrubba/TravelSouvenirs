@@ -67,6 +67,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
@@ -280,22 +281,20 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                                         modifier = Modifier.fillMaxWidth().height(200.dp),
                                         contentScale = ContentScale.Crop
                                     )
-                                    IconButton(
-                                        onClick = { viewModel.onRemovePhoto() },
+                                    Box(
                                         modifier = Modifier
                                             .align(Alignment.TopEnd)
                                             .padding(8.dp)
-                                            .size(28.dp)
-                                            .background(
-                                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                                shape = CircleShape
-                                            )
+                                            .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                                            .clip(CircleShape)
+                                            .clickable { viewModel.onRemovePhoto() }
+                                            .padding(7.5.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Close,
+                                            Icons.Default.Close,
                                             contentDescription = "Remove photo",
-                                            modifier = Modifier.size(16.dp),
-                                            tint = MaterialTheme.colorScheme.onSurface
+                                            tint = Color.White,
+                                            modifier = Modifier.size(27.dp)
                                         )
                                     }
                                 }
@@ -367,22 +366,20 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                                     .clip(RoundedCornerShape(16.dp)),
                                 contentScale = ContentScale.Crop
                             )
-                            IconButton(
-                                onClick = { viewModel.onRemovePhoto() },
+                            Box(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .padding(8.dp)
-                                    .size(28.dp)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                        shape = CircleShape
-                                    )
+                                    .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                                    .clip(CircleShape)
+                                    .clickable { viewModel.onRemovePhoto() }
+                                    .padding(7.5.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Close,
+                                    Icons.Default.Close,
                                     contentDescription = "Remove photo",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurface
+                                    tint = Color.White,
+                                    modifier = Modifier.size(27.dp)
                                 )
                             }
                         }
