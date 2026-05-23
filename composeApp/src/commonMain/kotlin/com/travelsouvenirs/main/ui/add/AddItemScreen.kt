@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,9 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -61,7 +65,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -464,10 +473,27 @@ private fun LocationPickerDialog(
     val pendingLng = uiState.pendingLng
     val cameraMoveId = uiState.cameraMoveId
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    var isScrollEnabled by remember { mutableStateOf(true) }
+
     var textFieldValue by remember { mutableStateOf(TextFieldValue(searchQuery)) }
     LaunchedEffect(searchQuery) {
         if (textFieldValue.text != searchQuery) {
             textFieldValue = TextFieldValue(searchQuery, TextRange(searchQuery.length))
+        }
+        if (searchQuery.isEmpty()) {
+            keyboardController?.hide()
+            focusManager.clearFocus()
+        }
+    }
+
+    // Dismiss keyboard when a map tap or GPS sets a location
+    LaunchedEffect(pendingLat, pendingLng) {
+        if (pendingLat != null) {
+            keyboardController?.hide()
+            focusManager.clearFocus()
         }
     }
 
@@ -475,167 +501,200 @@ private fun LocationPickerDialog(
         onDismissRequest = { viewModel.closeLocationDialog() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(0.95f),
-            shape = MaterialTheme.shapes.large,
-            tonalElevation = 6.dp
-        ) {
-            Column(modifier = Modifier.padding(24.dp).imePadding().verticalScroll(rememberScrollState())) {
-                Text(
-                    stringResource(Res.string.dialog_set_location),
-                    style = MaterialTheme.typography.titleLarge
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Search field + my-location icon button inline
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    OutlinedTextField(
-                        value = textFieldValue,
-                        onValueChange = { newValue ->
-                            textFieldValue = newValue
-                            viewModel.onSearchQueryChange(newValue.text)
-                        },
-                        label = { Text(stringResource(Res.string.label_city_or_place)) },
-                        shape = dialogFieldShape,
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    IconButton(
-                        onClick = onRequestGps,
-                        enabled = !isLocating
-                    ) {
-                        if (isLocating && pendingLat == null) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(
-                                Icons.Default.MyLocation,
-                                contentDescription = stringResource(Res.string.cd_my_location)
-                            )
-                        }
-                    }
-                }
-
-                locationError?.let {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Map with floating search results overlay
-                Box(
+        BoxWithConstraints {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .heightIn(max = maxHeight * 0.9f),
+                shape = MaterialTheme.shapes.large,
+                tonalElevation = 6.dp
+            ) {
+                // Outer Column fills the bounded Surface and shrinks its inner area when keyboard shows.
+                // Buttons are outside the scrollable section so they are always reachable.
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(260.dp)
+                        .imePadding()
                 ) {
-                    PlatformMapLocationPicker(
-                        selectedLat = pendingLat,
-                        selectedLng = pendingLng,
-                        cameraMoveId = cameraMoveId,
-                        onLocationPicked = viewModel::onPendingLocationChanged,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    // Scrollable content: title, search, map
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState(), enabled = isScrollEnabled)
+                            .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 8.dp)
+                    ) {
+                        Text(
+                            stringResource(Res.string.dialog_set_location),
+                            style = MaterialTheme.typography.titleLarge
+                        )
 
-                    // Search results float above the map
-                    val showSearchOverlay = isSearching || searchResults.isNotEmpty() || searchQuery.length >= 2
-                    if (showSearchOverlay) {
-                        Card(
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Search field + my-location icon button inline
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 40.dp, max = 150.dp)
+                            OutlinedTextField(
+                                value = textFieldValue,
+                                onValueChange = { newValue ->
+                                    textFieldValue = newValue
+                                    viewModel.onSearchQueryChange(newValue.text)
+                                },
+                                label = { Text(stringResource(Res.string.label_city_or_place)) },
+                                shape = dialogFieldShape,
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() })
+                            )
+                            IconButton(
+                                onClick = onRequestGps,
+                                enabled = !isLocating
                             ) {
-                                when {
-                                    isSearching -> CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp).align(Alignment.Center)
+                                if (isLocating && pendingLat == null) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(
+                                        Icons.Default.MyLocation,
+                                        contentDescription = stringResource(Res.string.cd_my_location)
                                     )
-                                    searchResults.isNotEmpty() -> LazyColumn(
-                                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
-                                    ) {
-                                        items(searchResults) { place ->
-                                            Card(
-                                                onClick = { viewModel.onPlaceSelected(place) },
-                                                shape = RoundedCornerShape(16.dp),
-                                                colors = CardDefaults.cardColors(
-                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                                                ),
-                                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                                modifier = Modifier.fillMaxWidth()
-                                            ) {
-                                                Text(
-                                                    text = place.name,
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
-                                                )
-                                            }
+                                }
+                            }
+                        }
+
+                        locationError?.let {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Map with floating search results overlay
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(260.dp)
+                                .pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                                            isScrollEnabled = !event.changes.any { it.pressed }
                                         }
                                     }
-                                    else -> Text(
-                                        stringResource(Res.string.no_results_found),
-                                        modifier = Modifier.align(Alignment.Center).padding(8.dp),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                        ) {
+                            PlatformMapLocationPicker(
+                                selectedLat = pendingLat,
+                                selectedLng = pendingLng,
+                                cameraMoveId = cameraMoveId,
+                                onLocationPicked = viewModel::onPendingLocationChanged,
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                            // Search results float above the map
+                            val showSearchOverlay = isSearching || searchResults.isNotEmpty() || searchQuery.length >= 2
+                            if (showSearchOverlay) {
+                                Card(
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surface
+                                    ),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 40.dp, max = 150.dp)
+                                    ) {
+                                        when {
+                                            isSearching -> CircularProgressIndicator(
+                                                modifier = Modifier.size(24.dp).align(Alignment.Center)
+                                            )
+                                            searchResults.isNotEmpty() -> LazyColumn(
+                                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
+                                            ) {
+                                                items(searchResults) { place ->
+                                                    Card(
+                                                        onClick = {
+                                                            keyboardController?.hide()
+                                                            focusManager.clearFocus()
+                                                            viewModel.onPlaceSelected(place)
+                                                        },
+                                                        shape = RoundedCornerShape(16.dp),
+                                                        colors = CardDefaults.cardColors(
+                                                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                                        ),
+                                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    ) {
+                                                        Text(
+                                                            text = place.name,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            else -> Text(
+                                                stringResource(Res.string.no_results_found),
+                                                modifier = Modifier.align(Alignment.Center).padding(8.dp),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Hint when no pin has been placed yet
+                            if (pendingLat == null && !isSearching && searchResults.isEmpty()) {
+                                Card(modifier = Modifier.align(Alignment.Center).padding(16.dp)) {
+                                    Text(
+                                        stringResource(Res.string.map_picker_hint),
+                                        modifier = Modifier.padding(12.dp),
+                                        style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
                             }
                         }
                     }
 
-                    // Hint when no pin has been placed yet
-                    if (pendingLat == null && !isSearching && searchResults.isEmpty()) {
-                        Card(modifier = Modifier.align(Alignment.Center).padding(16.dp)) {
-                            Text(
-                                stringResource(Res.string.map_picker_hint),
-                                modifier = Modifier.padding(12.dp),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { viewModel.closeLocationDialog() },
-                        shape = dialogButtonShape,
-                        modifier = Modifier.weight(1f)
+                    // Buttons pinned outside the scrollable area — always visible above the keyboard
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(stringResource(Res.string.btn_cancel))
-                    }
-                    Button(
-                        onClick = { viewModel.confirmLocation() },
-                        enabled = pendingLat != null && !isLocating,
-                        shape = dialogButtonShape,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        if (isLocating && pendingLat != null) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                            Spacer(modifier = Modifier.size(8.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.closeLocationDialog() },
+                            shape = dialogButtonShape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(Res.string.btn_cancel))
                         }
-                        Text(stringResource(Res.string.btn_confirm))
+                        Button(
+                            onClick = { viewModel.confirmLocation() },
+                            enabled = pendingLat != null && !isLocating,
+                            shape = dialogButtonShape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            if (isLocating && pendingLat != null) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                            }
+                            Text(stringResource(Res.string.btn_confirm))
+                        }
                     }
                 }
             }

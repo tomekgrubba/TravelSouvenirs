@@ -19,7 +19,7 @@ import platform.MapKit.MKMapViewDelegateProtocol
 import platform.MapKit.MKPointAnnotation
 import platform.MapKit.MKStandardMapConfiguration
 import platform.MapKit.MKStandardMapEmphasisStyleMuted
-import platform.UIKit.UIGestureRecognizerStateBegan
+import platform.UIKit.UIGestureRecognizerStateEnded
 import platform.UIKit.UITapGestureRecognizer
 import platform.UIKit.UIUserInterfaceStyle
 import kotlinx.cinterop.ObjCAction
@@ -77,7 +77,7 @@ actual fun PlatformMapLocationPicker(
                 addTarget(object : NSObject() {
                     @ObjCAction
                     fun handleTap(recognizer: UITapGestureRecognizer) {
-                        if (recognizer.state != UIGestureRecognizerStateBegan) return
+                        if (recognizer.state != UIGestureRecognizerStateEnded) return
                         val point = recognizer.locationInView(mapViewRef)
                         val coord = mapViewRef.convertPoint(point, toCoordinateFromView = mapViewRef)
                         coord.useContents {
