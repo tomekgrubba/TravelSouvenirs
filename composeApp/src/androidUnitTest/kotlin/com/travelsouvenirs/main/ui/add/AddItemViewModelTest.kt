@@ -144,6 +144,16 @@ class AddItemViewModelTest {
     }
 
     @Test
+    fun `onRemovePhoto clears photoPath state`() = runTest {
+        val vm = viewModel()
+        setPhotoPath(vm, "/source/image.jpg")
+        assertEquals("/source/image.jpg", vm.state.photoPath)
+
+        vm.onRemovePhoto()
+        assertEquals(null, vm.state.photoPath)
+    }
+
+    @Test
     fun `onDateChange updates dateAcquired state`() {
         val vm = viewModel()
         val newDate = LocalDate(2023, 3, 21)
