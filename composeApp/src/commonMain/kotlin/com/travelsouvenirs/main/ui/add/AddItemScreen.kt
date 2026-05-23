@@ -19,12 +19,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
@@ -271,24 +273,75 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                                 .padding(top = 12.dp, start = 12.dp, end = 12.dp)
                         ) {
                             if (photoPath != null) {
-                                AsyncImage(
-                                    model = localImageModel(photoPath),
-                                    contentDescription = stringResource(Res.string.cd_item_photo),
-                                    modifier = Modifier.fillMaxWidth().height(200.dp),
-                                    contentScale = ContentScale.Crop
-                                )
+                                Box {
+                                    AsyncImage(
+                                        model = localImageModel(photoPath),
+                                        contentDescription = stringResource(Res.string.cd_item_photo),
+                                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    IconButton(
+                                        onClick = { viewModel.onRemovePhoto() },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(8.dp)
+                                            .size(28.dp)
+                                            .background(
+                                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                                shape = CircleShape
+                                            )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Remove photo",
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
                             } else {
-                                Box(
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(160.dp)
-                                        .background(MaterialTheme.colorScheme.surfaceContainerLow),
-                                    contentAlignment = Alignment.Center
+                                        .height(200.dp)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
                                 ) {
                                     Text(
                                         stringResource(Res.string.no_photo_selected),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyMedium
                                     )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = { launchCamera() },
+                                            shape = buttonShape,
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(
+                                                text = stringResource(Res.string.btn_take_photo),
+                                                maxLines = 1,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                        OutlinedButton(
+                                            onClick = { launchPhotoPicker() },
+                                            shape = buttonShape,
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(
+                                                text = stringResource(Res.string.btn_gallery),
+                                                maxLines = 1,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -304,45 +357,82 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                         modifier = Modifier.padding(start = 4.dp)
                     )
                     if (photoPath != null) {
-                        AsyncImage(
-                            model = localImageModel(photoPath),
-                            contentDescription = stringResource(Res.string.cd_item_photo),
+                        Box {
+                            AsyncImage(
+                                model = localImageModel(photoPath),
+                                contentDescription = stringResource(Res.string.cd_item_photo),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .clip(RoundedCornerShape(16.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { viewModel.onRemovePhoto() },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .size(28.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                        shape = CircleShape
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Remove photo",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    } else {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(200.dp)
-                                .clip(RoundedCornerShape(16.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(160.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainer),
-                            contentAlignment = Alignment.Center
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Text(
                                 stringResource(Res.string.no_photo_selected),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                OutlinedButton(
+                                    onClick = { launchCamera() },
+                                    shape = buttonShape,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = stringResource(Res.string.btn_take_photo),
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                OutlinedButton(
+                                    onClick = { launchPhotoPicker() },
+                                    shape = buttonShape,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = stringResource(Res.string.btn_gallery),
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = { launchCamera() },
-                    shape = buttonShape,
-                    modifier = Modifier.weight(1f)
-                ) { Text(stringResource(Res.string.btn_take_photo)) }
-
-                OutlinedButton(
-                    onClick = { launchPhotoPicker() },
-                    shape = buttonShape,
-                    modifier = Modifier.weight(1f)
-                ) { Text(stringResource(Res.string.btn_gallery)) }
             }
 
             OutlinedButton(

@@ -278,6 +278,10 @@ class AddItemViewModel(
         _uiState.update { it.copy(pendingLat = lat, pendingLng = lng) }
     }
 
+    fun onRemovePhoto() {
+        _uiState.update { it.copy(photoPath = null) }
+    }
+
     fun confirmLocation() {
         val state = _uiState.value
         val lat = state.pendingLat ?: return
