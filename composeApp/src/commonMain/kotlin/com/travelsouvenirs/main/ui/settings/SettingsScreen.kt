@@ -114,6 +114,23 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
         )
     }
 
+    if (uiState.showSignOutWarning) {
+        AlertDialog(
+            onDismissRequest = { vm.dismissSignOutWarning() },
+            title = { Text("Unsynced Souvenirs") },
+            text = { Text("You have photos that haven't been saved to the cloud yet. If you log out now, these souvenirs will be lost forever. Are you sure you want to log out?") },
+            confirmButton = {
+                TextButton(
+                    onClick = { vm.signOut(force = true) },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Sign out anyway") }
+            },
+            dismissButton = {
+                TextButton(onClick = { vm.dismissSignOutWarning() }) { Text("Cancel") }
+            }
+        )
+    }
+
     // ── Shared section content lambdas ──────────────────────────────────────
     // Each captures the surrounding state so it can be placed inside either
     // a PolaroidSectionCard (Polaroid mode) or a plain Card (other themes).

@@ -24,6 +24,7 @@ data class SettingsUiState(
     val notes: String = "",
     val modelDownloadable: Boolean = false,
     val isDownloadingModel: Boolean = false,
+    val showSignOutWarning: Boolean = false,
 )
 
 /** Persists appearance and sync settings; delegates category management to CategoryRepository. */
@@ -102,14 +103,23 @@ class SettingsViewModel(
         }
     }
 
-    fun signOut() {
+    fun signOut(force: Boolean = false) {
         viewModelScope.launch {
-            syncCoordinator.cancelAllSyncs()
-            repository.deleteAll()
-            categoryRepository.setAll(emptyList())
-            imageStorage.deleteAllImages()
-            appSettings.clear()
-            authRepository.signOut()
+            if (!force && repository.hasPendingUploads()) {
+                _uiState.update { it.copy(showSignOutWarning = true) }
+            } else {
+                _uiState.update { it.copy(showSignOutWarning = false) }
+                syncCoordinator.cancelAllSyncs()
+                repository.deleteAll()
+                categoryRepository.setAll(emptyList())
+                imageStorage.deleteAllImages()
+                appSettings.clear()
+                authRepository.signOut()
+            }
         }
+    }
+
+    fun dismissSignOutWarning() {
+        _uiState.update { it.copy(showSignOutWarning = false) }
     }
 }

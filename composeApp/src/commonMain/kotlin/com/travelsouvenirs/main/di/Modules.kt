@@ -10,6 +10,7 @@ import com.travelsouvenirs.main.domain.usecase.DeleteItemUseCase
 import com.travelsouvenirs.main.domain.usecase.FilterItemsUseCase
 import com.travelsouvenirs.main.domain.usecase.SaveItemUseCase
 import com.travelsouvenirs.main.sync.CategorySyncService
+import com.travelsouvenirs.main.sync.CloudImageStorage
 import com.travelsouvenirs.main.sync.ImageSyncHelper
 import com.travelsouvenirs.main.sync.ImageSyncService
 import com.travelsouvenirs.main.sync.MetadataSyncService
@@ -41,13 +42,13 @@ val dataModule = module {
 
 val syncModule = module {
     single { Firebase.firestore }
-    single { ImageSyncHelper(Firebase.storage) }
+    single<CloudImageStorage> { ImageSyncHelper(Firebase.storage) }
     single { MetadataSyncService(get(), get(), get(), get()) }
     single { ImageSyncService(get(), get()) }
     single { CategorySyncService(get(), get(), get()) }
     single {
         SyncCoordinator(
-            imageSyncHelper = get(),
+            cloudImageStorage = get(),
             authRepository = get(),
             appSettings = get(),
             networkMonitor = get(),

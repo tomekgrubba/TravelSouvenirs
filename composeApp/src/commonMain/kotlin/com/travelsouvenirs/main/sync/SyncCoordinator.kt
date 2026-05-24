@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
  * Delegates the actual work to [MetadataSyncService], [ImageSyncService], and [CategorySyncService].
  */
 class SyncCoordinator(
-    val imageSyncHelper: ImageSyncHelper,
+    private val cloudImageStorage: CloudImageStorage,
     private val authRepository: AuthRepository,
     private val appSettings: AppSettings,
     private val networkMonitor: NetworkMonitor,
@@ -117,7 +117,7 @@ class SyncCoordinator(
         try {
             withContext(currentJob) {
                 _isSyncingImages.value = true
-                metadataSync.uploadPending(userId, imageSyncHelper)
+                metadataSync.uploadPending(userId, cloudImageStorage)
                 coroutineContext.ensureActive()
                 imageSync.downloadMissingImages()
             }

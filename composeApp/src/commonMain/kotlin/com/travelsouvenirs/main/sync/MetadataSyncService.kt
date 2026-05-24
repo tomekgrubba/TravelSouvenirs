@@ -45,7 +45,7 @@ class MetadataSyncService(
         appSettings.lastSyncMillis = now
     }
 
-    suspend fun uploadPending(userId: String, imageSyncHelper: ImageSyncHelper) {
+    suspend fun uploadPending(userId: String, cloudImageStorage: CloudImageStorage) {
         val pending = dao.getPendingItems()
         val itemsRef = firestore.collection("users").document(userId).collection("items")
 
@@ -65,7 +65,7 @@ class MetadataSyncService(
                     var storagePath = entity.photoStoragePath
                     var storageUrl = entity.photoStorageUrl
                     if (entity.photoPath.isNotEmpty() && storagePath.isEmpty()) {
-                        val (path, url) = imageSyncHelper.upload(userId, fbId, entity.photoPath)
+                        val (path, url) = cloudImageStorage.upload(userId, fbId, entity.photoPath)
                         storagePath = path
                         storageUrl = url
                     }
