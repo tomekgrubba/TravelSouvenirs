@@ -248,6 +248,20 @@ class AddItemViewModelTest {
     }
 
     @Test
+    fun `saveItem trims leading and trailing spaces and line breaks from notes`() = runTest {
+        val vm = viewModel()
+        setPhotoPath(vm, "/photo.jpg")
+        vm.onNameChange("Eiffel Tower")
+        vm.onNotesChange(" \n\r  Some notes with spaces and line breaks \n\n ")
+        vm.saveItem()
+        advanceUntilIdle()
+        assertTrue(vm.state.isSaved)
+
+        val savedItem = (dao.getAllActiveItems() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.ItemEntity>>).value.first()
+        assertEquals("Some notes with spaces and line breaks", savedItem.notes)
+    }
+
+    @Test
     fun `saveItem in edit mode upserts existing item`() = runTest {
         dao.insertItem(
             ItemEntity(

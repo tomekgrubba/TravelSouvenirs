@@ -311,7 +311,7 @@ class AddItemViewModel(
             val saved = saveItem(Item(
                 id = editId ?: 0,
                 name = state.name,
-                notes = state.notes,
+                notes = state.notes.trim(),
                 photoPath = path,
                 latitude = state.latitude,
                 longitude = state.longitude,
