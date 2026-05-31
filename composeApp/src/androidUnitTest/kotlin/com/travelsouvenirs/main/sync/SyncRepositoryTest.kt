@@ -96,7 +96,7 @@ class SyncRepositoryTest {
         val fakeCategoryDao = com.travelsouvenirs.main.data.FakeCategoryDao()
         val categoryRepo = com.travelsouvenirs.main.data.CategoryRepository(fakeCategoryDao)
         return SyncCoordinator(
-            imageSyncHelper = mock<ImageSyncHelper>(),
+            cloudImageStorage = mock<CloudImageStorage>(),
             authRepository = FakeAuthRepository(authUserId),
             appSettings = appSettings,
             networkMonitor = networkMonitor,
