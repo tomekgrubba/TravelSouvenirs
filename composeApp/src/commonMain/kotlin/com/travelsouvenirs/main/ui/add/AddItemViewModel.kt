@@ -308,10 +308,12 @@ class AddItemViewModel(
         val path = state.photoPath ?: return
         viewModelScope.launch {
             imagePicker.cleanupOnSave(path)
+            val trimmedNotes = state.notes.trim()
+            val cleanNotes = trimmedNotes.replace(Regex("(\\r?\\n){3,}"), "\n\n")
             val saved = saveItem(Item(
                 id = editId ?: 0,
                 name = state.name,
-                notes = state.notes.trim(),
+                notes = cleanNotes,
                 photoPath = path,
                 latitude = state.latitude,
                 longitude = state.longitude,

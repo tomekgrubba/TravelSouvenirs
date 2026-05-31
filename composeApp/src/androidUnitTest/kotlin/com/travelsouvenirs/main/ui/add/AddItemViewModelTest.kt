@@ -262,6 +262,20 @@ class AddItemViewModelTest {
     }
 
     @Test
+    fun `saveItem limits consecutive line breaks in the middle of notes to a maximum of two`() = runTest {
+        val vm = viewModel()
+        setPhotoPath(vm, "/photo.jpg")
+        vm.onNameChange("Eiffel Tower")
+        vm.onNotesChange("Line 1\n\n\n\nLine 2\r\n\r\n\r\nLine 3\n\nLine 4")
+        vm.saveItem()
+        advanceUntilIdle()
+        assertTrue(vm.state.isSaved)
+
+        val savedItem = (dao.getAllActiveItems() as kotlinx.coroutines.flow.StateFlow<List<com.travelsouvenirs.main.data.ItemEntity>>).value.first()
+        assertEquals("Line 1\n\nLine 2\n\nLine 3\n\nLine 4", savedItem.notes)
+    }
+
+    @Test
     fun `saveItem in edit mode upserts existing item`() = runTest {
         dao.insertItem(
             ItemEntity(
