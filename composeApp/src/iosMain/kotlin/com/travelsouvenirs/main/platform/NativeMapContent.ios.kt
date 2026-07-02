@@ -209,7 +209,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             coroutineScope.launch {
                 val coord = CLLocationCoordinate2DMake(target.lat, target.lng)
                 mapView.setRegion(
-                    MKCoordinateRegionMakeWithDistance(coord, 1000.0, 1000.0),
+                    MKCoordinateRegionMakeWithDistance(coord, 5000.0, 5000.0),
                     animated = true
                 )
             }

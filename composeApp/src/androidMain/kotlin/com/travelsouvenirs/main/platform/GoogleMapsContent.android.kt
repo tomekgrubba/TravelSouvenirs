@@ -120,7 +120,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             appViewModel.clearTargetCameraLocation()
             scope.launch {
                 cameraPositionState.animate(
-                    CameraUpdateFactory.newLatLngZoom(LatLng(target.lat, target.lng), PIN_ZOOM),
+                    CameraUpdateFactory.newLatLngZoom(LatLng(target.lat, target.lng), LOCATION_ZOOM),
                     1000
                 )
             }
