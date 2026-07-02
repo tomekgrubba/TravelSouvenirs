@@ -61,7 +61,10 @@ class SyncCoordinator(
     private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val errors: SharedFlow<String> = _errors.asSharedFlow()
 
-    private fun canSync(): Boolean = !appSettings.wifiOnlySync || networkMonitor.isWifi.value
+    private fun canSync(): Boolean {
+        if (!networkMonitor.isConnected.value) return false
+        return !appSettings.wifiOnlySync || networkMonitor.isWifi.value
+    }
 
     /** Cancels any ongoing sync operations immediately. */
     fun cancelAllSyncs() {

@@ -151,6 +151,45 @@ class SyncRepositoryTest {
     }
 
     @Test
+    fun `sync skipped entirely when device is offline`() = runTest {
+        val appSettings = fakeAppSettings(wifiOnly = false)
+        val repo = buildRepo(
+            networkMonitor = FakeNetworkMonitor(connected = false, wifi = false),
+            appSettings = appSettings,
+        )
+
+        repo.sync()
+
+        assertFalse(repo.isSyncing.value, "isSyncing should stay false when device is offline")
+        assertFalse(repo.isSyncingImages.value, "isSyncingImages should stay false when device is offline")
+        assertTrue(appSettings.lastSyncMillis == 0L, "last_sync_millis should not be updated when offline")
+    }
+
+    @Test
+    fun `syncData skipped when device is offline`() = runTest {
+        val repo = buildRepo(
+            networkMonitor = FakeNetworkMonitor(connected = false, wifi = false),
+            appSettings = fakeAppSettings(wifiOnly = false),
+        )
+
+        repo.syncData()
+
+        assertFalse(repo.isSyncing.value)
+    }
+
+    @Test
+    fun `syncImages skipped when device is offline`() = runTest {
+        val repo = buildRepo(
+            networkMonitor = FakeNetworkMonitor(connected = false, wifi = false),
+            appSettings = fakeAppSettings(wifiOnly = false),
+        )
+
+        repo.syncImages()
+
+        assertFalse(repo.isSyncingImages.value)
+    }
+
+    @Test
     fun `sync allowed when wifi-only disabled regardless of wifi state`() = runTest {
         val repo = buildRepo(
             networkMonitor = FakeNetworkMonitor(connected = true, wifi = false),
