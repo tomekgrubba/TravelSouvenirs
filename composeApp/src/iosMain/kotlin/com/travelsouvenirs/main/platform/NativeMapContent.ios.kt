@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.travelsouvenirs.main.di.LocalAppViewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.ui.map.ItemGroup
@@ -132,6 +133,7 @@ private class MapDelegateHelper(
 internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
+    val appViewModel = LocalAppViewModel.current
     val koinScope = currentKoinScope()
     val viewModel: MapViewModel = viewModel { koinScope.get<MapViewModel>() }
 
@@ -199,6 +201,18 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         )
     }
 
+    val targetLoc = appViewModel.targetCameraLocation
+    LaunchedEffect(targetLoc) {
+        if (targetLoc != null) {
+            appViewModel.clearTargetCameraLocation()
+            val coord = CLLocationCoordinate2DMake(targetLoc.lat, targetLoc.lng)
+            mapView.setRegion(
+                MKCoordinateRegionMakeWithDistance(coord, 1000.0, 1000.0),
+                animated = true
+            )
+        }
+    }
+
     // Keep delegate icon caches in sync when loading finishes
     LaunchedEffect(individualIcons.entries.toList()) {
         delegate.iconCache.clear()
@@ -225,27 +239,29 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     LaunchedEffect(Unit) {
         if (!viewModel.initialCameraSet) {
             viewModel.initialCameraSet = true
-            val loc = locationService.getCurrentLocation()
-            if (loc != null) {
-                val coord = CLLocationCoordinate2DMake(loc.lat, loc.lng)
-                mapView.setRegion(
-                    MKCoordinateRegionMakeWithDistance(coord, 5_000_000.0, 5_000_000.0),
-                    animated = false
-                )
-            } else if (allItems.isNotEmpty()) {
-                val minLat = allItems.minOf { it.latitude }
-                val maxLat = allItems.maxOf { it.latitude }
-                val minLng = allItems.minOf { it.longitude }
-                val maxLng = allItems.maxOf { it.longitude }
-                val spanLat = (maxLat - minLat) * 1.4 + 0.01
-                val spanLng = (maxLng - minLng) * 1.4 + 0.01
-                mapView.setRegion(
-                    MKCoordinateRegionMake(
-                        CLLocationCoordinate2DMake((minLat + maxLat) / 2.0, (minLng + maxLng) / 2.0),
-                        MKCoordinateSpanMake(spanLat, spanLng)
-                    ),
-                    animated = false
-                )
+            if (appViewModel.targetCameraLocation == null) {
+                val loc = locationService.getCurrentLocation()
+                if (loc != null) {
+                    val coord = CLLocationCoordinate2DMake(loc.lat, loc.lng)
+                    mapView.setRegion(
+                        MKCoordinateRegionMakeWithDistance(coord, 5_000_000.0, 5_000_000.0),
+                        animated = false
+                    )
+                } else if (allItems.isNotEmpty()) {
+                    val minLat = allItems.minOf { it.latitude }
+                    val maxLat = allItems.maxOf { it.latitude }
+                    val minLng = allItems.minOf { it.longitude }
+                    val maxLng = allItems.maxOf { it.longitude }
+                    val spanLat = (maxLat - minLat) * 1.4 + 0.01
+                    val spanLng = (maxLng - minLng) * 1.4 + 0.01
+                    mapView.setRegion(
+                        MKCoordinateRegionMake(
+                            CLLocationCoordinate2DMake((minLat + maxLat) / 2.0, (minLng + maxLng) / 2.0),
+                            MKCoordinateSpanMake(spanLat, spanLng)
+                        ),
+                        animated = false
+                    )
+                }
             }
         }
     }

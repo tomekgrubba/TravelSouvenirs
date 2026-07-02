@@ -51,6 +51,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
+import com.travelsouvenirs.main.di.LocalAppViewModel
 import com.travelsouvenirs.main.di.LocalCategoryFilter
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.ui.map.ItemGroup
@@ -67,6 +68,7 @@ import travelsouvenirs.composeapp.generated.resources.*
 private const val CLUSTER_ZOOM_THRESHOLD = 13f
 private const val INITIAL_ZOOM = 5f
 private const val LOCATION_ZOOM = 10f
+private const val PIN_ZOOM = 15f
 
 
 @Composable
@@ -74,6 +76,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val context = LocalContext.current
     val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
+    val appViewModel = LocalAppViewModel.current
 
     val viewModel: MapViewModel = koinViewModel()
     val allItems by viewModel.items.collectAsState()
@@ -106,6 +109,17 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             north = bounds.northeast.latitude,
             east = bounds.northeast.longitude
         )
+    }
+
+    val appViewModelTarget = appViewModel.targetCameraLocation
+    LaunchedEffect(appViewModelTarget) {
+        if (appViewModelTarget != null) {
+            appViewModel.clearTargetCameraLocation()
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(LatLng(appViewModelTarget.lat, appViewModelTarget.lng), PIN_ZOOM),
+                1000
+            )
+        }
     }
 
     var itemGroups by remember { mutableStateOf<List<ItemGroup>>(emptyList()) }
@@ -181,16 +195,19 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         if (!initialZoomDone) {
             initialZoomDone = true
             try {
-                val location = if (hasLocationPermission) locationService.getCurrentLocation() else null
-                val update = if (location != null) {
-                    CameraUpdateFactory.newLatLngZoom(LatLng(location.lat, location.lng), INITIAL_ZOOM)
-                } else if (allItems.isNotEmpty()) {
-                    val bounds = LatLngBounds.Builder().apply {
-                        allItems.forEach { include(LatLng(it.latitude, it.longitude)) }
-                    }.build()
-                    CameraUpdateFactory.newLatLngBounds(bounds, 120)
-                } else null
-                update?.let { cameraPositionState.animate(it, 800) }
+                // If there's a target location waiting from appViewModel, let that take priority
+                if (appViewModel.targetCameraLocation == null) {
+                    val location = if (hasLocationPermission) locationService.getCurrentLocation() else null
+                    val update = if (location != null) {
+                        CameraUpdateFactory.newLatLngZoom(LatLng(location.lat, location.lng), INITIAL_ZOOM)
+                    } else if (allItems.isNotEmpty()) {
+                        val bounds = LatLngBounds.Builder().apply {
+                            allItems.forEach { include(LatLng(it.latitude, it.longitude)) }
+                        }.build()
+                        CameraUpdateFactory.newLatLngBounds(bounds, 120)
+                    } else null
+                    update?.let { cameraPositionState.animate(it, 800) }
+                }
             } catch (_: Exception) { }
         }
     }

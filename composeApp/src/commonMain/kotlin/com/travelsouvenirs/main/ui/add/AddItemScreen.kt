@@ -91,6 +91,8 @@ import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
 import com.travelsouvenirs.main.util.formatDisplayDate
 import com.travelsouvenirs.main.util.localImageModel
+import com.travelsouvenirs.main.di.LocalAppViewModel
+import com.travelsouvenirs.main.domain.LatLon
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -132,8 +134,13 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     val isSaved = uiState.isSaved
     val showLocationDialog = uiState.showLocationDialog
 
+    val appViewModel = LocalAppViewModel.current
+
     LaunchedEffect(isSaved) {
-        if (isSaved) onSaved()
+        if (isSaved) {
+            appViewModel.zoomToLocation(LatLon(uiState.latitude, uiState.longitude))
+            onSaved()
+        }
     }
 
     val launchPhotoPicker = rememberPhotoPicker { path, exifLat, exifLng, exifDate ->
@@ -805,7 +812,7 @@ fun CustomDatePickerDialog(
     onConfirm: (String?) -> Unit
 ) {
     val initialTab = when {
-        initialDate == null -> 2
+        initialDate == null -> 0
         !initialDate.contains("-") -> 0
         initialDate.count { it == '-' } == 1 -> 1
         else -> 2
