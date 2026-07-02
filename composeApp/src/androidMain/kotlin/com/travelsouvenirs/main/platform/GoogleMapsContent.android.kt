@@ -111,12 +111,13 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         )
     }
 
-    val appViewModelTarget = appViewModel.targetCameraLocation
+    val appViewModelTarget by appViewModel.targetCameraLocation.collectAsState()
     LaunchedEffect(appViewModelTarget) {
-        if (appViewModelTarget != null) {
+        val target = appViewModelTarget
+        if (target != null) {
             appViewModel.clearTargetCameraLocation()
             cameraPositionState.animate(
-                CameraUpdateFactory.newLatLngZoom(LatLng(appViewModelTarget.lat, appViewModelTarget.lng), PIN_ZOOM),
+                CameraUpdateFactory.newLatLngZoom(LatLng(target.lat, target.lng), PIN_ZOOM),
                 1000
             )
         }
@@ -196,7 +197,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             initialZoomDone = true
             try {
                 // If there's a target location waiting from appViewModel, let that take priority
-                if (appViewModel.targetCameraLocation == null) {
+                if (appViewModel.targetCameraLocation.value == null) {
                     val location = if (hasLocationPermission) locationService.getCurrentLocation() else null
                     val update = if (location != null) {
                         CameraUpdateFactory.newLatLngZoom(LatLng(location.lat, location.lng), INITIAL_ZOOM)

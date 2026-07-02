@@ -201,11 +201,12 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         )
     }
 
-    val targetLoc = appViewModel.targetCameraLocation
+    val targetLoc by appViewModel.targetCameraLocation.collectAsState()
     LaunchedEffect(targetLoc) {
-        if (targetLoc != null) {
+        val target = targetLoc
+        if (target != null) {
             appViewModel.clearTargetCameraLocation()
-            val coord = CLLocationCoordinate2DMake(targetLoc.lat, targetLoc.lng)
+            val coord = CLLocationCoordinate2DMake(target.lat, target.lng)
             mapView.setRegion(
                 MKCoordinateRegionMakeWithDistance(coord, 1000.0, 1000.0),
                 animated = true
@@ -239,7 +240,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     LaunchedEffect(Unit) {
         if (!viewModel.initialCameraSet) {
             viewModel.initialCameraSet = true
-            if (appViewModel.targetCameraLocation == null) {
+            if (appViewModel.targetCameraLocation.value == null) {
                 val loc = locationService.getCurrentLocation()
                 if (loc != null) {
                     val coord = CLLocationCoordinate2DMake(loc.lat, loc.lng)
