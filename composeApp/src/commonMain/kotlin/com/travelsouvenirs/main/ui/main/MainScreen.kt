@@ -119,6 +119,12 @@ fun MainScreen(
         }
     }
 
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == MainTab.LIST) {
+            appViewModel.clearTargetCameraLocation()
+        }
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         scope.launch {
             syncRepository.syncData()
