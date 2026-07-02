@@ -810,16 +810,16 @@ fun CustomDatePickerDialog(
         initialDate.count { it == '-' } == 1 -> 1
         else -> 2
     }
-    
+
     var selectedTab by remember { mutableStateOf(initialTab) }
-    
+
     val initialParts = initialDate?.split("-")
     val initialYear = initialParts?.getOrNull(0)?.toIntOrNull() ?: 2026
     val initialMonth = initialParts?.getOrNull(1)?.toIntOrNull() ?: 5
-    
+
     var selectedYear by remember { mutableStateOf(initialYear) }
     var selectedMonth by remember { mutableStateOf(initialMonth) }
-    
+
     val initialSelectedMillis = if (initialDate != null && initialParts?.size == 3) {
         val y = initialParts[0].toIntOrNull() ?: 2026
         val m = initialParts[1].toIntOrNull() ?: 5
@@ -831,90 +831,137 @@ fun CustomDatePickerDialog(
     } else {
         kotlin.time.Clock.System.now().toEpochMilliseconds()
     }
-    
+
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialSelectedMillis
     )
 
-    AlertDialog(
+    val tabs = listOf("Year", "Month", "Full Date")
+
+    Dialog(
         onDismissRequest = onDismissRequest,
-        confirmButton = {
-            TextButton(onClick = {
-                val result = when (selectedTab) {
-                    0 -> "$selectedYear"
-                    1 -> "$selectedYear-${selectedMonth.toString().padStart(2, '0')}"
-                    2 -> {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            val localDate = Instant.fromEpochMilliseconds(millis)
-                                .toLocalDateTime(TimeZone.UTC).date
-                            "${localDate.year}-${localDate.monthNumber.toString().padStart(2, '0')}-${localDate.dayOfMonth.toString().padStart(2, '0')}"
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+
+                // Title
+                Text(
+                    text = "Select Date Acquired",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 16.dp)
+                )
+
+                // Pill-style segmented control
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        tabs.forEachIndexed { index, label ->
+                            val isSelected = selectedTab == index
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                        else Color.Transparent
+                                    )
+                                    .clickable { selectedTab = index }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
-                    else -> null
                 }
-                onConfirm(result)
-            }) { Text(stringResource(Res.string.btn_ok)) }
-        },
-        dismissButton = {
-            Row {
-                TextButton(onClick = {
-                    onConfirm(null)
-                }) { Text("Clear") }
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = onDismissRequest) { Text(stringResource(Res.string.btn_cancel)) }
-            }
-        },
-        title = {
-            Text("Select Date Acquired", style = MaterialTheme.typography.titleMedium)
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                TabRow(selectedTabIndex = selectedTab) {
-                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) {
-                        Box(Modifier.padding(vertical = 12.dp)) { Text("Year") }
-                    }
-                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }) {
-                        Box(Modifier.padding(vertical = 12.dp)) { Text("Month") }
-                    }
-                    Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }) {
-                        Box(Modifier.padding(vertical = 12.dp)) { Text("Full Date") }
-                    }
-                }
-                
+
                 Spacer(Modifier.height(16.dp))
-                
+
+                // Content
                 when (selectedTab) {
-                    0 -> {
-                        YearPicker(selectedYear = selectedYear, onYearSelected = { selectedYear = it })
-                    }
-                    1 -> {
-                        MonthYearPicker(
-                            selectedYear = selectedYear,
-                            selectedMonth = selectedMonth,
-                            onYearChange = { selectedYear = it },
-                            onMonthSelected = { selectedMonth = it }
-                        )
-                    }
+                    0 -> YearPicker(
+                        selectedYear = selectedYear,
+                        onYearSelected = { selectedYear = it },
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    1 -> MonthYearPicker(
+                        selectedYear = selectedYear,
+                        selectedMonth = selectedMonth,
+                        onYearChange = { selectedYear = it },
+                        onMonthSelected = { selectedMonth = it },
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
                     2 -> {
-                        DatePicker(state = datePickerState, showModeToggle = false)
+                        // Negative horizontal padding so the DatePicker uses full dialog width
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            DatePicker(
+                                state = datePickerState,
+                                showModeToggle = false,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
+                }
+
+                // Buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = { onConfirm(null) }) { Text("Clear") }
+                    Spacer(Modifier.width(4.dp))
+                    TextButton(onClick = onDismissRequest) { Text(stringResource(Res.string.btn_cancel)) }
+                    Spacer(Modifier.width(4.dp))
+                    TextButton(onClick = {
+                        val result = when (selectedTab) {
+                            0 -> "$selectedYear"
+                            1 -> "$selectedYear-${selectedMonth.toString().padStart(2, '0')}"
+                            2 -> datePickerState.selectedDateMillis?.let { millis ->
+                                val localDate = Instant.fromEpochMilliseconds(millis)
+                                    .toLocalDateTime(TimeZone.UTC).date
+                                "${localDate.year}-${localDate.monthNumber.toString().padStart(2, '0')}-${localDate.dayOfMonth.toString().padStart(2, '0')}"
+                            }
+                            else -> null
+                        }
+                        onConfirm(result)
+                    }) { Text(stringResource(Res.string.btn_ok)) }
                 }
             }
         }
-    )
+    }
 }
 
+
 @Composable
-fun YearPicker(selectedYear: Int, onYearSelected: (Int) -> Unit) {
+fun YearPicker(selectedYear: Int, onYearSelected: (Int) -> Unit, modifier: Modifier = Modifier) {
     val currentYear = 2026
     val years = remember { (currentYear downTo 1970).toList() }
-    
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
-        modifier = Modifier.height(260.dp).fillMaxWidth(),
+        modifier = modifier.height(260.dp).fillMaxWidth(),
         contentPadding = PaddingValues(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -947,7 +994,8 @@ fun MonthYearPicker(
     selectedYear: Int,
     selectedMonth: Int,
     onYearChange: (Int) -> Unit,
-    onMonthSelected: (Int) -> Unit
+    onMonthSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val months = remember {
         listOf(
@@ -956,7 +1004,7 @@ fun MonthYearPicker(
         )
     }
     
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
