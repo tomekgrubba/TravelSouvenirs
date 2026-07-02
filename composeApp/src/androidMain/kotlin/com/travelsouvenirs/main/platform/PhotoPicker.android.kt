@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -20,6 +21,9 @@ import androidx.exifinterface.media.ExifInterface
 import com.travelsouvenirs.main.image.ImageStorageHelper
 import com.travelsouvenirs.main.ui.add.CropActivity
 import com.yalantis.ucrop.UCrop
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 
 private data class ExifData(val lat: Double?, val lng: Double?, val date: LocalDate?)
@@ -58,10 +62,27 @@ private fun readExif(context: Context, uri: Uri): ExifData {
     }
 }
 
+/**
+ * Copies a content URI (which may be cloud-backed or temporarily-scoped) to a local temp file
+ * so that UCrop — running in a separate Activity — can reliably open it.
+ */
+private fun copyUriToTemp(context: Context, uri: Uri): Uri? {
+    return try {
+        val (tempUri, tempFile) = ImageStorageHelper.createTempUri(context)
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            tempFile.outputStream().use { output -> input.copyTo(output) }
+        }
+        tempUri
+    } catch (_: Exception) {
+        null
+    }
+}
+
 @Composable
 actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifLng: Double?, exifDate: LocalDate?) -> Unit): () -> Unit {
     val context = LocalContext.current
     val currentOnResult = rememberUpdatedState(onResult)
+    val scope = rememberCoroutineScope()
     var pendingExifLat by remember { mutableStateOf<Double?>(null) }
     var pendingExifLng by remember { mutableStateOf<Double?>(null) }
     var pendingExifDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -102,11 +123,22 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
+            // Read EXIF first (while we still hold the content URI permission).
             val exif = readExif(context, uri)
             pendingExifLat = exif.lat
             pendingExifLng = exif.lng
             pendingExifDate = exif.date
-            launchCrop(uri)
+            // Copy the content URI to a local temp file on IO before handing to UCrop.
+            // Cloud-backed / Google-Photos-edited images have restricted URIs that UCrop
+            // (a separate Activity) cannot open reliably. A local FileProvider URI always works.
+            scope.launch {
+                val localUri = withContext(Dispatchers.IO) { copyUriToTemp(context, uri) }
+                if (localUri != null) {
+                    launchCrop(localUri)
+                } else {
+                    currentOnResult.value(null, null, null, null)
+                }
+            }
         } else {
             currentOnResult.value(null, null, null, null)
         }

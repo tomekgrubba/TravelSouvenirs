@@ -116,10 +116,10 @@ class AddItemViewModel(
                 viewModelScope.launch {
                     val result = imageLocationAnalyzer.analyze(path, exifLat, exifLng)
                     if (result != null) {
-                        _uiState.update { it.copy(aiSuggestedPlace = result, pendingExifDate = exifDate) }
+                        _uiState.update { it.copy(aiSuggestedPlace = result) }
                     } else {
                         if (exifLat != null && exifLng != null) prefillLocationFromExif(exifLat, exifLng)
-                        exifDate?.let { prefillDateFromExif(it) }
+                        // Date is intentionally NOT prefilled from EXIF — user sets it manually.
                     }
                 }
             }
@@ -134,7 +134,7 @@ class AddItemViewModel(
             aiSuggestedPlace = null,
             pendingExifDate = null,
         ) }
-        state.pendingExifDate?.let { prefillDateFromExif(it) }
+        // Date is intentionally NOT prefilled from AI suggestion — user sets it manually.
         viewModelScope.launch {
             val results = runCatching { locationService.searchByName(place) }.getOrNull()
             val first = results?.firstOrNull()
