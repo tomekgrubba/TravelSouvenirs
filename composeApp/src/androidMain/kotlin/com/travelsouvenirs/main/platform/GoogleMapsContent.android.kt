@@ -114,7 +114,6 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     val appViewModelTarget by appViewModel.targetCameraLocation.collectAsState()
     LaunchedEffect(appViewModelTarget) {
-        println("DEBUG GoogleMapsContent appViewModel: ${appViewModel.hashCode()} targetLoc: $appViewModelTarget")
         val target = appViewModelTarget
         if (target != null) {
             appViewModel.clearTargetCameraLocation()
