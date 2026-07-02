@@ -96,10 +96,45 @@ private val MIGRATION_5_6 = object : Migration(5, 6) {
 
 private val MIGRATION_6_7 = object : Migration(6, 7) {
     override fun migrate(connection: SQLiteConnection) {
-        connection.execSQL("ALTER TABLE items ADD COLUMN dateAcquired TEXT DEFAULT NULL")
         connection.execSQL(
-            "UPDATE items SET dateAcquired = date(dateAcquiredMillis / 1000, 'unixepoch') WHERE dateAcquiredMillis > 0"
+            """
+            CREATE TABLE IF NOT EXISTS `items_new` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `notes` TEXT NOT NULL,
+                `photoPath` TEXT NOT NULL,
+                `latitude` REAL NOT NULL,
+                `longitude` REAL NOT NULL,
+                `placeName` TEXT NOT NULL,
+                `dateAcquired` TEXT,
+                `category` TEXT NOT NULL,
+                `firebaseId` TEXT NOT NULL,
+                `syncStatus` TEXT NOT NULL,
+                `updatedAtMillis` INTEGER NOT NULL,
+                `photoStoragePath` TEXT NOT NULL,
+                `photoStorageUrl` TEXT NOT NULL,
+                FOREIGN KEY(`category`) REFERENCES `categories`(`name`) ON UPDATE NO ACTION ON DELETE SET DEFAULT
+            )
+            """.trimIndent()
         )
+        connection.execSQL(
+            """
+            INSERT INTO items_new (
+                id, name, notes, photoPath, latitude, longitude, placeName,
+                dateAcquired, category, firebaseId, syncStatus, updatedAtMillis,
+                photoStoragePath, photoStorageUrl
+            )
+            SELECT
+                id, name, notes, photoPath, latitude, longitude, placeName,
+                CASE WHEN dateAcquiredMillis > 0 THEN date(dateAcquiredMillis / 1000, 'unixepoch') ELSE NULL END,
+                category, firebaseId, syncStatus, updatedAtMillis,
+                photoStoragePath, photoStorageUrl
+            FROM items
+            """.trimIndent()
+        )
+        connection.execSQL("DROP TABLE items")
+        connection.execSQL("ALTER TABLE items_new RENAME TO items")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_items_category` ON `items` (`category`)")
     }
 }
 
