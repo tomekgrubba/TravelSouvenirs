@@ -36,7 +36,7 @@ val dataModule = module {
     single { get<com.travelsouvenirs.main.data.ItemDatabase>().itemDao() }
     single { get<com.travelsouvenirs.main.data.ItemDatabase>().categoryDao() }
     single { ItemRepository(get()) }
-    single { CategoryRepository(get()) }
+    single { CategoryRepository(get(), get()) }
     single<CoroutineDispatchers> { DefaultCoroutineDispatchers() }
 }
 

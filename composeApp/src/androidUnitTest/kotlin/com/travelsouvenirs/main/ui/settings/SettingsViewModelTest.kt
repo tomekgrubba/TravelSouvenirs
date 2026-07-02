@@ -74,10 +74,11 @@ class SettingsViewModelTest {
     private fun vm(
         settings: FakeSettings = FakeSettings(),
         categoryDao: FakeCategoryDao = FakeCategoryDao(),
+        itemDao: FakeItemDao = FakeItemDao(),
     ) = SettingsViewModel(
         AppSettings(settings),
-        ItemRepository(FakeItemDao()),
-        CategoryRepository(categoryDao),
+        ItemRepository(itemDao),
+        CategoryRepository(categoryDao, itemDao),
         mock<AuthRepository>(),
         mock<ImageStorage>(),
         FakeImageLocationAnalyzer(),

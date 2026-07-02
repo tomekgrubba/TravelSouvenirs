@@ -55,8 +55,10 @@ class MetadataSyncService(
                     if (entity.firebaseId.isNotEmpty()) {
                         itemsRef.document(entity.firebaseId)
                             .update(mapOf("deleted" to true, "updatedAtMillis" to entity.updatedAtMillis))
+                        dao.hardDeleteByFirebaseId(entity.firebaseId)
+                    } else {
+                        dao.deleteItem(entity)
                     }
-                    dao.hardDeleteByFirebaseId(entity.firebaseId)
                 }
                 SyncStatus.PENDING_UPLOAD -> {
                     val fbId = entity.firebaseId.ifEmpty { randomId() }

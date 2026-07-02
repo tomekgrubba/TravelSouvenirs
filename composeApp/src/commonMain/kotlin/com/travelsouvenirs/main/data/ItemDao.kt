@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -45,8 +46,13 @@ interface ItemDao {
     suspend fun getItemByFirebaseId(fbId: String): ItemEntity?
 
     /** Permanently removes a soft-deleted item after Firebase confirms deletion. */
-    @Query("DELETE FROM items WHERE firebaseId = :fbId")
+    @Query("DELETE FROM items WHERE firebaseId = :fbId AND firebaseId != ''")
     suspend fun hardDeleteByFirebaseId(fbId: String)
+
+    /** Returns all items associated with a given category. */
+    @Query("SELECT * FROM items WHERE category = :categoryName")
+    suspend fun getItemsByCategory(categoryName: String): List<ItemEntity>
+
 
     /** Items that have a remote photo URL but no local image file yet. */
     @Query("SELECT * FROM items WHERE photoStorageUrl != '' AND photoPath = '' AND syncStatus != 'PENDING_DELETE'")
@@ -54,4 +60,21 @@ interface ItemDao {
 
     @Query("DELETE FROM items")
     suspend fun deleteAll()
+
+    @Query("DELETE FROM categories WHERE name = :name")
+    suspend fun deleteCategoryDirectly(name: String)
+
+    @Transaction
+    suspend fun deleteCategoryAndReassignItems(categoryName: String, defaultCategory: String, ts: Long) {
+        reassignCategory(categoryName, defaultCategory, ts)
+        deleteCategoryDirectly(categoryName)
+    }
+
+    @Transaction
+    suspend fun deleteCategoriesAndReassignItems(categoryNames: List<String>, defaultCategory: String, ts: Long) {
+        categoryNames.forEach { name ->
+            reassignCategory(name, defaultCategory, ts)
+            deleteCategoryDirectly(name)
+        }
+    }
 }

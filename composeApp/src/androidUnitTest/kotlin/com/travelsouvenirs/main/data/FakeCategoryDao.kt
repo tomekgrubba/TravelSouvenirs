@@ -36,4 +36,22 @@ class FakeCategoryDao : CategoryDao {
     }
 
     override suspend fun count(): Int = store.size
+
+    override suspend fun updateCategoryTimestamp(name: String, ts: Long) {
+        val existing = store.find { it.name == name }
+        if (existing != null) {
+            store.remove(existing)
+            store.add(existing.copy(updatedAtMillis = ts))
+            publish()
+        }
+    }
+
+    override suspend fun insertOrUpdateCategory(entity: CategoryEntity) {
+        val existing = store.find { it.name == entity.name }
+        if (existing == null) {
+            insertCategory(entity)
+        } else {
+            updateCategoryTimestamp(entity.name, entity.updatedAtMillis)
+        }
+    }
 }

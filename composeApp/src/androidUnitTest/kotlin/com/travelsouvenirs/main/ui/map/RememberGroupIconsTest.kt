@@ -167,7 +167,8 @@ class RememberGroupIconsSmokeTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     private val fakeAppSettings = AppSettings(FakeSettings())
-    private val fakeRepository = ItemRepository(FakeItemDao())
+    private val fakeItemDao = FakeItemDao()
+    private val fakeRepository = ItemRepository(fakeItemDao)
 
     @Before
     fun setUp() {
@@ -176,7 +177,7 @@ class RememberGroupIconsSmokeTest {
             modules(module {
                 single { fakeAppSettings }
                 single { fakeRepository }
-                single { CategoryRepository(FakeCategoryDao()) }
+                single { CategoryRepository(FakeCategoryDao(), fakeItemDao) }
                 single<AuthRepository> { mock() }
                 single<ImageStorage> { mock() }
                 single<ImageLocationAnalyzer> { mock() }

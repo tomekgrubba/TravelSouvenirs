@@ -82,8 +82,13 @@ class SyncRepositoryTest {
         override suspend fun markSynced(fbId: String) {}
         override suspend fun getItemByFirebaseId(fbId: String): ItemEntity? = null
         override suspend fun hardDeleteByFirebaseId(fbId: String) {}
+        override suspend fun getItemsByCategory(categoryName: String): List<ItemEntity> = emptyList()
         override suspend fun getItemsWithMissingLocalPhotos(): List<ItemEntity> = emptyList()
         override suspend fun deleteAll() {}
+
+        override suspend fun deleteCategoryDirectly(name: String) {}
+        override suspend fun deleteCategoryAndReassignItems(categoryName: String, defaultCategory: String, ts: Long) {}
+        override suspend fun deleteCategoriesAndReassignItems(categoryNames: List<String>, defaultCategory: String, ts: Long) {}
     }
 
     private fun buildRepo(
@@ -94,7 +99,7 @@ class SyncRepositoryTest {
         val firestore = mock<FirebaseFirestore>()
         val dao = NoOpItemDao()
         val fakeCategoryDao = com.travelsouvenirs.main.data.FakeCategoryDao()
-        val categoryRepo = com.travelsouvenirs.main.data.CategoryRepository(fakeCategoryDao)
+        val categoryRepo = com.travelsouvenirs.main.data.CategoryRepository(fakeCategoryDao, dao)
         return SyncCoordinator(
             cloudImageStorage = mock<CloudImageStorage>(),
             authRepository = FakeAuthRepository(authUserId),

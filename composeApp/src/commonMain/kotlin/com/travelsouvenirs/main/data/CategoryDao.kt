@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -29,4 +30,13 @@ interface CategoryDao {
 
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun count(): Int
+
+    @Query("UPDATE categories SET updatedAtMillis = :ts WHERE name = :name")
+    suspend fun updateCategoryTimestamp(name: String, ts: Long)
+
+    @Transaction
+    suspend fun insertOrUpdateCategory(entity: CategoryEntity) {
+        insertCategory(entity)
+        updateCategoryTimestamp(entity.name, entity.updatedAtMillis)
+    }
 }

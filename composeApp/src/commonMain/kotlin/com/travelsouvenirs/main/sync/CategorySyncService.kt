@@ -37,7 +37,10 @@ class CategorySyncService(
                     return
                 }
             }
-        } catch (_: Exception) { /* document may not exist yet on first run */ }
+        } catch (e: Exception) {
+            // Propagate network/auth errors to avoid overwriting remote categories with local state
+            throw e
+        }
 
         val localCategories = categoryRepository.getAll()
         val now = nowEpochMillis()

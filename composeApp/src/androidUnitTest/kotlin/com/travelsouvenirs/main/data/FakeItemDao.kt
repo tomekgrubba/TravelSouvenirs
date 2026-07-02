@@ -47,6 +47,19 @@ class FakeItemDao : ItemDao {
     override suspend fun markSynced(fbId: String) {}
     override suspend fun getItemByFirebaseId(fbId: String): ItemEntity? = null
     override suspend fun hardDeleteByFirebaseId(fbId: String) { store.entries.removeIf { it.value.firebaseId == fbId }; publish() }
+    override suspend fun getItemsByCategory(categoryName: String): List<ItemEntity> = store.values.filter { it.category == categoryName }
     override suspend fun getItemsWithMissingLocalPhotos(): List<ItemEntity> = emptyList()
     override suspend fun deleteAll() { store.clear(); publish() }
+
+    override suspend fun deleteCategoryDirectly(name: String) {}
+    override suspend fun deleteCategoryAndReassignItems(categoryName: String, defaultCategory: String, ts: Long) {
+        reassignCategory(categoryName, defaultCategory, ts)
+        deleteCategoryDirectly(categoryName)
+    }
+    override suspend fun deleteCategoriesAndReassignItems(categoryNames: List<String>, defaultCategory: String, ts: Long) {
+        categoryNames.forEach { name ->
+            reassignCategory(name, defaultCategory, ts)
+            deleteCategoryDirectly(name)
+        }
+    }
 }

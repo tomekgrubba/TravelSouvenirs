@@ -307,7 +307,6 @@ class AddItemViewModel(
         val state = _uiState.value
         val path = state.photoPath ?: return
         viewModelScope.launch {
-            imagePicker.cleanupOnSave(path)
             val trimmedNotes = state.notes.trim()
             val cleanNotes = trimmedNotes.replace(Regex("(\\r?\\n){3,}"), "\n\n")
             val saved = saveItem(Item(
@@ -321,7 +320,10 @@ class AddItemViewModel(
                 dateAcquired = state.dateAcquired,
                 category = state.category,
             ))
-            if (saved) _uiState.update { it.copy(isSaved = true) }
+            if (saved) {
+                imagePicker.cleanupOnSave(path)
+                _uiState.update { it.copy(isSaved = true) }
+            }
         }
     }
 

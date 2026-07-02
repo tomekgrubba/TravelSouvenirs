@@ -83,7 +83,7 @@ class AddItemViewModelTest {
         locationService,
         fakeImageStorage,
         editId,
-        CategoryRepository(categoryDaoOverride),
+        CategoryRepository(categoryDaoOverride, dao),
         fakeImageLocationAnalyzer,
     )
 
