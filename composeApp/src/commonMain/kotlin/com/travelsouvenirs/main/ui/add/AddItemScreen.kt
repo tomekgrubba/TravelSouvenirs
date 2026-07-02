@@ -1032,7 +1032,7 @@ fun MonthYearPicker(
         
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
-            modifier = Modifier.height(200.dp).fillMaxWidth(),
+            modifier = Modifier.height(230.dp).fillMaxWidth(),
             contentPadding = PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
