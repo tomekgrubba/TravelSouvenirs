@@ -60,7 +60,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.koin.compose.currentKoinScope
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.SortOption
-import com.travelsouvenirs.main.util.formatDisplay
+import com.travelsouvenirs.main.util.formatDisplayDate
+import com.travelsouvenirs.main.util.formatTileDisplay
 import com.travelsouvenirs.main.util.localImageModel
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -351,7 +352,7 @@ private fun PolaroidListCard(item: Item, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
-                val date = item.dateAcquired.formatDisplay()
+                val date = item.dateAcquired.formatDisplayDate()
                 Text(
                     text = "$place · $date",
                     style = MaterialTheme.typography.bodySmall,
@@ -397,11 +398,10 @@ private fun PolaroidTileCard(item: Item, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
-                val month = item.dateAcquired.month.name.lowercase()
-                    .replaceFirstChar { it.uppercase() }.take(3)
-                val year2d = item.dateAcquired.year % 100
+                val tileDate = item.dateAcquired.formatTileDisplay()
+                val displayInfo = if (tileDate.isEmpty()) place else "$place · $tileDate"
                 Text(
-                    text = "$place · $month '${year2d.toString().padStart(2, '0')}",
+                    text = displayInfo,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

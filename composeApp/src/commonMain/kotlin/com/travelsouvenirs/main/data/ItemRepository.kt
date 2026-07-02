@@ -5,8 +5,6 @@ import com.travelsouvenirs.main.sync.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import com.travelsouvenirs.main.util.nowEpochMillis
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.TimeZone
 
 class ItemRepository(private val dao: ItemDao) {
 
@@ -29,7 +27,7 @@ class ItemRepository(private val dao: ItemDao) {
             latitude = item.latitude,
             longitude = item.longitude,
             placeName = item.placeName,
-            dateAcquiredMillis = item.dateAcquired.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds(),
+            dateAcquired = item.dateAcquired,
             category = item.category,
             firebaseId = existing?.firebaseId ?: "",
             syncStatus = SyncStatus.PENDING_UPLOAD.name,

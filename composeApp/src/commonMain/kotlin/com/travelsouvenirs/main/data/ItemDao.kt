@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ItemDao {
     /** All non-deleted items ordered by acquisition date descending. */
-    @Query("SELECT * FROM items WHERE syncStatus != 'PENDING_DELETE' ORDER BY dateAcquiredMillis DESC")
+    @Query("SELECT * FROM items WHERE syncStatus != 'PENDING_DELETE' ORDER BY dateAcquired DESC")
     fun getAllActiveItems(): Flow<List<ItemEntity>>
 
     @Query("SELECT * FROM items WHERE id = :id")

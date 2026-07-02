@@ -62,7 +62,7 @@ class ItemDetailViewModelTest {
         latitude = 48.85,
         longitude = 2.35,
         placeName = "Paris",
-        dateAcquiredMillis = 0L
+        dateAcquired = "2026-07-02"
     )
 
     @Test

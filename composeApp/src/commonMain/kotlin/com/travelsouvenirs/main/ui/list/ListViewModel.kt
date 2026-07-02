@@ -7,6 +7,7 @@ import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.SortOption
 import com.travelsouvenirs.main.util.AppSettings
 import com.travelsouvenirs.main.util.CoroutineDispatchers
+import com.travelsouvenirs.main.util.DateStringComparatorDescending
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -48,7 +49,7 @@ class ListViewModel(
         }
         when (state.sortOption) {
             SortOption.NAME -> filtered.sortedBy { it.name.lowercase() }
-            SortOption.DATE -> filtered.sortedByDescending { it.dateAcquired }
+            SortOption.DATE -> filtered.sortedWith(compareBy(DateStringComparatorDescending) { it.dateAcquired })
             SortOption.LOCATION -> filtered.sortedBy { it.placeName.lowercase() }
         }
     }.flowOn(dispatchers.default)

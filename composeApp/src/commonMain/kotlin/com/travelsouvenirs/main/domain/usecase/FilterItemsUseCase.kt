@@ -2,7 +2,8 @@ package com.travelsouvenirs.main.domain.usecase
 
 import com.travelsouvenirs.main.domain.Item
 import com.travelsouvenirs.main.domain.SortOption
-
+import com.travelsouvenirs.main.util.DateStringComparatorDescending
+ 
 object FilterItemsUseCase {
     operator fun invoke(
         items: List<Item>,
@@ -22,7 +23,7 @@ object FilterItemsUseCase {
         }
         return when (sortOption) {
             SortOption.NAME -> searchFiltered.sortedBy { it.name.lowercase() }
-            SortOption.DATE -> searchFiltered.sortedByDescending { it.dateAcquired }
+            SortOption.DATE -> searchFiltered.sortedWith(compareBy(DateStringComparatorDescending) { it.dateAcquired })
             SortOption.LOCATION -> searchFiltered.sortedBy { it.placeName.lowercase() }
         }
     }

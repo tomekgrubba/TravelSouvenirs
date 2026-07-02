@@ -61,7 +61,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.koin.compose.currentKoinScope
 import org.koin.core.parameter.parametersOf
 import com.travelsouvenirs.main.platform.PlatformMapPreview
-import com.travelsouvenirs.main.util.formatDisplay
+import com.travelsouvenirs.main.util.formatDisplayDate
 import com.travelsouvenirs.main.util.localImageModel
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
@@ -231,7 +231,7 @@ fun ItemDetailScreen(
                                                 }
                                             }
                                             Text(
-                                                m.dateAcquired.formatDisplay(),
+                                                m.dateAcquired.formatDisplayDate(),
                                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp),
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(start = 18.dp)
@@ -346,7 +346,7 @@ fun ItemDetailScreen(
                                     }
 
                                     Text(
-                                        m.dateAcquired.formatDisplay(),
+                                        m.dateAcquired.formatDisplayDate(),
                                         modifier = Modifier.padding(start = 32.dp),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant

@@ -89,11 +89,28 @@ import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
 import com.travelsouvenirs.main.platform.rememberCameraCapture
 import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
-import com.travelsouvenirs.main.util.formatDisplay
+import com.travelsouvenirs.main.util.formatDisplayDate
 import com.travelsouvenirs.main.util.localImageModel
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.atStartOfDayIn
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.ui.draw.clip
+
 
 /** Form for creating or editing an item; shows "Edit Item" title when [itemId] is non-null. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -134,9 +151,6 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     var newCategoryInput by remember { mutableStateOf("") }
     var duplicateCategoryError by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = kotlin.time.Clock.System.now().toEpochMilliseconds()
-    )
     val isPolaroid = true
     val fieldShape = RoundedCornerShape(2.dp)
     val buttonShape = RoundedCornerShape(2.dp)
@@ -157,22 +171,14 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
     }
 
     if (showDatePicker) {
-        DatePickerDialog(
+        CustomDatePickerDialog(
+            initialDate = dateAcquired,
             onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        viewModel.onDateChange(LocalDate.fromEpochDays((millis / 86_400_000).toInt()))
-                    }
-                    showDatePicker = false
-                }) { Text(stringResource(Res.string.btn_ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(Res.string.btn_cancel)) }
+            onConfirm = { date ->
+                viewModel.onDateChange(date)
+                showDatePicker = false
             }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        )
     }
 
     if (showLocationDialog) {
@@ -519,7 +525,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
             }
 
             OutlinedTextField(
-                value = dateAcquired.formatDisplay(),
+                value = dateAcquired.formatDisplayDate(),
                 onValueChange = {},
                 label = { Text(stringResource(Res.string.label_date_acquired)) },
                 shape = fieldShape,
@@ -785,6 +791,214 @@ private fun LocationPickerDialog(
                             Text(stringResource(Res.string.btn_confirm))
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomDatePickerDialog(
+    initialDate: String?,
+    onDismissRequest: () -> Unit,
+    onConfirm: (String?) -> Unit
+) {
+    val initialTab = when {
+        initialDate == null -> 2
+        !initialDate.contains("-") -> 0
+        initialDate.count { it == '-' } == 1 -> 1
+        else -> 2
+    }
+    
+    var selectedTab by remember { mutableStateOf(initialTab) }
+    
+    val initialParts = initialDate?.split("-")
+    val initialYear = initialParts?.getOrNull(0)?.toIntOrNull() ?: 2026
+    val initialMonth = initialParts?.getOrNull(1)?.toIntOrNull() ?: 5
+    
+    var selectedYear by remember { mutableStateOf(initialYear) }
+    var selectedMonth by remember { mutableStateOf(initialMonth) }
+    
+    val initialSelectedMillis = if (initialDate != null && initialParts?.size == 3) {
+        val y = initialParts[0].toIntOrNull() ?: 2026
+        val m = initialParts[1].toIntOrNull() ?: 5
+        val d = initialParts[2].toIntOrNull() ?: 12
+        runCatching {
+            val localDate = LocalDate(y, m, d)
+            localDate.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+        }.getOrNull()
+    } else {
+        kotlin.time.Clock.System.now().toEpochMilliseconds()
+    }
+    
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialSelectedMillis
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            TextButton(onClick = {
+                val result = when (selectedTab) {
+                    0 -> "$selectedYear"
+                    1 -> "$selectedYear-${selectedMonth.toString().padStart(2, '0')}"
+                    2 -> {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val localDate = Instant.fromEpochMilliseconds(millis)
+                                .toLocalDateTime(TimeZone.UTC).date
+                            "${localDate.year}-${localDate.monthNumber.toString().padStart(2, '0')}-${localDate.dayOfMonth.toString().padStart(2, '0')}"
+                        }
+                    }
+                    else -> null
+                }
+                onConfirm(result)
+            }) { Text(stringResource(Res.string.btn_ok)) }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = {
+                    onConfirm(null)
+                }) { Text("Clear") }
+                Spacer(Modifier.width(8.dp))
+                TextButton(onClick = onDismissRequest) { Text(stringResource(Res.string.btn_cancel)) }
+            }
+        },
+        title = {
+            Text("Select Date Acquired", style = MaterialTheme.typography.titleMedium)
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) {
+                        Box(Modifier.padding(vertical = 12.dp)) { Text("Year") }
+                    }
+                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }) {
+                        Box(Modifier.padding(vertical = 12.dp)) { Text("Month") }
+                    }
+                    Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }) {
+                        Box(Modifier.padding(vertical = 12.dp)) { Text("Full Date") }
+                    }
+                }
+                
+                Spacer(Modifier.height(16.dp))
+                
+                when (selectedTab) {
+                    0 -> {
+                        YearPicker(selectedYear = selectedYear, onYearSelected = { selectedYear = it })
+                    }
+                    1 -> {
+                        MonthYearPicker(
+                            selectedYear = selectedYear,
+                            selectedMonth = selectedMonth,
+                            onYearChange = { selectedYear = it },
+                            onMonthSelected = { selectedMonth = it }
+                        )
+                    }
+                    2 -> {
+                        DatePicker(state = datePickerState, showModeToggle = false)
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun YearPicker(selectedYear: Int, onYearSelected: (Int) -> Unit) {
+    val currentYear = 2026
+    val years = remember { (currentYear downTo 1970).toList() }
+    
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        modifier = Modifier.height(260.dp).fillMaxWidth(),
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(years) { y ->
+            val isSelected = y == selectedYear
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                    .clickable {
+                        onYearSelected(y)
+                    }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = y.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MonthYearPicker(
+    selectedYear: Int,
+    selectedMonth: Int,
+    onYearChange: (Int) -> Unit,
+    onMonthSelected: (Int) -> Unit
+) {
+    val months = remember {
+        listOf(
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        )
+    }
+    
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        ) {
+            IconButton(onClick = { onYearChange(selectedYear - 1) }) {
+                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Previous Year")
+            }
+            Text(
+                text = selectedYear.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            IconButton(onClick = { onYearChange(selectedYear + 1) }) {
+                Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Next Year")
+            }
+        }
+        
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.height(200.dp).fillMaxWidth(),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            itemsIndexed(months) { index, m ->
+                val monthNumber = index + 1
+                val isSelected = monthNumber == selectedMonth
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                        .clickable { onMonthSelected(monthNumber) }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = m,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }

@@ -13,6 +13,7 @@ data class FirebaseItem(
     val longitude: Double = 0.0,
     val placeName: String = "",
     val dateAcquiredMillis: Long = 0L,
+    val dateAcquired: String? = null,
     val category: String = "",
     val updatedAtMillis: Long = 0L,
     val deleted: Boolean = false,

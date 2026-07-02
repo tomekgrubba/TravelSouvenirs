@@ -6,10 +6,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.domain.Item
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.toLocalDateTime
 
 @Entity(
     tableName = "items",
@@ -30,7 +26,7 @@ data class ItemEntity(
     val latitude: Double,
     val longitude: Double,
     val placeName: String,
-    val dateAcquiredMillis: Long,
+    val dateAcquired: String? = null,
     val category: String = DEFAULT_CATEGORY,
     val firebaseId: String = "",
     val syncStatus: String = "PENDING_UPLOAD",
@@ -47,8 +43,7 @@ fun ItemEntity.toDomain(): Item = Item(
     latitude = latitude,
     longitude = longitude,
     placeName = placeName,
-    dateAcquired = Instant.fromEpochMilliseconds(dateAcquiredMillis)
-        .toLocalDateTime(TimeZone.UTC).date,
+    dateAcquired = dateAcquired,
     category = category,
 )
 
@@ -60,6 +55,6 @@ fun Item.toEntity(): ItemEntity = ItemEntity(
     latitude = latitude,
     longitude = longitude,
     placeName = placeName,
-    dateAcquiredMillis = dateAcquired.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds(),
+    dateAcquired = dateAcquired,
     category = category,
 )

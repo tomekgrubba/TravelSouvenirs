@@ -156,7 +156,7 @@ class AddItemViewModelTest {
     @Test
     fun `onDateChange updates dateAcquired state`() {
         val vm = viewModel()
-        val newDate = LocalDate(2023, 3, 21)
+        val newDate = "2023-03-21"
         vm.onDateChange(newDate)
         assertEquals(newDate, vm.state.dateAcquired)
     }
@@ -214,7 +214,7 @@ class AddItemViewModelTest {
                 latitude = 48.86,
                 longitude = 2.33,
                 placeName = "Paris",
-                dateAcquiredMillis = 1_700_000_000_000L
+                dateAcquired = "2023-11-14"
             )
         )
 
@@ -286,7 +286,7 @@ class AddItemViewModelTest {
                 latitude = 0.0,
                 longitude = 0.0,
                 placeName = "Rome",
-                dateAcquiredMillis = 0L
+                dateAcquired = "2026-07-02"
             )
         )
         val vm = viewModel(editId = 7)

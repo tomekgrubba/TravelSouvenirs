@@ -6,7 +6,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import com.travelsouvenirs.main.domain.Item
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -131,7 +130,7 @@ class ItemRepositoryTest {
         latitude = 0.0,
         longitude = 0.0,
         placeName = place,
-        dateAcquired = LocalDate(2024, 1, 1),
+        dateAcquired = "2024-01-01",
         category = category
     )
 }

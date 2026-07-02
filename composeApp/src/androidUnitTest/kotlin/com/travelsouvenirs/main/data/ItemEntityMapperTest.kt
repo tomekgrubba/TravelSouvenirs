@@ -1,9 +1,6 @@
 package com.travelsouvenirs.main.data
 
 import com.travelsouvenirs.main.domain.Item
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -11,7 +8,6 @@ class ItemEntityMapperTest {
 
     @Test
     fun `toDomain preserves all fields`() {
-        val date = LocalDate(2023, 6, 15)
         val entity = ItemEntity(
             id = 42,
             name = "Berlin Wall",
@@ -20,7 +16,7 @@ class ItemEntityMapperTest {
             latitude = 52.516,
             longitude = 13.377,
             placeName = "Berlin",
-            dateAcquiredMillis = date.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+            dateAcquired = "2023-06-15"
         )
 
         val domain = entity.toDomain()
@@ -32,9 +28,7 @@ class ItemEntityMapperTest {
         assertEquals(52.516, domain.latitude)
         assertEquals(13.377, domain.longitude)
         assertEquals("Berlin", domain.placeName)
-        assertEquals(date.year, domain.dateAcquired.year)
-        assertEquals(date.monthNumber, domain.dateAcquired.monthNumber)
-        assertEquals(date.dayOfMonth, domain.dateAcquired.dayOfMonth)
+        assertEquals("2023-06-15", domain.dateAcquired)
     }
 
     @Test
@@ -47,7 +41,7 @@ class ItemEntityMapperTest {
             latitude = 48.858,
             longitude = 2.294,
             placeName = "Paris",
-            dateAcquired = LocalDate(2022, 8, 10)
+            dateAcquired = "2022-08-10"
         )
 
         val result = original.toEntity().toDomain()
@@ -59,9 +53,7 @@ class ItemEntityMapperTest {
         assertEquals(original.latitude, result.latitude)
         assertEquals(original.longitude, result.longitude)
         assertEquals(original.placeName, result.placeName)
-        assertEquals(original.dateAcquired.year, result.dateAcquired.year)
-        assertEquals(original.dateAcquired.monthNumber, result.dateAcquired.monthNumber)
-        assertEquals(original.dateAcquired.dayOfMonth, result.dateAcquired.dayOfMonth)
+        assertEquals(original.dateAcquired, result.dateAcquired)
     }
 
     @Test
@@ -69,7 +61,7 @@ class ItemEntityMapperTest {
         val item = Item(
             id = 1, name = "X", notes = "", photoPath = "/p.jpg",
             latitude = 0.0, longitude = 0.0,
-            placeName = "Null Island", dateAcquired = LocalDate(2020, 1, 1)
+            placeName = "Null Island", dateAcquired = "2020-01-01"
         )
         val entity = item.toEntity()
         assertEquals(0.0, entity.latitude)

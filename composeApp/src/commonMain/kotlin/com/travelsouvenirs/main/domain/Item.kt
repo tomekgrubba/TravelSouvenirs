@@ -1,7 +1,5 @@
 package com.travelsouvenirs.main.domain
 
-import kotlinx.datetime.LocalDate
-
 const val DEFAULT_CATEGORY = "Default"
 /** Maximum number of user-defined custom categories (excluding Default). */
 const val MAX_CUSTOM_CATEGORIES = 5
@@ -15,6 +13,6 @@ data class Item(
     val latitude: Double,
     val longitude: Double,
     val placeName: String,
-    val dateAcquired: LocalDate,
+    val dateAcquired: String?,
     val category: String = DEFAULT_CATEGORY,
 )

@@ -7,6 +7,9 @@ import com.travelsouvenirs.main.data.ItemEntity
 import com.travelsouvenirs.main.util.AppSettings
 import com.travelsouvenirs.main.util.nowEpochMillis
 import dev.gitlive.firebase.firestore.FirebaseFirestore
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.random.Random
 
 /** Downloads item metadata from Firestore and uploads pending local changes. */
@@ -80,7 +83,7 @@ class MetadataSyncService(
                         latitude = entity.latitude,
                         longitude = entity.longitude,
                         placeName = entity.placeName,
-                        dateAcquiredMillis = entity.dateAcquiredMillis,
+                        dateAcquired = entity.dateAcquired,
                         category = entity.category,
                         updatedAtMillis = now,
                         deleted = false,
@@ -120,7 +123,10 @@ private fun buildEntity(
         latitude = remote.latitude,
         longitude = remote.longitude,
         placeName = remote.placeName,
-        dateAcquiredMillis = remote.dateAcquiredMillis,
+        dateAcquired = remote.dateAcquired ?: if (remote.dateAcquiredMillis > 0) {
+            Instant.fromEpochMilliseconds(remote.dateAcquiredMillis)
+                .toLocalDateTime(TimeZone.UTC).date.toString()
+        } else null,
         category = remote.category,
         firebaseId = fbId,
         syncStatus = SyncStatus.SYNCED.name,

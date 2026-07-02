@@ -12,7 +12,6 @@ import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.location.PlaceResult
-import com.travelsouvenirs.main.platform.todayLocalDate
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +24,7 @@ data class AddItemUiState(
     val photoPath: String? = null,
     val name: String = "",
     val notes: String = "",
-    val dateAcquired: LocalDate = todayLocalDate(),
+    val dateAcquired: String? = null,
     val category: String = DEFAULT_CATEGORY,
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
@@ -165,7 +164,7 @@ class AddItemViewModel(
 
     fun onNameChange(value: String) { _uiState.update { it.copy(name = value) } }
     fun onNotesChange(value: String) { _uiState.update { it.copy(notes = value) } }
-    fun onDateChange(date: LocalDate) {
+    fun onDateChange(date: String?) {
         dateSetByUser = true
         _uiState.update { it.copy(dateAcquired = date) }
     }
@@ -173,7 +172,7 @@ class AddItemViewModel(
 
     fun prefillDateFromExif(date: LocalDate) {
         if (dateSetByUser) return
-        _uiState.update { it.copy(dateAcquired = date) }
+        _uiState.update { it.copy(dateAcquired = date.toString()) }
     }
 
     fun addCategoryOnTheFly(name: String): Boolean {

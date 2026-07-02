@@ -15,7 +15,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -61,7 +60,7 @@ class MapViewModelTest {
         latitude = lat,
         longitude = lng,
         placeName = "City",
-        dateAcquiredMillis = 0L
+        dateAcquired = "2026-07-02"
     )
 
     private fun item(id: Long, lat: Double, lng: Double, name: String = "Item $id") = Item(
@@ -72,7 +71,7 @@ class MapViewModelTest {
         latitude = lat,
         longitude = lng,
         placeName = "City",
-        dateAcquired = LocalDate(2024, 1, 1)
+        dateAcquired = "2024-01-01"
     )
 
     // ── groupByZoom (pure companion function) ────────────────────────────────

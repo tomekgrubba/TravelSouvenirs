@@ -16,9 +16,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -182,8 +179,7 @@ class ListViewModelTest {
         latitude = 0.0,
         longitude = 0.0,
         placeName = place,
-        dateAcquiredMillis = LocalDate.parse(dateString)
-            .atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+        dateAcquired = dateString
     )
 
     @Test

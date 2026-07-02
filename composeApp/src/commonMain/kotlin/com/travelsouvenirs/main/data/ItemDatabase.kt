@@ -10,7 +10,7 @@ import androidx.sqlite.execSQL
 import com.travelsouvenirs.main.domain.DEFAULT_CATEGORY
 import com.travelsouvenirs.main.sync.SyncStatus
 
-@Database(entities = [ItemEntity::class, CategoryEntity::class], version = 6, exportSchema = true)
+@Database(entities = [ItemEntity::class, CategoryEntity::class], version = 7, exportSchema = true)
 @ConstructedBy(ItemDatabaseConstructor::class)
 abstract class ItemDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
@@ -94,9 +94,18 @@ private val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
+private val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE items ADD COLUMN dateAcquired TEXT DEFAULT NULL")
+        connection.execSQL(
+            "UPDATE items SET dateAcquired = date(dateAcquiredMillis / 1000, 'unixepoch') WHERE dateAcquiredMillis > 0"
+        )
+    }
+}
+
 fun buildItemDatabase(): ItemDatabase =
     createItemDatabaseBuilder()
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
         .addCallback(object : RoomDatabase.Callback() {
             override fun onCreate(connection: SQLiteConnection) {
                 connection.execSQL("INSERT OR IGNORE INTO `categories` (name, updatedAtMillis) VALUES ('$DEFAULT_CATEGORY', 0)")

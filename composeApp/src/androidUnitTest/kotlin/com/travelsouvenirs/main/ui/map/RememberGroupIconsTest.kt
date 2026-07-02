@@ -27,7 +27,6 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
-import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -44,7 +43,7 @@ import kotlin.test.assertTrue
 
 private fun makeItem(id: Long, photoPath: String) = Item(
     id = id, name = "Item $id", notes = "", photoPath = photoPath,
-    latitude = 0.0, longitude = 0.0, placeName = "", dateAcquired = LocalDate(2024, 1, 1)
+    latitude = 0.0, longitude = 0.0, placeName = "", dateAcquired = "2024-01-01"
 )
 
 private fun makeGroup(photoPath: String, itemCount: Int): ItemGroup {

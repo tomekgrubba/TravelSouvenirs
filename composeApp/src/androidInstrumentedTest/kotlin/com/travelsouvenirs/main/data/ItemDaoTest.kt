@@ -54,7 +54,7 @@ class ItemDaoTest {
         dao.insertItem(entity("B"))
         dao.insertItem(entity("C"))
 
-        dao.getAllItems().test {
+        dao.getAllActiveItems().test {
             val list = awaitItem()
             assertEquals(3, list.size)
             cancelAndIgnoreRemainingEvents()
@@ -79,7 +79,7 @@ class ItemDaoTest {
 
     @Test
     fun getAllItems_emitsOnInsert() = runTest {
-        dao.getAllItems().test {
+        dao.getAllActiveItems().test {
             assertEquals(0, awaitItem().size)
 
             dao.insertItem(entity("Paris"))
@@ -96,7 +96,7 @@ class ItemDaoTest {
     fun getAllItems_emitsOnDelete() = runTest {
         val id = dao.insertItem(entity("Berlin"))
 
-        dao.getAllItems().test {
+        dao.getAllActiveItems().test {
             assertEquals(1, awaitItem().size)
 
             dao.deleteItem(dao.getItemById(id)!!)
@@ -128,6 +128,6 @@ class ItemDaoTest {
         latitude = 0.0,
         longitude = 0.0,
         placeName = place,
-        dateAcquiredMillis = 1_700_000_000_000L
+        dateAcquired = "2023-11-14"
     )
 }
