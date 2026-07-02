@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -119,8 +118,13 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
         cropLauncher.launch(intent)
     }
 
+    // Use ACTION_GET_CONTENT (GetContent) instead of PickVisualMedia.
+    // The Android Photo Picker (PickVisualMedia) shows "Can't load some photos" for
+    // cloud-only or Google-Photos-edited images before our callback is ever called.
+    // GetContent routes through the app's own picker (e.g. Google Photos), which downloads
+    // the photo transparently before returning the URI to us.
     val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
             // Read EXIF first (while we still hold the content URI permission).
@@ -128,9 +132,7 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
             pendingExifLat = exif.lat
             pendingExifLng = exif.lng
             pendingExifDate = exif.date
-            // Copy the content URI to a local temp file on IO before handing to UCrop.
-            // Cloud-backed / Google-Photos-edited images have restricted URIs that UCrop
-            // (a separate Activity) cannot open reliably. A local FileProvider URI always works.
+            // Copy to a local temp file so UCrop (separate Activity) gets a stable URI.
             scope.launch {
                 val localUri = withContext(Dispatchers.IO) { copyUriToTemp(context, uri) }
                 if (localUri != null) {
@@ -146,9 +148,7 @@ actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifL
 
     return remember {
         {
-            galleryLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
+            galleryLauncher.launch("image/*")
         }
     }
 }
