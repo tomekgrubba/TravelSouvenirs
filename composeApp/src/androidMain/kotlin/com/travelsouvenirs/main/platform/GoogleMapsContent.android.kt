@@ -77,6 +77,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val locationService: LocationService = koinInject()
     val categoryFilter = LocalCategoryFilter.current
     val appViewModel = LocalAppViewModel.current
+    val scope = rememberCoroutineScope()
 
     val viewModel: MapViewModel = koinViewModel()
     val allItems by viewModel.items.collectAsState()
@@ -113,13 +114,16 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     val appViewModelTarget by appViewModel.targetCameraLocation.collectAsState()
     LaunchedEffect(appViewModelTarget) {
+        println("DEBUG GoogleMapsContent appViewModel: ${appViewModel.hashCode()} targetLoc: $appViewModelTarget")
         val target = appViewModelTarget
         if (target != null) {
             appViewModel.clearTargetCameraLocation()
-            cameraPositionState.animate(
-                CameraUpdateFactory.newLatLngZoom(LatLng(target.lat, target.lng), PIN_ZOOM),
-                1000
-            )
+            scope.launch {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(LatLng(target.lat, target.lng), PIN_ZOOM),
+                    1000
+                )
+            }
         }
     }
 
@@ -138,7 +142,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val individualIcons = rememberIndividualIcons(itemPins, sizePx = markerSizePx)
     val groupIcons = rememberGroupIcons(itemGroups, sizePx = markerSizePx)
 
-    val scope = rememberCoroutineScope()
+
 
     var hasFineLocation by remember {
         mutableStateOf(

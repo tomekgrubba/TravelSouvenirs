@@ -206,11 +206,13 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         val target = targetLoc
         if (target != null) {
             appViewModel.clearTargetCameraLocation()
-            val coord = CLLocationCoordinate2DMake(target.lat, target.lng)
-            mapView.setRegion(
-                MKCoordinateRegionMakeWithDistance(coord, 1000.0, 1000.0),
-                animated = true
-            )
+            coroutineScope.launch {
+                val coord = CLLocationCoordinate2DMake(target.lat, target.lng)
+                mapView.setRegion(
+                    MKCoordinateRegionMakeWithDistance(coord, 1000.0, 1000.0),
+                    animated = true
+                )
+            }
         }
     }
 
