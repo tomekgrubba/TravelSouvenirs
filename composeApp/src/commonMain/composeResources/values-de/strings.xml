@@ -59,6 +59,9 @@
     <string name="section_categories">Kategorien</string>
     <string name="text_categories_hint">Weise jedem Element eine Kategorie zu. Du kannst bis zu 5 benutzerdefinierte Kategorien hinzufügen.</string>
     <string name="dialog_delete_category_title">"%1$s" löschen?</string>
+    <string name="dialog_rename_category_title">Kategorie umbenennen</string>
+    <string name="label_rename_category_prompt">Gib einen neuen Namen für die Kategorie "%1$s" ein:</string>
+    <string name="btn_save">Speichern</string>
     <string name="label_new_category">Neuer Kategoriename</string>
     <string name="max_categories_reached">Maximal 5 benutzerdefinierte Kategorien erreicht.</string>
     <string name="cd_builtin_category">Integrierte Kategorie</string>

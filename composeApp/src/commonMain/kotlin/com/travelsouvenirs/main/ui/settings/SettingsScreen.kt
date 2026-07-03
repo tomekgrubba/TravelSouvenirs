@@ -90,6 +90,58 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
     var duplicateCategoryError by remember { mutableStateOf(false) }
     var commaError by remember { mutableStateOf(false) }
     var pendingDeleteCategory by remember { mutableStateOf<String?>(null) }
+    var pendingRenameCategory by remember { mutableStateOf<String?>(null) }
+    var renameInput by remember { mutableStateOf("") }
+    var renameDuplicateError by remember { mutableStateOf(false) }
+    var renameCommaError by remember { mutableStateOf(false) }
+
+    pendingRenameCategory?.let { oldName ->
+        AlertDialog(
+            onDismissRequest = { pendingRenameCategory = null },
+            title = { Text(stringResource(Res.string.dialog_rename_category_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(Res.string.label_rename_category_prompt, oldName))
+                    OutlinedTextField(
+                        value = renameInput,
+                        onValueChange = {
+                            renameInput = it
+                            renameDuplicateError = false
+                            renameCommaError = ',' in it
+                        },
+                        singleLine = true,
+                        isError = renameDuplicateError || renameCommaError,
+                        supportingText = when {
+                            renameCommaError -> { { Text(stringResource(Res.string.error_category_no_comma)) } }
+                            renameDuplicateError -> { { Text(stringResource(Res.string.error_category_already_exists)) } }
+                            else -> null
+                        },
+                        shape = fieldShape,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val renamed = vm.renameCategory(oldName, renameInput)
+                        if (renamed) {
+                            pendingRenameCategory = null
+                            renameInput = ""
+                            renameDuplicateError = false
+                            renameCommaError = false
+                        } else {
+                            renameDuplicateError = true
+                        }
+                    },
+                    enabled = renameInput.isNotBlank() && !renameCommaError
+                ) { Text(stringResource(Res.string.btn_save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRenameCategory = null }) { Text(stringResource(Res.string.btn_cancel)) }
+            }
+        )
+    }
 
     pendingDeleteCategory?.let { categoryToDelete ->
         val affectedCount = allItems.count { it.category == categoryToDelete }
@@ -191,7 +243,13 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
                     name = name,
                     index = index,
                     deletable = deletable,
-                    onDeleteRequest = { pendingDeleteCategory = name }
+                    onDeleteRequest = { pendingDeleteCategory = name },
+                    onRenameRequest = {
+                        pendingRenameCategory = name
+                        renameInput = name
+                        renameDuplicateError = false
+                        renameCommaError = false
+                    }
                 )
             }
             if (vm.canAddCategory) {
@@ -392,7 +450,8 @@ private fun PolaroidCategoryRow(
     name: String,
     index: Int,
     deletable: Boolean,
-    onDeleteRequest: () -> Unit
+    onDeleteRequest: () -> Unit,
+    onRenameRequest: () -> Unit
 ) {
     val rotation = ((index * 3 + name.length % 5) % 9 - 4).toFloat() * 0.8f
     Row(
@@ -402,7 +461,12 @@ private fun PolaroidCategoryRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
-            modifier = Modifier.rotate(rotation),
+            modifier = Modifier
+                .rotate(rotation)
+                .then(
+                    if (deletable) Modifier.clickable { onRenameRequest() }
+                    else Modifier
+                ),
             shape = RoundedCornerShape(2.dp),
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
             border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.85f))

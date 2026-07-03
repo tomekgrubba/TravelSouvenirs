@@ -87,6 +87,21 @@ class SettingsViewModel(
         return true
     }
 
+    /** Returns true if the category was renamed, false if validation failed. */
+    fun renameCategory(oldName: String, newName: String): Boolean {
+        val trimmed = newName.trim()
+        if (trimmed.isBlank()) return false
+        val current = customCategories.value
+        val isDuplicate = trimmed.equals(DEFAULT_CATEGORY, ignoreCase = true) ||
+                current.any { it.equals(trimmed, ignoreCase = true) }
+        if (isDuplicate && !trimmed.equals(oldName, ignoreCase = true)) return false
+
+        viewModelScope.launch {
+            categoryRepository.rename(oldName, trimmed)
+        }
+        return true
+    }
+
     fun deleteCategory(name: String) {
         viewModelScope.launch {
             categoryRepository.delete(name)

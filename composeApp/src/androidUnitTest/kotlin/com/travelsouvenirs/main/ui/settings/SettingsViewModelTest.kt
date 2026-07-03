@@ -193,4 +193,46 @@ class SettingsViewModelTest {
         assertNull(settings.getStringOrNull("note"))
         assertEquals("value", settings.getStringOrNull("notes"))
     }
+
+    @Test
+    fun `renameCategory returns true and renames category successfully`() = runTest {
+        val vm = vm()
+        vm.addCategory("OldCategory")
+        assertTrue(vm.renameCategory("OldCategory", "NewCategory"))
+        assertEquals(listOf("NewCategory"), vm.customCategories.value)
+    }
+
+    @Test
+    fun `renameCategory returns false for duplicate name`() = runTest {
+        val vm = vm()
+        vm.addCategory("First")
+        vm.addCategory("Second")
+        assertFalse(vm.renameCategory("First", "Second"))
+        assertEquals(listOf("First", "Second"), vm.customCategories.value)
+    }
+
+    @Test
+    fun `renameCategory returns false when new name conflicts with built-in Default`() = runTest {
+        val vm = vm()
+        vm.addCategory("First")
+        assertFalse(vm.renameCategory("First", "Default"))
+        assertFalse(vm.renameCategory("First", "default"))
+        assertEquals(listOf("First"), vm.customCategories.value)
+    }
+
+    @Test
+    fun `renameCategory returns false for blank inputs`() = runTest {
+        val vm = vm()
+        vm.addCategory("First")
+        assertFalse(vm.renameCategory("First", "   "))
+        assertEquals(listOf("First"), vm.customCategories.value)
+    }
+
+    @Test
+    fun `renameCategory allows renaming to same name with case difference`() = runTest {
+        val vm = vm()
+        vm.addCategory("First")
+        assertTrue(vm.renameCategory("First", "first"))
+        assertEquals(listOf("first"), vm.customCategories.value)
+    }
 }

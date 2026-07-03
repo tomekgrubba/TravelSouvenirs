@@ -18,7 +18,24 @@ class CategoryRepository(
     suspend fun getAll(): List<String> = dao.getAllNames().filter { it != DEFAULT_CATEGORY }
  
     suspend fun add(name: String) = dao.insertCategory(CategoryEntity(name, nowEpochMillis()))
- 
+
+    suspend fun rename(oldName: String, newName: String): Boolean {
+        val trimmedNew = newName.trim()
+        if (trimmedNew.isBlank() || trimmedNew.contains(',') || trimmedNew == DEFAULT_CATEGORY) {
+            return false
+        }
+        val ts = nowEpochMillis()
+        val allNames = dao.getAllNames()
+        if (trimmedNew in allNames) {
+            return false
+        }
+
+        dao.insertCategory(CategoryEntity(trimmedNew, ts))
+        itemDao.reassignCategory(oldName, trimmedNew, ts)
+        dao.deleteCategory(oldName)
+        return true
+    }
+
     suspend fun delete(name: String) {
         val ts = nowEpochMillis()
         itemDao.deleteCategoryAndReassignItems(name, DEFAULT_CATEGORY, ts)
