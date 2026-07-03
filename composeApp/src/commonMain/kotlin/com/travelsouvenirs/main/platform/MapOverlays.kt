@@ -28,7 +28,7 @@ internal fun EdgeIndicator(
         color = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier = modifier
             .background(
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                 shape = MaterialTheme.shapes.extraSmall
             )
             .clickable { onClick() }

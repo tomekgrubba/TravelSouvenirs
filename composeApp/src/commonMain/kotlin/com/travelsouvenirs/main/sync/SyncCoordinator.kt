@@ -34,6 +34,15 @@ class SyncCoordinator(
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var syncJob = SupervisorJob()
 
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    private val _isSyncingImages = MutableStateFlow(false)
+    val isSyncingImages: StateFlow<Boolean> = _isSyncingImages.asStateFlow()
+
+    private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val errors: SharedFlow<String> = _errors.asSharedFlow()
+
     init {
         // Trigger sync whenever the signed-in user changes from null → non-null.
         // Lives in a singleton scope so it catches sign-in regardless of which screen is active.
@@ -51,15 +60,6 @@ class SyncCoordinator(
             }
         }
     }
-
-    private val _isSyncing = MutableStateFlow(false)
-    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
-
-    private val _isSyncingImages = MutableStateFlow(false)
-    val isSyncingImages: StateFlow<Boolean> = _isSyncingImages.asStateFlow()
-
-    private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 4)
-    val errors: SharedFlow<String> = _errors.asSharedFlow()
 
     private fun canSync(): Boolean {
         if (!networkMonitor.isConnected.value) return false
