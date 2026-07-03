@@ -96,7 +96,7 @@ fun ItemDetailScreen(
                 var scale by remember { mutableStateOf(1f) }
                 var offset by remember { mutableStateOf(Offset.Zero) }
                 val state = rememberTransformableState { zoomChange, panChange, _ ->
-                    scale = (scale * zoomChange).coerceIn(1f, 5f)
+                    scale = (scale * zoomChange).coerceIn(1f, 4f)
                     if (scale > 1f) {
                         offset += panChange
                     } else {
