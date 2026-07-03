@@ -72,24 +72,35 @@ internal fun findNextOffscreenItem(
     north: Double,
     east: Double
 ): Item? {
-    val activeItems = items.filter { it.latitude != 0.0 || it.longitude != 0.0 }
+    val centerLat = (south + north) / 2.0
+    val centerLng = (west + east) / 2.0
+    val halfLat = (north - south) / 2.0
+    val halfLng = (east - west) / 2.0
+    if (halfLat <= 0 || halfLng <= 0) return null
+
+    val activeOffscreenItems = items.filter { (it.latitude != 0.0 || it.longitude != 0.0) &&
+        (it.latitude > north || it.latitude < south ||
+         it.longitude > east || it.longitude < west)
+    }
+
+    val candidates = activeOffscreenItems.filter { m ->
+        val normLat = (m.latitude - centerLat) / halfLat
+        val normLng = (m.longitude - centerLng) / halfLng
+        val isVertical = abs(normLat) >= abs(normLng)
+        when (direction) {
+            "top" -> isVertical && normLat > 0
+            "bottom" -> isVertical && normLat < 0
+            "right" -> !isVertical && normLng > 0
+            "left" -> !isVertical && normLng < 0
+            else -> false
+        }
+    }
+
     return when (direction) {
-        "top" -> {
-            activeItems.filter { it.latitude > north }
-                .minByOrNull { it.latitude }
-        }
-        "bottom" -> {
-            activeItems.filter { it.latitude < south }
-                .maxByOrNull { it.latitude }
-        }
-        "left" -> {
-            activeItems.filter { it.longitude < west }
-                .maxByOrNull { it.longitude }
-        }
-        "right" -> {
-            activeItems.filter { it.longitude > east }
-                .minByOrNull { it.longitude }
-        }
+        "top" -> candidates.minByOrNull { it.latitude }
+        "bottom" -> candidates.maxByOrNull { it.latitude }
+        "left" -> candidates.maxByOrNull { it.longitude }
+        "right" -> candidates.minByOrNull { it.longitude }
         else -> null
     }
 }
