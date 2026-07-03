@@ -189,6 +189,30 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         }
     }
 
+    fun scrollOffScreen(direction: String) {
+        mapView.region.useContents {
+            val cLat = center.latitude
+            val cLng = center.longitude
+            val hLat = span.latitudeDelta / 2.0
+            val hLng = span.longitudeDelta / 2.0
+            val target = findNextOffscreenItem(
+                items = items,
+                direction = direction,
+                south = cLat - hLat,
+                west = cLng - hLng,
+                north = cLat + hLat,
+                east = cLng + hLng
+            )
+            if (target != null) {
+                val newRegion = MKCoordinateRegionMake(
+                    CLLocationCoordinate2DMake(target.latitude, target.longitude),
+                    span
+                )
+                mapView.setRegion(newRegion, animated = true)
+            }
+        }
+    }
+
     val delegate = remember {
         MapDelegateHelper(
             iconCache      = mutableMapOf(),
@@ -348,12 +372,12 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
         // Edge indicators
         if (offScreen.top > 0)
-            EdgeIndicator("▲", offScreen.top, Modifier.align(Alignment.TopCenter).padding(top = 16.dp))
+            EdgeIndicator("▲", offScreen.top, { scrollOffScreen("top") }, Modifier.align(Alignment.TopCenter).padding(top = 16.dp))
         if (offScreen.bottom > 0)
-            EdgeIndicator("▼", offScreen.bottom, Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp))
+            EdgeIndicator("▼", offScreen.bottom, { scrollOffScreen("bottom") }, Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp))
         if (offScreen.left > 0)
-            EdgeIndicator("◀", offScreen.left, Modifier.align(Alignment.CenterStart).padding(start = 8.dp))
+            EdgeIndicator("◀", offScreen.left, { scrollOffScreen("left") }, Modifier.align(Alignment.CenterStart).padding(start = 8.dp))
         if (offScreen.right > 0)
-            EdgeIndicator("▶", offScreen.right, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp))
+            EdgeIndicator("▶", offScreen.right, { scrollOffScreen("right") }, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp))
     }
 }

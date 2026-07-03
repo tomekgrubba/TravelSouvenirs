@@ -1,6 +1,7 @@
 package com.travelsouvenirs.main.platform
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,7 +15,12 @@ import kotlin.math.abs
 internal data class EdgeCounts(val top: Int, val bottom: Int, val left: Int, val right: Int)
 
 @Composable
-internal fun EdgeIndicator(arrow: String, count: Int, modifier: Modifier = Modifier) {
+internal fun EdgeIndicator(
+    arrow: String,
+    count: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Text(
         text = "$arrow  $count",
         style = MaterialTheme.typography.labelMedium,
@@ -22,9 +28,10 @@ internal fun EdgeIndicator(arrow: String, count: Int, modifier: Modifier = Modif
         color = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier = modifier
             .background(
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
                 shape = MaterialTheme.shapes.extraSmall
             )
+            .clickable { onClick() }
             .padding(horizontal = 8.dp, vertical = 4.dp)
     )
 }
@@ -55,4 +62,34 @@ internal fun computeEdgeCounts(
         }
     }
     return EdgeCounts(top, bottom, left, right)
+}
+
+internal fun findNextOffscreenItem(
+    items: List<Item>,
+    direction: String,
+    south: Double,
+    west: Double,
+    north: Double,
+    east: Double
+): Item? {
+    val activeItems = items.filter { it.latitude != 0.0 || it.longitude != 0.0 }
+    return when (direction) {
+        "top" -> {
+            activeItems.filter { it.latitude > north }
+                .minByOrNull { it.latitude }
+        }
+        "bottom" -> {
+            activeItems.filter { it.latitude < south }
+                .maxByOrNull { it.latitude }
+        }
+        "left" -> {
+            activeItems.filter { it.longitude < west }
+                .maxByOrNull { it.longitude }
+        }
+        "right" -> {
+            activeItems.filter { it.longitude > east }
+                .minByOrNull { it.longitude }
+        }
+        else -> null
+    }
 }

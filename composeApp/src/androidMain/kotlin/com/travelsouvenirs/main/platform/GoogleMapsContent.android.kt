@@ -194,6 +194,28 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         }
     }
 
+    fun scrollOffScreen(direction: String) {
+        val bounds = visibleBounds ?: return
+        val target = findNextOffscreenItem(
+            items = items,
+            direction = direction,
+            south = bounds.southwest.latitude,
+            west = bounds.southwest.longitude,
+            north = bounds.northeast.latitude,
+            east = bounds.northeast.longitude
+        )
+        if (target != null) {
+            scope.launch {
+                try {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLng(LatLng(target.latitude, target.longitude)),
+                        600
+                    )
+                } catch (_: Exception) { }
+            }
+        }
+    }
+
     var initialZoomDone by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         if (!initialZoomDone) {
@@ -325,12 +347,12 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         }
 
         if (offScreen.top > 0)
-            EdgeIndicator("▲", offScreen.top, Modifier.align(Alignment.TopCenter).padding(top = 16.dp))
+            EdgeIndicator("▲", offScreen.top, { scrollOffScreen("top") }, Modifier.align(Alignment.TopCenter).padding(top = 16.dp))
         if (offScreen.bottom > 0)
-            EdgeIndicator("▼", offScreen.bottom, Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp))
+            EdgeIndicator("▼", offScreen.bottom, { scrollOffScreen("bottom") }, Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp))
         if (offScreen.left > 0)
-            EdgeIndicator("◀", offScreen.left, Modifier.align(Alignment.CenterStart).padding(start = 8.dp))
+            EdgeIndicator("◀", offScreen.left, { scrollOffScreen("left") }, Modifier.align(Alignment.CenterStart).padding(start = 8.dp))
         if (offScreen.right > 0)
-            EdgeIndicator("▶", offScreen.right, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp))
+            EdgeIndicator("▶", offScreen.right, { scrollOffScreen("right") }, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp))
     }
 }
