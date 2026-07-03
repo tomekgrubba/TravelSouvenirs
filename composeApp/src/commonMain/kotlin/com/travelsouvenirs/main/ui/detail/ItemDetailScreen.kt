@@ -63,6 +63,11 @@ import org.koin.core.parameter.parametersOf
 import com.travelsouvenirs.main.platform.PlatformMapPreview
 import com.travelsouvenirs.main.util.formatDisplayDate
 import com.travelsouvenirs.main.util.localImageModel
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.material.icons.filled.Close
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
@@ -88,19 +93,51 @@ fun ItemDetailScreen(
                 onDismissRequest = { showFullscreenPhoto = false },
                 properties = DialogProperties(usePlatformDefaultWidth = false)
             ) {
+                var scale by remember { mutableStateOf(1f) }
+                var offset by remember { mutableStateOf(Offset.Zero) }
+                val state = rememberTransformableState { zoomChange, panChange, _ ->
+                    scale = (scale * zoomChange).coerceIn(1f, 5f)
+                    if (scale > 1f) {
+                        offset += panChange
+                    } else {
+                        offset = Offset.Zero
+                    }
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black)
-                        .clickable { showFullscreenPhoto = false },
+                        .background(Color.Black),
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
                         model = localImageModel(m.photoPath),
                         contentDescription = stringResource(Res.string.cd_item_photo),
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                translationX = offset.x,
+                                translationY = offset.y
+                            )
+                            .transformable(state = state),
                         contentScale = ContentScale.Fit
                     )
+
+                    IconButton(
+                        onClick = { showFullscreenPhoto = false },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                            .background(Color.Black.copy(alpha = 0.6f), shape = CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }
