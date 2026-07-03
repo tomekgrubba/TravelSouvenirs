@@ -21,15 +21,16 @@
     <string name="search_placeholder">Elemente suchen…</string>
     <string name="sort_by">Sortieren nach</string>
     <string name="sort_name">Name</string>
-    <string name="sort_date">Erwerbsdatum</string>
+    <string name="sort_date">Datum</string>
     <string name="sort_location">Ortsname</string>
     <string name="filter_by_category">Nach Kategorie filtern</string>
     <string name="empty_state_no_items">Noch keine Elemente.\nTippe hier, um dein erstes hinzuzufügen!</string>
     <string name="empty_state_no_results">Keine Ergebnisse.</string>
     <string name="empty_state_no_match">Keine Elemente entsprechen\nden ausgewählten Kategorien.</string>
     <string name="no_location">Kein Ort</string>
+    <string name="date_none">keines</string>
     <string name="items_here">%1$d Elemente hier</string>
-
+ 
     <string name="title_edit_item">Element bearbeiten</string>
     <string name="title_add_item">Element hinzufügen</string>
     <string name="no_photo_selected">Kein Foto ausgewählt</string>
@@ -38,7 +39,7 @@
     <string name="label_name">Name *</string>
     <string name="label_notes">Notizen</string>
     <string name="label_category">Kategorie</string>
-    <string name="label_date_acquired">Erwerbsdatum</string>
+    <string name="label_date_acquired">Datum</string>
     <string name="label_set_location">Ort festlegen… *</string>
     <string name="btn_save_item">Element speichern</string>
 

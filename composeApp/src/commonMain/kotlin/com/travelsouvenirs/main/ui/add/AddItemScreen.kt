@@ -532,7 +532,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
             }
 
             OutlinedTextField(
-                value = dateAcquired.formatDisplayDate(),
+                value = dateAcquired.formatDisplayDate(stringResource(Res.string.date_none)),
                 onValueChange = {},
                 label = { Text(stringResource(Res.string.label_date_acquired)) },
                 shape = fieldShape,
@@ -861,7 +861,7 @@ fun CustomDatePickerDialog(
 
                 // Title
                 Text(
-                    text = "Select Date Acquired",
+                    text = "Select Date",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 16.dp)
                 )

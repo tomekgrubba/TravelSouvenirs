@@ -5,8 +5,8 @@ import kotlinx.datetime.LocalDate
 fun LocalDate.formatDisplay(): String =
     "$dayOfMonth ${month.name.lowercase().replaceFirstChar { it.uppercase() }} $year"
 
-fun String?.formatDisplayDate(): String {
-    if (this.isNullOrBlank()) return "Date unspecified"
+fun String?.formatDisplayDate(noneLabel: String = "none"): String {
+    if (this.isNullOrBlank()) return noneLabel
     val parts = this.split("-")
     return when (parts.size) {
         1 -> parts[0] // "2024"

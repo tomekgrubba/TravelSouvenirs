@@ -352,7 +352,7 @@ private fun PolaroidListCard(item: Item, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 val place = item.placeName.ifBlank { stringResource(Res.string.no_location) }
-                val date = item.dateAcquired.formatDisplayDate()
+                val date = item.dateAcquired.formatDisplayDate(stringResource(Res.string.date_none))
                 Text(
                     text = "$place · $date",
                     style = MaterialTheme.typography.bodySmall,

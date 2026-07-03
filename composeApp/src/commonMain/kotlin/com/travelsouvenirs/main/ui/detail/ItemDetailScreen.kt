@@ -268,7 +268,7 @@ fun ItemDetailScreen(
                                                 }
                                             }
                                             Text(
-                                                m.dateAcquired.formatDisplayDate(),
+                                                m.dateAcquired.formatDisplayDate(stringResource(Res.string.date_none)),
                                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp),
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(start = 18.dp)
@@ -383,7 +383,7 @@ fun ItemDetailScreen(
                                     }
 
                                     Text(
-                                        m.dateAcquired.formatDisplayDate(),
+                                        m.dateAcquired.formatDisplayDate(stringResource(Res.string.date_none)),
                                         modifier = Modifier.padding(start = 32.dp),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
