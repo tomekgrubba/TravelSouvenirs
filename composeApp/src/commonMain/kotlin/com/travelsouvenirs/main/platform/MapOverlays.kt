@@ -19,10 +19,12 @@ internal fun EdgeIndicator(
     arrow: String,
     count: Int,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    arrowOnRight: Boolean = false
 ) {
+    val displayText = if (arrowOnRight) "$count  $arrow" else "$arrow  $count"
     Text(
-        text = "$arrow  $count",
+        text = displayText,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onPrimaryContainer,

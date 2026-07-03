@@ -378,6 +378,6 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
         if (offScreen.left > 0)
             EdgeIndicator("◀", offScreen.left, { scrollOffScreen("left") }, Modifier.align(Alignment.CenterStart).padding(start = 8.dp))
         if (offScreen.right > 0)
-            EdgeIndicator("▶", offScreen.right, { scrollOffScreen("right") }, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp))
+            EdgeIndicator("▶", offScreen.right, { scrollOffScreen("right") }, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp), arrowOnRight = true)
     }
 }
