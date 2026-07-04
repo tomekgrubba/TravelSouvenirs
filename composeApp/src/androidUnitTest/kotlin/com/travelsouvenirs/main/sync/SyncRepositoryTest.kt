@@ -39,6 +39,7 @@ class SyncRepositoryTest {
         override suspend fun signInWithEmail(email: String, password: String): FirebaseUser = mock()
         override suspend fun createAccount(email: String, password: String): FirebaseUser = mock()
         override suspend fun signInWithGoogle(idToken: String): FirebaseUser = mock()
+        override suspend fun sendPasswordResetEmail(email: String) {}
         override suspend fun signOut() {}
     }
 

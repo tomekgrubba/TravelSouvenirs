@@ -115,8 +115,22 @@ fun SignInScreen(onBack: () -> Unit = {}, onSignedIn: () -> Unit = {}) {
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            if (!state.isCreateMode) {
+                TextButton(
+                    onClick = vm::onForgotPasswordClick,
+                    enabled = !state.isLoading,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Forgot password?", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
             state.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
+            state.successMessage?.let {
+                Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
             }
 
             Button(

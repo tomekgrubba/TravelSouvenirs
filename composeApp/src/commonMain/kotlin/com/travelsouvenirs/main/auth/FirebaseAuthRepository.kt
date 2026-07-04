@@ -28,7 +28,10 @@ class FirebaseAuthRepository : AuthRepository {
     override suspend fun signInWithGoogle(idToken: String): FirebaseUser {
         val credential = GoogleAuthProvider.credential(idToken, null)
         return auth.signInWithCredential(credential).user!!
-    }
+     }
+
+    override suspend fun sendPasswordResetEmail(email: String) =
+        auth.sendPasswordResetEmail(email)
 
     override suspend fun signOut() = auth.signOut()
 }

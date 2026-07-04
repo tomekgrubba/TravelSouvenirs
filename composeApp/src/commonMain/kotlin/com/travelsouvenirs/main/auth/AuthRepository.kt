@@ -16,5 +16,8 @@ interface AuthRepository {
     /** Signs in using a Google ID token. Not supported on all platforms. */
     suspend fun signInWithGoogle(idToken: String): FirebaseUser
 
+    /** Sends a password reset email for the given email address. */
+    suspend fun sendPasswordResetEmail(email: String)
+
     suspend fun signOut()
 }
