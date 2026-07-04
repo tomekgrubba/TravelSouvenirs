@@ -1,5 +1,6 @@
 package com.travelsouvenirs.main.ui.shared
 
+import com.travelsouvenirs.main.data.CategoryEntity
 import com.travelsouvenirs.main.data.CategoryRepository
 import com.travelsouvenirs.main.data.FakeCategoryDao
 import com.travelsouvenirs.main.data.FakeItemDao
@@ -56,6 +57,10 @@ class CategoryFilterViewModelTest {
         category = category
     )
 
+    private suspend fun insertCategory(name: String) {
+        categoryDao.insertCategory(CategoryEntity(name, 123456L))
+    }
+
     @Test
     fun `categoryCounts is empty initially`() = runTest {
         backgroundScope.launch(testDispatcher) { viewModel.categoryCounts.collect {} }
@@ -76,6 +81,8 @@ class CategoryFilterViewModelTest {
     fun `categoryCounts groups multiple items by category`() = runTest {
         backgroundScope.launch(testDispatcher) { viewModel.categoryCounts.collect {} }
         
+        insertCategory("Work")
+        insertCategory("Vacation")
         itemDao.insertItem(entity(1, DEFAULT_CATEGORY))
         itemDao.insertItem(entity(2, DEFAULT_CATEGORY))
         itemDao.insertItem(entity(3, "Work"))
@@ -87,5 +94,68 @@ class CategoryFilterViewModelTest {
         assertEquals(2, counts[DEFAULT_CATEGORY])
         assertEquals(1, counts["Work"])
         assertEquals(2, counts["Vacation"])
+    }
+
+    @Test
+    fun `selectedCategory defaults to null when multiple categories exist`() = runTest {
+        backgroundScope.launch(testDispatcher) { viewModel.availableCategories.collect {} }
+        backgroundScope.launch(testDispatcher) { viewModel.selectedCategory.collect {} }
+        
+        insertCategory("Vacation")
+        itemDao.insertItem(entity(1, DEFAULT_CATEGORY))
+        itemDao.insertItem(entity(2, "Vacation"))
+        
+        assertEquals(null, viewModel.selectedCategory.value)
+    }
+
+    @Test
+    fun `selectedCategory updates correctly when selectCategory is called`() = runTest {
+        backgroundScope.launch(testDispatcher) { viewModel.availableCategories.collect {} }
+        backgroundScope.launch(testDispatcher) { viewModel.selectedCategory.collect {} }
+        
+        insertCategory("Vacation")
+        itemDao.insertItem(entity(1, DEFAULT_CATEGORY))
+        itemDao.insertItem(entity(2, "Vacation"))
+        
+        viewModel.selectCategory("Vacation")
+        assertEquals("Vacation", viewModel.selectedCategory.value)
+        assertEquals(setOf("Vacation"), viewModel.selectedCategories.value)
+        
+        viewModel.selectCategory(null)
+        assertEquals(null, viewModel.selectedCategory.value)
+        assertEquals(setOf(DEFAULT_CATEGORY, "Vacation"), viewModel.selectedCategories.value)
+    }
+
+    @Test
+    fun `selectedCategory automatically selects the only category when only one exists`() = runTest {
+        backgroundScope.launch(testDispatcher) { viewModel.availableCategories.collect {} }
+        backgroundScope.launch(testDispatcher) { viewModel.selectedCategory.collect {} }
+        
+        itemDao.insertItem(entity(1, DEFAULT_CATEGORY))
+        
+        assertEquals(DEFAULT_CATEGORY, viewModel.selectedCategory.value)
+    }
+
+    @Test
+    fun `selectedCategory resets to null if the selected category is no longer available`() = runTest {
+        backgroundScope.launch(testDispatcher) { viewModel.availableCategories.collect {} }
+        backgroundScope.launch(testDispatcher) { viewModel.selectedCategory.collect {} }
+        
+        insertCategory("Vacation")
+        insertCategory("Work")
+        val item1 = entity(1, DEFAULT_CATEGORY)
+        val vacationItem = entity(2, "Vacation")
+        val item3 = entity(3, "Work")
+        itemDao.insertItem(item1)
+        itemDao.insertItem(vacationItem)
+        itemDao.insertItem(item3)
+        
+        viewModel.selectCategory("Vacation")
+        assertEquals("Vacation", viewModel.selectedCategory.value)
+        
+        // Remove item with Vacation category so it is no longer available
+        itemDao.deleteItem(vacationItem)
+        
+        assertEquals(null, viewModel.selectedCategory.value)
     }
 }

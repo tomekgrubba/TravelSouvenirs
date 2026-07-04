@@ -142,6 +142,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
     val categoryCounts by categoryFilter.categoryCounts.collectAsState()
+    val selectedCategory by categoryFilter.selectedCategory.collectAsState()
 
     val items = remember(allItems, selectedCategories) { categoryFilter.filterItems(allItems) }
     val itemPins = remember(allPins, selectedCategories) {
@@ -341,9 +342,9 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
             CategoryFilterFab(
                 availableCategories = availableCategories,
-                selectedCategories = selectedCategories,
+                selectedCategory = selectedCategory,
                 categoryCounts = categoryCounts,
-                onToggleCategory = { categoryFilter.toggleCategoryFilter(it) },
+                onSelectCategory = { categoryFilter.selectCategory(it) },
                 isTablet = isTablet,
             )
         }

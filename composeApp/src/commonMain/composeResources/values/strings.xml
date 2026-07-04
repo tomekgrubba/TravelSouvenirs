@@ -27,6 +27,7 @@
     <string name="view_list">List</string>
     <string name="view_tile">Grid</string>
     <string name="filter_by_category">Filter by category</string>
+    <string name="filter_all">All</string>
     <string name="empty_state_no_items">No items yet.\nTap here to add your first!</string>
     <string name="empty_state_no_results">No results.</string>
     <string name="empty_state_no_match">No items match\nthe selected categories.</string>

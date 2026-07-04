@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
@@ -26,18 +26,20 @@ import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.Res
 import travelsouvenirs.composeapp.generated.resources.cd_filter_category
 import travelsouvenirs.composeapp.generated.resources.filter_by_category
+import travelsouvenirs.composeapp.generated.resources.filter_all
 
 @Composable
 fun CategoryFilterFab(
     availableCategories: List<String>,
-    selectedCategories: Set<String>,
+    selectedCategory: String?,
     categoryCounts: Map<String, Int>,
-    onToggleCategory: (String) -> Unit,
+    onSelectCategory: (String?) -> Unit,
     modifier: Modifier = Modifier,
     isTablet: Boolean = false,
 ) {
     var showFilterMenu by remember { mutableStateOf(false) }
-    val isFilterActive = selectedCategories.size < availableCategories.size
+    // Filter is active if a specific category is selected AND there are multiple categories available
+    val isFilterActive = selectedCategory != null && availableCategories.size > 1
     val containerColor = if (isFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
     val contentColor = if (isFilterActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
     val iconSize = if (isTablet) 28.dp else 24.dp
@@ -70,9 +72,12 @@ fun CategoryFilterFab(
         ) {
             CategoryFilterMenuSection(
                 availableCategories = availableCategories,
-                selectedCategories = selectedCategories,
+                selectedCategory = selectedCategory,
                 categoryCounts = categoryCounts,
-                onToggleCategory = onToggleCategory
+                onSelectCategory = {
+                    onSelectCategory(it)
+                    showFilterMenu = false
+                }
             )
         }
     }
@@ -81,9 +86,9 @@ fun CategoryFilterFab(
 @Composable
 fun CategoryFilterMenuSection(
     availableCategories: List<String>,
-    selectedCategories: Set<String>,
+    selectedCategory: String?,
     categoryCounts: Map<String, Int>,
-    onToggleCategory: (String) -> Unit
+    onSelectCategory: (String?) -> Unit
 ) {
     Text(
         text = stringResource(Res.string.filter_by_category),
@@ -91,20 +96,42 @@ fun CategoryFilterMenuSection(
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
     )
+
+    // Only show "All" option if there are multiple categories with items
+    if (availableCategories.size > 1) {
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.filter_all), style = MaterialTheme.typography.bodyMedium) },
+            trailingIcon = {
+                if (selectedCategory == null) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            },
+            onClick = { onSelectCategory(null) }
+        )
+    }
+
     availableCategories.forEach { category ->
         DropdownMenuItem(
             text = {
                 val count = categoryCounts[category] ?: 0
-                Text("$category ($count)")
+                Text("$category ($count)", style = MaterialTheme.typography.bodyMedium)
             },
-            leadingIcon = {
-                Checkbox(
-                    checked = category in selectedCategories,
-                    onCheckedChange = null,
-                    modifier = Modifier.size(20.dp)
-                )
+            trailingIcon = {
+                if (selectedCategory == category) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             },
-            onClick = { onToggleCategory(category) }
+            onClick = { onSelectCategory(category) }
         )
     }
 }

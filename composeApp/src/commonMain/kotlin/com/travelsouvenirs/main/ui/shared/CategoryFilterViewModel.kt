@@ -42,35 +42,62 @@ class CategoryFilterViewModel(
     /** Snapshot set of all known categories. */
     val allCategoriesSet: Set<String> get() = availableCategories.value.toSet()
 
-    private val _selectedCategories = MutableStateFlow<Set<String>>(emptySet())
-    /** Categories currently visible; all selected by default. */
-    val selectedCategories: StateFlow<Set<String>> = _selectedCategories.asStateFlow()
+    private val _selectedCategory = MutableStateFlow<String?>(null) // null means "All"
+    /** The currently selected category, or null if "All" is selected. */
+    val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
+
+    /** Set of selected categories. Keeps compatibility with map rendering and filter checks. */
+    val selectedCategories: StateFlow<Set<String>> = combine(
+        _selectedCategory,
+        availableCategories
+    ) { selected, available ->
+        if (selected == null) {
+            available.toSet()
+        } else {
+            setOf(selected)
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
+    private var isExplicitSelection = false
 
     init {
-        var previousAvail = emptySet<String>()
         viewModelScope.launch {
             availableCategories.collect { available ->
-                val availSet = available.toSet()
-                val newCategories = availSet - previousAvail
-                _selectedCategories.value = (_selectedCategories.value intersect availSet) union newCategories
-                previousAvail = availSet
+                val current = _selectedCategory.value
+                if (available.size == 1) {
+                    _selectedCategory.value = available.first()
+                } else if (available.size > 1 && !isExplicitSelection) {
+                    _selectedCategory.value = null
+                } else if (current != null && current !in available) {
+                    _selectedCategory.value = null
+                    isExplicitSelection = false
+                }
             }
         }
     }
 
-    /** Toggles a category in or out of the active filter set. */
+    /** Selects a category. Pass null to select "All". */
+    fun selectCategory(category: String?) {
+        _selectedCategory.value = category
+        isExplicitSelection = category != null
+    }
+
+    /** Toggles category filter (kept for basic compatibility, behaves as selectCategory/deselect). */
     fun toggleCategoryFilter(category: String) {
-        val updated = _selectedCategories.value.toMutableSet()
-        if (category in updated) updated.remove(category) else updated.add(category)
-        _selectedCategories.value = updated
+        if (_selectedCategory.value == category) {
+            selectCategory(null)
+        } else {
+            selectCategory(category)
+        }
     }
 
     /** No-op: categories are now derived reactively from items. */
     fun refreshCategories() {}
 
     /** Returns items whose category is selected or not in the known category set. */
-    fun filterItems(items: List<Item>): List<Item> =
-        items.filter { m ->
-            m.category in selectedCategories.value || m.category !in allCategoriesSet
-        }
+    fun filterItems(items: List<Item>): List<Item> {
+        val selected = _selectedCategory.value
+        if (selected == null) return items
+        return items.filter { it.category == selected }
+    }
 }
