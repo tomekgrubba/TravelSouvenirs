@@ -116,6 +116,16 @@ private class MapDelegateHelper(
         mapView.region.useContents {
             val cLat = center.latitude
             val cLng = center.longitude
+
+            // Limit zoom out (minimum zoom level ~2.58, i.e., max longitudeDelta of 60.0 degrees)
+            val maxSpanLng = 60.0
+            if (span.longitudeDelta > maxSpanLng) {
+                val newSpanLat = span.latitudeDelta * (maxSpanLng / span.longitudeDelta)
+                val region = MKCoordinateRegionMake(CLLocationCoordinate2DMake(cLat, cLng), MKCoordinateSpanMake(newSpanLat, maxSpanLng))
+                mapView.setRegion(region, animated = false)
+                return
+            }
+
             val hLat = span.latitudeDelta / 2.0
             val hLng = span.longitudeDelta / 2.0
             val zoom = log2(360.0 / span.longitudeDelta.coerceAtLeast(0.0001)).toFloat()
