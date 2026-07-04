@@ -298,19 +298,22 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             it.emphasisStyle = MKStandardMapEmphasisStyleMuted
         }
         mapView.showsUserLocation = true
+    }
 
-        // Initial camera — fire only once per provider switch
+    // Initial camera — fire when provider switch happens or items load
+    LaunchedEffect(allItems) {
         if (!viewModel.initialCameraSet) {
-            viewModel.initialCameraSet = true
             if (appViewModel.targetCameraLocation.value == null) {
                 val loc = locationService.getCurrentLocation()
                 if (loc != null) {
+                    viewModel.initialCameraSet = true
                     val coord = CLLocationCoordinate2DMake(loc.lat, loc.lng)
                     mapView.setRegion(
                         MKCoordinateRegionMakeWithDistance(coord, 5_000_000.0, 5_000_000.0),
                         animated = false
                     )
                 } else if (allItems.isNotEmpty()) {
+                    viewModel.initialCameraSet = true
                     val minLat = allItems.minOf { it.latitude }
                     val maxLat = allItems.maxOf { it.latitude }
                     val minLng = allItems.minOf { it.longitude }
