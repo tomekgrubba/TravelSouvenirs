@@ -3,6 +3,7 @@ package com.travelsouvenirs.main.ui.shared
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -95,12 +96,13 @@ fun CategoryFilterMenuSection(
         text = stringResource(Res.string.filter_by_category),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
+        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 2.dp)
     )
 
     // Only show "All" option if there are multiple categories with items
     if (availableCategories.size > 1) {
         DropdownMenuItem(
+            modifier = Modifier.height(38.dp),
             text = {
                 Text(
                     text = stringResource(Res.string.filter_all),
@@ -124,6 +126,7 @@ fun CategoryFilterMenuSection(
 
     availableCategories.forEach { category ->
         DropdownMenuItem(
+            modifier = Modifier.height(38.dp),
             text = {
                 val count = categoryCounts[category] ?: 0
                 Text(
