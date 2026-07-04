@@ -139,8 +139,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         modifier = Modifier
                             .width(240.dp)
-                            .heightIn(max = maxDropdownHeight),
-                        offset = DpOffset(x = (-192).dp, y = 48.dp)
+                            .heightIn(max = maxDropdownHeight)
                     ) {
                         // View as — top of menu with side-by-side icon+label buttons
                         Text(
