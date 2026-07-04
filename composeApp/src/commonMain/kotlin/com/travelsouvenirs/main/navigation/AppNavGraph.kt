@@ -2,11 +2,14 @@ package com.travelsouvenirs.main.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.travelsouvenirs.main.di.LocalAppViewModel
+import com.travelsouvenirs.main.network.NetworkMonitor
+import com.travelsouvenirs.main.sync.SyncCoordinator
 import com.travelsouvenirs.main.ui.add.AddItemScreen
 import com.travelsouvenirs.main.ui.auth.SignInScreen
 import com.travelsouvenirs.main.ui.detail.ItemDetailScreen
@@ -16,6 +19,7 @@ import com.travelsouvenirs.main.ui.settings.SettingsScreen
 import kotlinx.serialization.Serializable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.koin.compose.currentKoinScope
+import org.koin.compose.koinInject
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -31,6 +35,13 @@ sealed class Screen(val route: String) {
 fun AppNavGraph(navController: NavHostController) {
     val koinScope = currentKoinScope()
     val appViewModel: AppViewModel = viewModel { koinScope.get<AppViewModel>() }
+    val networkMonitor: NetworkMonitor = koinInject()
+    val syncCoordinator: SyncCoordinator = koinInject()
+    LaunchedEffect(networkMonitor, syncCoordinator) {
+        networkMonitor.isConnected.collect { connected ->
+            if (connected) syncCoordinator.sync()
+        }
+    }
     CompositionLocalProvider(LocalAppViewModel provides appViewModel) {
         NavHost(navController = navController, startDestination = Screen.Main.route) {
             composable(Screen.Main.route) {
