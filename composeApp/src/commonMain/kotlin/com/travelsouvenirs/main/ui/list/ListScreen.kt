@@ -140,7 +140,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                         modifier = Modifier
                             .width(240.dp)
                             .heightIn(max = maxDropdownHeight),
-                        offset = DpOffset(x = (-192).dp, y = 0.dp)
+                        offset = DpOffset(x = (-192).dp, y = 48.dp)
                     ) {
                         // View as — top of menu with side-by-side icon+label buttons
                         Text(
