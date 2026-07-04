@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -94,187 +96,193 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
 
     var showMenu by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = viewModel::onQueryChange,
-                placeholder = { Text(stringResource(Res.string.search_placeholder)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                ),
-                modifier = Modifier.weight(1f)
-            )
-
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(
-                        imageVector = Icons.Default.FilterList,
-                        contentDescription = stringResource(Res.string.cd_sort_filter),
-                        tint = if (isIconHighlighted)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val maxDropdownHeight = maxHeight - 144.dp
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = viewModel::onQueryChange,
+                    placeholder = { Text(stringResource(Res.string.search_placeholder)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
                     shape = RoundedCornerShape(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.width(240.dp)
-                ) {
-                    // View as — top of menu with side-by-side icon+label buttons
-                    Text(
-                        text = stringResource(Res.string.view_as),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 8.dp)
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ViewModeButton(
-                            icon = Icons.Default.ViewList,
-                            label = stringResource(Res.string.view_list),
-                            selected = viewMode == ViewMode.LIST,
-                            onClick = { viewModel.onViewModeChange(ViewMode.LIST); showMenu = false },
-                            modifier = Modifier.weight(1f)
-                        )
-                        ViewModeButton(
-                            icon = Icons.Default.GridView,
-                            label = stringResource(Res.string.view_tile),
-                            selected = viewMode == ViewMode.GRID,
-                            onClick = { viewModel.onViewModeChange(ViewMode.GRID); showMenu = false },
-                            modifier = Modifier.weight(1f)
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = stringResource(Res.string.cd_sort_filter),
+                            tint = if (isIconHighlighted)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface
                         )
                     }
 
-                    Spacer(modifier = Modifier.size(8.dp))
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        modifier = Modifier
+                            .width(240.dp)
+                            .heightIn(max = maxDropdownHeight),
+                        offset = DpOffset(x = (-192).dp, y = 0.dp)
+                    ) {
+                        // View as — top of menu with side-by-side icon+label buttons
+                        Text(
+                            text = stringResource(Res.string.view_as),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 8.dp)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ViewModeButton(
+                                icon = Icons.Default.ViewList,
+                                label = stringResource(Res.string.view_list),
+                                selected = viewMode == ViewMode.LIST,
+                                onClick = { viewModel.onViewModeChange(ViewMode.LIST); showMenu = false },
+                                modifier = Modifier.weight(1f)
+                            )
+                            ViewModeButton(
+                                icon = Icons.Default.GridView,
+                                label = stringResource(Res.string.view_tile),
+                                selected = viewMode == ViewMode.GRID,
+                                onClick = { viewModel.onViewModeChange(ViewMode.GRID); showMenu = false },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
 
-                    // Sort by
-                    Text(
-                        text = stringResource(Res.string.sort_by),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
-                    )
-                    listOf(
-                        SortOption.NAME to stringResource(Res.string.sort_name),
-                        SortOption.DATE to stringResource(Res.string.sort_date),
-                        SortOption.LOCATION to stringResource(Res.string.sort_location)
-                    ).forEach { (option, label) ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            trailingIcon = {
-                                if (sortOption == option) {
-                                    Icon(
-                                        Icons.Default.Check,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp)
+                        Spacer(modifier = Modifier.size(8.dp))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                        )
+
+                        // Sort by
+                        Text(
+                            text = stringResource(Res.string.sort_by),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
+                        )
+                        listOf(
+                            SortOption.NAME to stringResource(Res.string.sort_name),
+                            SortOption.DATE to stringResource(Res.string.sort_date),
+                            SortOption.LOCATION to stringResource(Res.string.sort_location)
+                        ).forEach { (option, label) ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
                                     )
+                                },
+                                trailingIcon = {
+                                    if (sortOption == option) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    viewModel.onSortChange(option)
+                                    showMenu = false
                                 }
-                            },
-                            onClick = {
-                                viewModel.onSortChange(option)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.size(4.dp))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                        )
+
+                        CategoryFilterMenuSection(
+                            availableCategories = availableCategories,
+                            selectedCategory = selectedCategory,
+                            categoryCounts = categoryCounts,
+                            onSelectCategory = {
+                                categoryFilter.selectCategory(it)
                                 showMenu = false
                             }
                         )
+                        Spacer(modifier = Modifier.size(4.dp))
                     }
+                }
+            }
 
-                    Spacer(modifier = Modifier.size(4.dp))
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
-
-                    CategoryFilterMenuSection(
-                        availableCategories = availableCategories,
-                        selectedCategory = selectedCategory,
-                        categoryCounts = categoryCounts,
-                        onSelectCategory = {
-                            categoryFilter.selectCategory(it)
-                            showMenu = false
+            when {
+                allEmpty -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize().clickable { onAddClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            modifier = Modifier.padding(32.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                        ) {
+                            Text(stringResource(Res.string.empty_state_no_items), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
                         }
-                    )
-                    Spacer(modifier = Modifier.size(4.dp))
-                }
-            }
-        }
-
-        when {
-            allEmpty -> {
-                Box(
-                    modifier = Modifier.fillMaxSize().clickable { onAddClick() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Card(
-                        modifier = Modifier.padding(32.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
-                    ) {
-                        Text(stringResource(Res.string.empty_state_no_items), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
                     }
                 }
-            }
-            items.isEmpty() -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Card(
-                        modifier = Modifier.padding(32.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
-                    ) {
-                        Text(stringResource(Res.string.empty_state_no_results), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
+                items.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Card(
+                            modifier = Modifier.padding(32.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                        ) {
+                            Text(stringResource(Res.string.empty_state_no_results), modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
+                        }
                     }
                 }
-            }
-            viewMode == ViewMode.GRID -> {
-                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                    val columns = if (maxWidth >= 600.dp) 3 else 2
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(columns),
+                viewMode == ViewMode.GRID -> {
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val columns = if (maxWidth >= 600.dp) 3 else 2
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(columns),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            items(items, key = { it.id }) { item ->
+                                PolaroidTileCard(item = item, onClick = { onItemClick(item.id) })
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(items, key = { it.id }) { item ->
-                            PolaroidTileCard(item = item, onClick = { onItemClick(item.id) })
+                            PolaroidListCard(item = item, onClick = { onItemClick(item.id) })
                         }
-                    }
-                }
-            }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(items, key = { it.id }) { item ->
-                        PolaroidListCard(item = item, onClick = { onItemClick(item.id) })
                     }
                 }
             }
