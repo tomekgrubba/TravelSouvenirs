@@ -217,7 +217,10 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                         availableCategories = availableCategories,
                         selectedCategory = selectedCategory,
                         categoryCounts = categoryCounts,
-                        onSelectCategory = { categoryFilter.selectCategory(it) }
+                        onSelectCategory = {
+                            categoryFilter.selectCategory(it)
+                            showMenu = false
+                        }
                     )
                     Spacer(modifier = Modifier.size(4.dp))
                 }
