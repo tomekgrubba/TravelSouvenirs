@@ -69,7 +69,7 @@ import platform.objc.sel_registerName
 import travelsouvenirs.composeapp.generated.resources.*
 import kotlin.math.log2
 
-private const val NATIVE_CLUSTER_ZOOM_THRESHOLD = 15f
+private const val NATIVE_CLUSTER_ZOOM_THRESHOLD = 16f
 
 // Carries typed payload for each map annotation.
 private class ItemAnnotation(

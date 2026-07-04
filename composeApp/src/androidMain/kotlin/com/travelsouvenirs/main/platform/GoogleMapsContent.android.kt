@@ -65,7 +65,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.*
 
-private const val CLUSTER_ZOOM_THRESHOLD = 15f
+private const val CLUSTER_ZOOM_THRESHOLD = 16f
 private const val INITIAL_ZOOM = 5f
 private const val LOCATION_ZOOM = 10f
 private const val PIN_ZOOM = 15f
