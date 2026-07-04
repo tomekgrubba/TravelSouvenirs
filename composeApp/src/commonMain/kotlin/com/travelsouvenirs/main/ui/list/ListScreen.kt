@@ -139,7 +139,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     // View as — top of menu with side-by-side icon+label buttons
                     Text(
                         text = stringResource(Res.string.view_as),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
                     )
@@ -174,7 +174,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     // Sort by
                     Text(
                         text = stringResource(Res.string.sort_by),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 2.dp)
                     )
@@ -185,6 +185,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     ).forEach { (option, label) ->
                         DropdownMenuItem(
                             modifier = Modifier.height(38.dp),
+                            contentPadding = PaddingValues(start = 16.dp, end = 12.dp),
                             text = {
                                 Text(
                                     text = label,

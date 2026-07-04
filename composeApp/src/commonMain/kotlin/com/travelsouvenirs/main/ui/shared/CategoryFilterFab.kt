@@ -3,6 +3,7 @@ package com.travelsouvenirs.main.ui.shared
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -94,7 +95,7 @@ fun CategoryFilterMenuSection(
 ) {
     Text(
         text = stringResource(Res.string.filter_by_category),
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 2.dp)
     )
@@ -103,6 +104,7 @@ fun CategoryFilterMenuSection(
     if (availableCategories.size > 1) {
         DropdownMenuItem(
             modifier = Modifier.height(38.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 12.dp),
             text = {
                 Text(
                     text = stringResource(Res.string.filter_all),
@@ -127,6 +129,7 @@ fun CategoryFilterMenuSection(
     availableCategories.forEach { category ->
         DropdownMenuItem(
             modifier = Modifier.height(38.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 12.dp),
             text = {
                 val count = categoryCounts[category] ?: 0
                 Text(
