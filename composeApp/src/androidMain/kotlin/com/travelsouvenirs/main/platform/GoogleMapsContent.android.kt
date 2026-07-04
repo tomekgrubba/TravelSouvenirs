@@ -84,6 +84,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     val allPins by viewModel.itemPins.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
+    val categoryCounts by categoryFilter.categoryCounts.collectAsState()
 
     val items = remember(allItems, selectedCategories) { categoryFilter.filterItems(allItems) }
     val itemPins = remember(allPins, selectedCategories) {
@@ -320,6 +321,7 @@ internal fun GoogleMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             CategoryFilterFab(
                 availableCategories = availableCategories,
                 selectedCategories = selectedCategories,
+                categoryCounts = categoryCounts,
                 onToggleCategory = { categoryFilter.toggleCategoryFilter(it) },
                 isTablet = isTablet,
             )

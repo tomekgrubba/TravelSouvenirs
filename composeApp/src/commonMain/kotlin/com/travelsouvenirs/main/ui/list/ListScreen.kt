@@ -76,6 +76,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedCategories by categoryFilter.selectedCategories.collectAsState()
     val availableCategories by categoryFilter.availableCategories.collectAsState()
+    val categoryCounts by categoryFilter.categoryCounts.collectAsState()
     val sortedItems by viewModel.sortedItems.collectAsState()
 
     val searchQuery = uiState.searchQuery
@@ -208,6 +209,7 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                     CategoryFilterMenuSection(
                         availableCategories = availableCategories,
                         selectedCategories = selectedCategories,
+                        categoryCounts = categoryCounts,
                         onToggleCategory = { categoryFilter.toggleCategoryFilter(it) }
                     )
                     Spacer(modifier = Modifier.size(4.dp))

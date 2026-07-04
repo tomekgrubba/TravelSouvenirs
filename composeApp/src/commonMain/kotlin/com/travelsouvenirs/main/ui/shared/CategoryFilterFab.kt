@@ -31,6 +31,7 @@ import travelsouvenirs.composeapp.generated.resources.filter_by_category
 fun CategoryFilterFab(
     availableCategories: List<String>,
     selectedCategories: Set<String>,
+    categoryCounts: Map<String, Int>,
     onToggleCategory: (String) -> Unit,
     modifier: Modifier = Modifier,
     isTablet: Boolean = false,
@@ -70,6 +71,7 @@ fun CategoryFilterFab(
             CategoryFilterMenuSection(
                 availableCategories = availableCategories,
                 selectedCategories = selectedCategories,
+                categoryCounts = categoryCounts,
                 onToggleCategory = onToggleCategory
             )
         }
@@ -80,6 +82,7 @@ fun CategoryFilterFab(
 fun CategoryFilterMenuSection(
     availableCategories: List<String>,
     selectedCategories: Set<String>,
+    categoryCounts: Map<String, Int>,
     onToggleCategory: (String) -> Unit
 ) {
     Text(
@@ -90,7 +93,10 @@ fun CategoryFilterMenuSection(
     )
     availableCategories.forEach { category ->
         DropdownMenuItem(
-            text = { Text(category) },
+            text = {
+                val count = categoryCounts[category] ?: 0
+                Text("$category ($count)")
+            },
             leadingIcon = {
                 Checkbox(
                     checked = category in selectedCategories,

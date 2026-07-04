@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -23,6 +24,11 @@ class CategoryFilterViewModel(
     private val categoryRepository: CategoryRepository,
     private val itemRepository: ItemRepository,
 ) : ViewModel() {
+
+    /** Map of category name to the count of items in it. Only active items are counted. */
+    val categoryCounts: StateFlow<Map<String, Int>> = itemRepository.allItems.map { items ->
+        items.groupBy { it.category }.mapValues { it.value.size }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     /** Categories that have at least one item — DEFAULT_CATEGORY first, then custom alphabetically. */
     val availableCategories: StateFlow<List<String>> = combine(
