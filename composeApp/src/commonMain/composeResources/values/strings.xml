@@ -22,7 +22,7 @@
     <string name="sort_by">Sort by</string>
     <string name="sort_name">Name</string>
     <string name="sort_date">Date</string>
-    <string name="sort_location">Location name</string>
+    <string name="sort_location">Location</string>
     <string name="view_as">View as</string>
     <string name="view_list">List</string>
     <string name="view_tile">Grid</string>

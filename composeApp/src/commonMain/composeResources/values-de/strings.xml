@@ -22,7 +22,7 @@
     <string name="sort_by">Sortieren nach</string>
     <string name="sort_name">Name</string>
     <string name="sort_date">Datum</string>
-    <string name="sort_location">Ortsname</string>
+    <string name="sort_location">Ort</string>
     <string name="filter_by_category">Nach Kategorie filtern</string>
     <string name="filter_all">Alle</string>
     <string name="empty_state_no_items">Noch keine Elemente.\nTippe hier, um dein erstes hinzuzufügen!</string>
