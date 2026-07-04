@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import travelsouvenirs.composeapp.generated.resources.Res
@@ -100,7 +101,13 @@ fun CategoryFilterMenuSection(
     // Only show "All" option if there are multiple categories with items
     if (availableCategories.size > 1) {
         DropdownMenuItem(
-            text = { Text(stringResource(Res.string.filter_all), style = MaterialTheme.typography.bodyMedium) },
+            text = {
+                Text(
+                    text = stringResource(Res.string.filter_all),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (selectedCategory == null) FontWeight.Bold else FontWeight.Normal
+                )
+            },
             trailingIcon = {
                 if (selectedCategory == null) {
                     Icon(
@@ -119,7 +126,11 @@ fun CategoryFilterMenuSection(
         DropdownMenuItem(
             text = {
                 val count = categoryCounts[category] ?: 0
-                Text("$category ($count)", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = "$category ($count)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (selectedCategory == category) FontWeight.Bold else FontWeight.Normal
+                )
             },
             trailingIcon = {
                 if (selectedCategory == category) {

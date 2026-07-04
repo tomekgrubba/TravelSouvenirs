@@ -183,7 +183,13 @@ fun ListScreen(onItemClick: (Long) -> Unit, onAddClick: () -> Unit) {
                         SortOption.LOCATION to stringResource(Res.string.sort_location)
                     ).forEach { (option, label) ->
                         DropdownMenuItem(
-                            text = { Text(label, style = MaterialTheme.typography.bodyMedium) },
+                            text = {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
                             trailingIcon = {
                                 if (sortOption == option) {
                                     Icon(
