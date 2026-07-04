@@ -309,7 +309,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
                     viewModel.initialCameraSet = true
                     val coord = CLLocationCoordinate2DMake(loc.lat, loc.lng)
                     mapView.setRegion(
-                        MKCoordinateRegionMakeWithDistance(coord, 5_000_000.0, 5_000_000.0),
+                        MKCoordinateRegionMakeWithDistance(coord, 1_250_000.0, 1_250_000.0),
                         animated = false
                     )
                 } else if (allItems.isNotEmpty()) {
