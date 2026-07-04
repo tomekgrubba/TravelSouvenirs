@@ -83,6 +83,7 @@ private class MapDelegateHelper(
     val iconCache: MutableMap<Long, UIImage>,
     val groupIconCache: MutableMap<Int, UIImage>,
     val onPinClick: (Long) -> Unit,
+    val onGroupClick: (Int) -> Unit,
     val onRegionChange: (zoom: Float, south: Double, west: Double, north: Double, east: Double) -> Unit
 ) : NSObject(), MKMapViewDelegateProtocol {
 
@@ -105,12 +106,7 @@ private class MapDelegateHelper(
         if (ann.groupIndex < 0 || ann.itemCount == 1) {
             onPinClick(ann.itemId)
         } else {
-            mapView.region.useContents {
-                val newSpanLat = span.latitudeDelta / 3.0
-                val newSpanLng = span.longitudeDelta / 3.0
-                val newRegion = MKCoordinateRegionMake(ann.coordinate, MKCoordinateSpanMake(newSpanLat, newSpanLng))
-                mapView.setRegion(newRegion, animated = true)
-            }
+            onGroupClick(ann.groupIndex)
         }
         mapView.deselectAnnotation(ann, animated = false)
     }
@@ -171,6 +167,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
     // rememberUpdatedState so delegate lambdas always see the latest values
     val latestItems    = rememberUpdatedState(items)
     val latestOnPinClick = rememberUpdatedState(onPinClick)
+    val latestItemGroups = rememberUpdatedState(itemGroups)
     val coroutineScope = rememberCoroutineScope()
 
     val mapView = remember {
@@ -220,6 +217,32 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             iconCache      = mutableMapOf(),
             groupIconCache = mutableMapOf(),
             onPinClick     = { id -> coroutineScope.launch { latestOnPinClick.value(id) } },
+            onGroupClick   = { groupIndex ->
+                val groups = latestItemGroups.value
+                val group = groups.getOrNull(groupIndex) ?: return@MapDelegateHelper
+                if (group.items.isNotEmpty()) {
+                    val minLat = group.items.minOf { it.latitude }
+                    val maxLat = group.items.maxOf { it.latitude }
+                    val minLng = group.items.minOf { it.longitude }
+                    val maxLng = group.items.maxOf { it.longitude }
+
+                    val centerLat = (minLat + maxLat) / 2.0
+                    val centerLng = (minLng + maxLng) / 2.0
+                    val spanLat = (maxLat - minLat) * 1.5
+                    val spanLng = (maxLng - minLng) * 1.5
+
+                    // Enforce a minimum span (e.g. ~500m) to avoid zooming in too tight
+                    val minSpan = 0.005
+                    val finalSpanLat = maxOf(spanLat, minSpan)
+                    val finalSpanLng = maxOf(spanLng, minSpan)
+
+                    val region = MKCoordinateRegionMake(
+                        CLLocationCoordinate2DMake(centerLat, centerLng),
+                        MKCoordinateSpanMake(finalSpanLat, finalSpanLng)
+                    )
+                    mapView.setRegion(region, animated = true)
+                }
+            },
             onRegionChange = { zoom, s, w, n, e ->
                 zoomLevel = zoom
                 offScreen = computeEdgeCounts(latestItems.value, s, w, n, e)
