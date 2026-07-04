@@ -287,18 +287,19 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
 
     LaunchedEffect(Unit) {
         mapView.delegate = delegate
-    }
+        
+        // Immediately sync initial zoom level from current map view state
+        mapView.region.useContents {
+            zoomLevel = log2(360.0 / span.longitudeDelta.coerceAtLeast(0.0001)).toFloat()
+        }
 
-    LaunchedEffect(Unit) {
         mapView.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
         mapView.preferredConfiguration = MKStandardMapConfiguration().also {
             it.emphasisStyle = MKStandardMapEmphasisStyleMuted
         }
         mapView.showsUserLocation = true
-    }
 
-    // Initial camera — fire only once per provider switch
-    LaunchedEffect(Unit) {
+        // Initial camera — fire only once per provider switch
         if (!viewModel.initialCameraSet) {
             viewModel.initialCameraSet = true
             if (appViewModel.targetCameraLocation.value == null) {
