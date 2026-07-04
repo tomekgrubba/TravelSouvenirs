@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -336,23 +337,27 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                                         OutlinedButton(
                                             onClick = { launchCamera() },
                                             shape = buttonShape,
+                                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Text(
                                                 text = stringResource(Res.string.btn_take_photo),
-                                                maxLines = 1,
-                                                style = MaterialTheme.typography.bodyMedium
+                                                maxLines = 2,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                             )
                                         }
                                         OutlinedButton(
                                             onClick = { launchPhotoPicker() },
                                             shape = buttonShape,
+                                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Text(
                                                 text = stringResource(Res.string.btn_gallery),
-                                                maxLines = 1,
-                                                style = MaterialTheme.typography.bodyMedium
+                                                maxLines = 2,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                             )
                                         }
                                     }
@@ -422,23 +427,27 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
                                 OutlinedButton(
                                     onClick = { launchCamera() },
                                     shape = buttonShape,
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text(
                                         text = stringResource(Res.string.btn_take_photo),
-                                        maxLines = 1,
-                                        style = MaterialTheme.typography.bodyMedium
+                                        maxLines = 2,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
                                 }
                                 OutlinedButton(
                                     onClick = { launchPhotoPicker() },
                                     shape = buttonShape,
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text(
                                         text = stringResource(Res.string.btn_gallery),
-                                        maxLines = 1,
-                                        style = MaterialTheme.typography.bodyMedium
+                                        maxLines = 2,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
                                 }
                             }

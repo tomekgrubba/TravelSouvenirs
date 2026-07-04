@@ -10,13 +10,11 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSizeMake
+import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHomeDirectory
-import platform.PhotosUI.PHPickerConfiguration
-import platform.PhotosUI.PHPickerFilter
-import platform.PhotosUI.PHPickerResult
-import platform.PhotosUI.PHPickerViewController
-import platform.PhotosUI.PHPickerViewControllerDelegateProtocol
+import platform.Foundation.NSURL
+import platform.Foundation.dataWithContentsOfURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
@@ -27,6 +25,7 @@ import platform.UIKit.UIImagePickerController
 import platform.UIKit.UIImagePickerControllerDelegateProtocol
 import platform.UIKit.UIImagePickerControllerEditedImage
 import platform.UIKit.UIImagePickerControllerOriginalImage
+import platform.UIKit.UIImagePickerControllerImageURL
 import platform.UIKit.UIImagePickerControllerSourceType
 import platform.UIKit.UINavigationControllerDelegateProtocol
 import platform.UIKit.UIWindow
@@ -135,41 +134,66 @@ private fun saveJpegToDir(data: platform.Foundation.NSData, dir: String): String
 @Composable
 actual fun rememberPhotoPicker(onResult: (path: String?, exifLat: Double?, exifLng: Double?, exifDate: LocalDate?) -> Unit): () -> Unit {
     val currentOnResult = rememberUpdatedState(onResult)
-    val imageStorage = remember { IosImageStorage() }
     val retainedDelegates = remember { mutableSetOf<Any>() }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
     return remember {
         {
-            val config = PHPickerConfiguration()
-            config.filter = PHPickerFilter.imagesFilter
-            config.selectionLimit = 1
-            val picker = PHPickerViewController(configuration = config)
-            val delegate = object : NSObject(), PHPickerViewControllerDelegateProtocol {
-                override fun picker(picker: PHPickerViewController, didFinishPicking: List<*>) {
+            val picker = UIImagePickerController()
+            picker.sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary
+            picker.allowsEditing = false
+            val delegate = object : NSObject(),
+                UIImagePickerControllerDelegateProtocol,
+                UINavigationControllerDelegateProtocol {
+                override fun imagePickerController(
+                    picker: UIImagePickerController,
+                    didFinishPickingMediaWithInfo: Map<Any?, *>
+                ) {
                     retainedDelegates.remove(this)
                     picker.dismissViewControllerAnimated(true, null)
-                    val result = didFinishPicking.firstOrNull() as? PHPickerResult
-                    val provider = result?.itemProvider
-                    if (provider != null && provider.hasItemConformingToTypeIdentifier("public.image")) {
-                        provider.loadDataRepresentationForTypeIdentifier("public.image") { nsData, _ ->
-                            val image = nsData?.let { UIImage(data = it) }
-                            val jpegData = image?.let { UIImageJPEGRepresentation(resizeUIImage(it), IMAGE_JPEG_QUALITY / 100.0) }
-                            val exif = nsData?.let { extractExif(it) }
-                            scope.launch {
-                                if (jpegData != null) {
-                                    val dir = "${NSHomeDirectory()}/Documents/item_photos"
-                                    val destPath = saveJpegToDir(jpegData, dir)
-                                    currentOnResult.value(destPath, exif?.latitude, exif?.longitude, exif?.date)
-                                } else {
-                                    currentOnResult.value(null, null, null, null)
-                                }
-                            }
-                        }
-                    } else {
-                        scope.launch {
-                            currentOnResult.value(null, null, null, null)
+                    
+                    // 1. Extract EXIF data from original image URL (before cropping/editing strips it)
+                    val imageURL = didFinishPickingMediaWithInfo[UIImagePickerControllerImageURL] as? NSURL
+                    var exif: ExifMetadata? = null
+                    if (imageURL != null) {
+                        val nsData = NSData.dataWithContentsOfURL(imageURL)
+                        if (nsData != null) {
+                            exif = extractExif(nsData)
                         }
                     }
+
+                    // 2. Get the original image
+                    val image = didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage] as? UIImage
+                    val data = image?.let { UIImageJPEGRepresentation(resizeUIImage(it), IMAGE_JPEG_QUALITY / 100.0) }
+                    if (data != null) {
+                        val dir = "${NSHomeDirectory()}/Documents/item_photos"
+                        val tempPath = saveJpegToDir(data, dir)
+                        
+                        val cropper = ImageCropperRegistry.cropper
+                        if (cropper != null) {
+                            cropper.cropImage(
+                                imagePath = tempPath,
+                                onSuccess = { croppedPath ->
+                                    if (tempPath != croppedPath) {
+                                        platform.Foundation.NSFileManager.defaultManager.removeItemAtPath(tempPath, null)
+                                    }
+                                    currentOnResult.value(croppedPath, exif?.latitude, exif?.longitude, exif?.date)
+                                },
+                                onCancel = {
+                                    platform.Foundation.NSFileManager.defaultManager.removeItemAtPath(tempPath, null)
+                                    currentOnResult.value(null, null, null, null)
+                                }
+                            )
+                        } else {
+                            currentOnResult.value(tempPath, exif?.latitude, exif?.longitude, exif?.date)
+                        }
+                    } else {
+                        currentOnResult.value(null, null, null, null)
+                    }
+                }
+
+                override fun imagePickerControllerDidCancel(picker: UIImagePickerController) {
+                    retainedDelegates.remove(this)
+                    picker.dismissViewControllerAnimated(true, null)
+                    currentOnResult.value(null, null, null, null)
                 }
             }
             retainedDelegates.add(delegate)
@@ -189,7 +213,7 @@ actual fun rememberCameraCapture(onResult: (path: String?, exifLat: Double?, exi
         {
             val picker = UIImagePickerController()
             picker.sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera
-            picker.allowsEditing = true
+            picker.allowsEditing = false
             val delegate = object : NSObject(),
                 UIImagePickerControllerDelegateProtocol,
                 UINavigationControllerDelegateProtocol {
@@ -199,14 +223,31 @@ actual fun rememberCameraCapture(onResult: (path: String?, exifLat: Double?, exi
                 ) {
                     retainedDelegates.remove(this)
                     picker.dismissViewControllerAnimated(true, null)
-                    val image = (didFinishPickingMediaWithInfo[UIImagePickerControllerEditedImage]
-                        ?: didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage])
-                            as? UIImage
+                    
+                    val image = didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage] as? UIImage
                     val data = image?.let { UIImageJPEGRepresentation(resizeUIImage(it), IMAGE_JPEG_QUALITY / 100.0) }
                     if (data != null) {
                         val dir = "${NSHomeDirectory()}/Documents/item_photos"
-                        val destPath = saveJpegToDir(data, dir)
-                        currentOnResult.value(destPath, null, null)
+                        val tempPath = saveJpegToDir(data, dir)
+                        
+                        val cropper = ImageCropperRegistry.cropper
+                        if (cropper != null) {
+                            cropper.cropImage(
+                                imagePath = tempPath,
+                                onSuccess = { croppedPath ->
+                                    if (tempPath != croppedPath) {
+                                        platform.Foundation.NSFileManager.defaultManager.removeItemAtPath(tempPath, null)
+                                    }
+                                    currentOnResult.value(croppedPath, null, null)
+                                },
+                                onCancel = {
+                                    platform.Foundation.NSFileManager.defaultManager.removeItemAtPath(tempPath, null)
+                                    currentOnResult.value(null, null, null)
+                                }
+                            )
+                        } else {
+                            currentOnResult.value(tempPath, null, null)
+                        }
                     } else {
                         currentOnResult.value(null, null, null)
                     }

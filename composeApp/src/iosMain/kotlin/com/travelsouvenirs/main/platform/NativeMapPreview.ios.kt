@@ -30,11 +30,20 @@ import kotlinx.cinterop.ObjCAction
 import platform.darwin.NSObject
 import platform.objc.sel_registerName
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 @Composable
 internal fun NativeMapPreview(latitude: Double, longitude: Double, label: String, modifier: Modifier) {
     val showZoomButtons = remember { mutableStateOf(false) }
     val zoomDistance = remember { mutableStateOf(500_000.0) }
+
+    val tapTarget = remember {
+        object : NSObject() {
+            @ObjCAction
+            fun handleTap(r: UITapGestureRecognizer) {
+                showZoomButtons.value = true
+            }
+        }
+    }
 
     val mapView = remember {
         MKMapView().apply {
@@ -49,12 +58,7 @@ internal fun NativeMapPreview(latitude: Double, longitude: Double, label: String
             pin.setTitle(label)
             addAnnotation(pin as MKAnnotationProtocol)
             val tap = UITapGestureRecognizer().apply {
-                addTarget(object : NSObject() {
-                    @ObjCAction
-                    fun handleTap(r: UITapGestureRecognizer) {
-                        showZoomButtons.value = true
-                    }
-                }, action = sel_registerName("handleTap:"))
+                addTarget(tapTarget, action = sel_registerName("handleTap:"))
             }
             addGestureRecognizer(tap)
         }

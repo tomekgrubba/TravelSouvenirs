@@ -13,6 +13,7 @@ import platform.CoreLocation.CLLocationCoordinate2DMake
 import platform.MapKit.MKAnnotationProtocol
 import platform.MapKit.MKAnnotationView
 import platform.MapKit.MKAnnotationViewDragStateEnding
+import platform.MapKit.MKMarkerAnnotationView
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
 import platform.MapKit.MKMapView
 import platform.MapKit.MKMapViewDelegateProtocol
@@ -28,7 +29,7 @@ import platform.darwin.NSObject
 private const val PICKER_ZOOM_DISTANCE = 50_000.0   // metres for "zoom in" flyTo equivalent
 private const val PICKER_PAN_DISTANCE  = 500_000.0  // metres – if region is already closer, just pan
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 @Composable
 actual fun PlatformMapLocationPicker(
     selectedLat: Double?,
@@ -45,12 +46,11 @@ actual fun PlatformMapLocationPicker(
 
             override fun mapView(mapView: MKMapView, viewForAnnotation: MKAnnotationProtocol): MKAnnotationView? {
                 if (viewForAnnotation !== annotation) return null
-                val view = (mapView.dequeueReusableAnnotationViewWithIdentifier("picker") as? MKAnnotationView)
-                    ?: MKAnnotationView(annotation = viewForAnnotation, reuseIdentifier = "picker")
+                val view = (mapView.dequeueReusableAnnotationViewWithIdentifier("picker") as? MKMarkerAnnotationView)
+                    ?: MKMarkerAnnotationView(annotation = viewForAnnotation, reuseIdentifier = "picker")
                 view.annotation = viewForAnnotation
                 view.draggable = true
                 view.canShowCallout = false
-                view.image = null
                 return view
             }
 
@@ -69,28 +69,32 @@ actual fun PlatformMapLocationPicker(
         }
     }
 
+    val tapTarget = remember {
+        object : NSObject() {
+            @ObjCAction
+            fun handleTap(recognizer: UITapGestureRecognizer) {
+                if (recognizer.state != UIGestureRecognizerStateEnded) return
+                val mapViewRef = recognizer.view as? MKMapView ?: return
+                val point = recognizer.locationInView(mapViewRef)
+                val coord = mapViewRef.convertPoint(point, toCoordinateFromView = mapViewRef)
+                coord.useContents {
+                    val lat = latitude
+                    val lng = longitude
+                    annotation.setCoordinate(CLLocationCoordinate2DMake(lat, lng))
+                    if (!mapViewRef.annotations.contains(annotation as MKAnnotationProtocol)) {
+                        mapViewRef.addAnnotation(annotation as MKAnnotationProtocol)
+                    }
+                    onLocationPickedState.value(lat, lng)
+                }
+            }
+        }
+    }
+
     val mapView = remember {
         MKMapView().apply {
             this.delegate = delegate as MKMapViewDelegateProtocol
-            val mapViewRef = this
             val tap = UITapGestureRecognizer().apply {
-                addTarget(object : NSObject() {
-                    @ObjCAction
-                    fun handleTap(recognizer: UITapGestureRecognizer) {
-                        if (recognizer.state != UIGestureRecognizerStateEnded) return
-                        val point = recognizer.locationInView(mapViewRef)
-                        val coord = mapViewRef.convertPoint(point, toCoordinateFromView = mapViewRef)
-                        coord.useContents {
-                            val lat = latitude
-                            val lng = longitude
-                            annotation.setCoordinate(CLLocationCoordinate2DMake(lat, lng))
-                            if (!mapViewRef.annotations.contains(annotation as MKAnnotationProtocol)) {
-                                mapViewRef.addAnnotation(annotation as MKAnnotationProtocol)
-                            }
-                            onLocationPickedState.value(lat, lng)
-                        }
-                    }
-                }, action = platform.objc.sel_registerName("handleTap:"))
+                addTarget(tapTarget, action = platform.objc.sel_registerName("handleTap:"))
             }
             this.addGestureRecognizer(tap)
         }

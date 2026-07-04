@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.travelsouvenirs.main.auth.AuthRepository
 import com.travelsouvenirs.main.auth.GoogleSignInHelper
+import com.travelsouvenirs.main.util.ErrorUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,7 +46,7 @@ class SignInViewModel(
                 }
                 _uiState.value = SignInUiState()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Sign-in failed.")
+                _uiState.value = _uiState.value.copy(isLoading = false, error = ErrorUtils.getFriendlyErrorMessage(e))
             }
         }
     }
@@ -58,7 +59,7 @@ class SignInViewModel(
                 authRepository.signInWithGoogle(idToken)
                 _uiState.value = SignInUiState()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Google Sign-In failed.")
+                _uiState.value = _uiState.value.copy(isLoading = false, error = ErrorUtils.getFriendlyErrorMessage(e))
             }
         }
     }

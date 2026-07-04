@@ -208,7 +208,7 @@ internal fun NativeMapsContent(onPinClick: (Long) -> Unit, onAddClick: () -> Uni
             if (target != null) {
                 val newRegion = MKCoordinateRegionMake(
                     CLLocationCoordinate2DMake(target.latitude, target.longitude),
-                    span
+                    MKCoordinateSpanMake(span.latitudeDelta, span.longitudeDelta)
                 )
                 mapView.setRegion(newRegion, animated = true)
             }

@@ -6,4 +6,5 @@ target 'iosApp' do
   pod 'FirebaseFirestore', '~> 11.0'
   pod 'FirebaseStorage', '~> 11.0'
   pod 'GoogleSignIn', '~> 8.0'
+  pod 'TOCropViewController', '~> 2.6'
 end
