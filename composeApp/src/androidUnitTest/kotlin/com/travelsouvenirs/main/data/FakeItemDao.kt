@@ -42,8 +42,30 @@ class FakeItemDao : ItemDao {
         publish()
     }
 
-    override suspend fun getPendingItems(): List<ItemEntity> = emptyList()
+    override suspend fun getPendingItems(): List<ItemEntity> =
+        store.values.filter { it.syncStatus == "PENDING_UPLOAD" || it.syncStatus == "PENDING_DELETE" }
     override suspend fun updateSyncMeta(id: Long, status: String, fbId: String, storagePath: String, storageUrl: String, ts: Long) {}
+    override suspend fun updateSyncMetaIfUnmodified(id: Long, status: String, fbId: String, storagePath: String, storageUrl: String, ts: Long, expectedTs: Long): Int {
+        val current = store[id] ?: return 0
+        if (current.updatedAtMillis == expectedTs) {
+            store[id] = current.copy(
+                syncStatus = status,
+                firebaseId = fbId,
+                photoStoragePath = storagePath,
+                photoStorageUrl = storageUrl,
+                updatedAtMillis = ts
+            )
+            publish()
+            return 1
+        }
+        return 0
+    }
+    override suspend fun updatePhotoPath(id: Long, photoPath: String) {
+        store[id]?.let {
+            store[id] = it.copy(photoPath = photoPath)
+            publish()
+        }
+    }
     override suspend fun markSynced(fbId: String) {}
     override suspend fun getItemByFirebaseId(fbId: String): ItemEntity? = null
     override suspend fun hardDeleteByFirebaseId(fbId: String) { store.entries.removeIf { it.value.firebaseId == fbId }; publish() }

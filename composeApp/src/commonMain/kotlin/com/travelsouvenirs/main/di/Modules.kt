@@ -9,10 +9,14 @@ import com.travelsouvenirs.main.data.buildItemDatabase
 import com.travelsouvenirs.main.domain.usecase.DeleteItemUseCase
 import com.travelsouvenirs.main.domain.usecase.FilterItemsUseCase
 import com.travelsouvenirs.main.domain.usecase.SaveItemUseCase
+import com.travelsouvenirs.main.sync.CategorySyncEngine
 import com.travelsouvenirs.main.sync.CategorySyncService
 import com.travelsouvenirs.main.sync.CloudImageStorage
+import com.travelsouvenirs.main.sync.DefaultSyncCoordinator
+import com.travelsouvenirs.main.sync.ImageSyncEngine
 import com.travelsouvenirs.main.sync.ImageSyncHelper
 import com.travelsouvenirs.main.sync.ImageSyncService
+import com.travelsouvenirs.main.sync.MetadataSyncEngine
 import com.travelsouvenirs.main.sync.MetadataSyncService
 import com.travelsouvenirs.main.sync.SyncCoordinator
 import com.travelsouvenirs.main.ui.add.AddItemViewModel
@@ -43,11 +47,11 @@ val dataModule = module {
 val syncModule = module {
     single { Firebase.firestore }
     single<CloudImageStorage> { ImageSyncHelper(Firebase.storage) }
-    single { MetadataSyncService(get(), get(), get(), get()) }
-    single { ImageSyncService(get(), get()) }
-    single { CategorySyncService(get(), get(), get()) }
-    single {
-        SyncCoordinator(
+    single<MetadataSyncEngine> { MetadataSyncService(get(), get(), get(), get(), getOrNull()) }
+    single<ImageSyncEngine> { ImageSyncService(get(), get()) }
+    single<CategorySyncEngine> { CategorySyncService(get(), get(), get()) }
+    single<SyncCoordinator> {
+        DefaultSyncCoordinator(
             cloudImageStorage = get(),
             authRepository = get(),
             appSettings = get(),

@@ -37,6 +37,14 @@ interface ItemDao {
     @Query("UPDATE items SET syncStatus = :status, firebaseId = :fbId, photoStoragePath = :storagePath, photoStorageUrl = :storageUrl, updatedAtMillis = :ts WHERE id = :id")
     suspend fun updateSyncMeta(id: Long, status: String, fbId: String, storagePath: String, storageUrl: String, ts: Long)
 
+    /** Updates sync metadata only if the item has not been modified since upload started. */
+    @Query("UPDATE items SET syncStatus = :status, firebaseId = :fbId, photoStoragePath = :storagePath, photoStorageUrl = :storageUrl, updatedAtMillis = :ts WHERE id = :id AND updatedAtMillis = :expectedTs")
+    suspend fun updateSyncMetaIfUnmodified(id: Long, status: String, fbId: String, storagePath: String, storageUrl: String, ts: Long, expectedTs: Long): Int
+
+    /** Targeted update for photoPath without touching other columns. */
+    @Query("UPDATE items SET photoPath = :photoPath WHERE id = :id")
+    suspend fun updatePhotoPath(id: Long, photoPath: String)
+
     /** Marks an item as SYNCED by its Firebase ID. */
     @Query("UPDATE items SET syncStatus = 'SYNCED' WHERE firebaseId = :fbId")
     suspend fun markSynced(fbId: String)

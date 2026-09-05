@@ -9,7 +9,6 @@ import com.travelsouvenirs.main.data.ItemRepository
 import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.util.AppSettings
-import org.mockito.kotlin.mock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -63,6 +62,34 @@ private class FakeImageLocationAnalyzer : ImageLocationAnalyzer {
     override suspend fun analyze(imagePath: String, lat: Double?, lng: Double?): String? = null
 }
 
+private class FakeAuthRepository : AuthRepository {
+    override val currentUser: kotlinx.coroutines.flow.StateFlow<dev.gitlive.firebase.auth.FirebaseUser?> =
+        kotlinx.coroutines.flow.MutableStateFlow(null)
+    override suspend fun signInWithEmail(email: String, password: String): dev.gitlive.firebase.auth.FirebaseUser = error("Unused")
+    override suspend fun createAccount(email: String, password: String): dev.gitlive.firebase.auth.FirebaseUser = error("Unused")
+    override suspend fun signInWithGoogle(idToken: String): dev.gitlive.firebase.auth.FirebaseUser = error("Unused")
+    override suspend fun sendPasswordResetEmail(email: String) {}
+    override suspend fun signOut() {}
+}
+
+private class FakeImageStorage : ImageStorage {
+    override suspend fun copyToInternalStorage(sourcePath: String): String? = null
+    override suspend fun deleteImage(path: String) {}
+    override fun localPathForDownload(firebaseId: String): String = ""
+    override suspend fun deleteAllImages() {}
+}
+
+private class FakeSyncCoordinator : com.travelsouvenirs.main.sync.SyncCoordinator {
+    override val isSyncing: kotlinx.coroutines.flow.StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
+    override val isSyncingImages: kotlinx.coroutines.flow.StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
+    override val errors: kotlinx.coroutines.flow.SharedFlow<String> = kotlinx.coroutines.flow.MutableSharedFlow()
+    var cancelAllSyncsCalled = false
+    override fun cancelAllSyncs() { cancelAllSyncsCalled = true }
+    override suspend fun sync() {}
+    override suspend fun syncData() {}
+    override suspend fun syncImages() {}
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
@@ -79,10 +106,10 @@ class SettingsViewModelTest {
         AppSettings(settings),
         ItemRepository(itemDao),
         CategoryRepository(categoryDao, itemDao),
-        mock<AuthRepository>(),
-        mock<ImageStorage>(),
+        FakeAuthRepository(),
+        FakeImageStorage(),
         FakeImageLocationAnalyzer(),
-        mock<com.travelsouvenirs.main.sync.SyncCoordinator>(),
+        FakeSyncCoordinator(),
     )
 
     @Test
@@ -234,5 +261,66 @@ class SettingsViewModelTest {
         vm.addCategory("First")
         assertTrue(vm.renameCategory("First", "first"))
         assertEquals(listOf("first"), vm.customCategories.value)
+    }
+
+    @Test
+    fun `signOut when no pending uploads prompts for confirmation without warning`() = runTest {
+        val vm = vm()
+        vm.signOut()
+        assertTrue(vm.uiState.value.showSignOutConfirmation)
+        assertFalse(vm.uiState.value.showSignOutWarning)
+
+        vm.dismissSignOutWarning()
+        assertFalse(vm.uiState.value.showSignOutConfirmation)
+        assertFalse(vm.uiState.value.showSignOutWarning)
+    }
+
+    @Test
+    fun `signOut when pending uploads prompts with warning`() = runTest {
+        val dao = com.travelsouvenirs.main.data.FakeItemDao()
+        dao.insertItem(
+            com.travelsouvenirs.main.data.ItemEntity(
+                name = "Pending item",
+                syncStatus = "PENDING_UPLOAD",
+                dateAcquired = "2026-01-01",
+                category = "Souvenirs",
+                latitude = 1.0,
+                longitude = 1.0,
+                placeName = "Paris",
+                notes = "",
+                photoPath = "",
+                updatedAtMillis = 1000L,
+            )
+        )
+        val vm = vm(itemDao = dao)
+        vm.signOut()
+        assertTrue(vm.uiState.value.showSignOutWarning)
+        assertFalse(vm.uiState.value.showSignOutConfirmation)
+    }
+
+    @Test
+    fun `confirmSignOut clears database, images, and settings`() = runTest {
+        val settings = FakeSettings(mapOf("notes" to "Saved notes"))
+        val dao = com.travelsouvenirs.main.data.FakeItemDao()
+        dao.insertItem(
+            com.travelsouvenirs.main.data.ItemEntity(
+                name = "Item",
+                syncStatus = "SYNCED",
+                dateAcquired = "2026-01-01",
+                category = "Souvenirs",
+                latitude = 1.0,
+                longitude = 1.0,
+                placeName = "Paris",
+                notes = "",
+                photoPath = "",
+                updatedAtMillis = 1000L,
+            )
+        )
+        val vm = vm(settings = settings, itemDao = dao)
+        vm.confirmSignOut()
+
+        assertFalse(vm.uiState.value.showSignOutConfirmation)
+        assertFalse(vm.uiState.value.showSignOutWarning)
+        assertTrue(dao.getItemsByCategory("Souvenirs").isEmpty())
     }
 }

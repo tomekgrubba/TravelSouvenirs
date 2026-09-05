@@ -25,6 +25,7 @@ data class SettingsUiState(
     val modelDownloadable: Boolean = false,
     val isDownloadingModel: Boolean = false,
     val showSignOutWarning: Boolean = false,
+    val showSignOutConfirmation: Boolean = false,
 )
 
 /** Persists appearance and sync settings; delegates category management to CategoryRepository. */
@@ -121,20 +122,28 @@ class SettingsViewModel(
     fun signOut(force: Boolean = false) {
         viewModelScope.launch {
             if (!force && repository.hasPendingUploads()) {
-                _uiState.update { it.copy(showSignOutWarning = true) }
+                _uiState.update { it.copy(showSignOutWarning = true, showSignOutConfirmation = false) }
+            } else if (!force) {
+                _uiState.update { it.copy(showSignOutConfirmation = true, showSignOutWarning = false) }
             } else {
-                _uiState.update { it.copy(showSignOutWarning = false) }
-                syncCoordinator.cancelAllSyncs()
-                repository.deleteAll()
-                categoryRepository.setAll(emptyList())
-                imageStorage.deleteAllImages()
-                appSettings.clear()
-                authRepository.signOut()
+                confirmSignOut()
             }
         }
     }
 
+    fun confirmSignOut() {
+        _uiState.update { it.copy(showSignOutWarning = false, showSignOutConfirmation = false) }
+        viewModelScope.launch {
+            syncCoordinator.cancelAllSyncs()
+            repository.deleteAll()
+            categoryRepository.setAll(emptyList())
+            imageStorage.deleteAllImages()
+            appSettings.clear()
+            authRepository.signOut()
+        }
+    }
+
     fun dismissSignOutWarning() {
-        _uiState.update { it.copy(showSignOutWarning = false) }
+        _uiState.update { it.copy(showSignOutWarning = false, showSignOutConfirmation = false) }
     }
 }

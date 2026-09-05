@@ -170,12 +170,29 @@ fun SettingsScreen(onBack: () -> Unit = {}, onSignInClick: () -> Unit = {}) {
         AlertDialog(
             onDismissRequest = { vm.dismissSignOutWarning() },
             title = { Text("Unsynced Souvenirs") },
-            text = { Text("You have photos that haven't been saved to the cloud yet. If you log out now, these souvenirs will be lost forever. Are you sure you want to log out?") },
+            text = { Text("You have photos or souvenirs that haven't been saved to the cloud yet. If you log out now, these souvenirs will be lost forever. Are you sure you want to log out?") },
             confirmButton = {
                 TextButton(
                     onClick = { vm.signOut(force = true) },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) { Text("Sign out anyway") }
+            },
+            dismissButton = {
+                TextButton(onClick = { vm.dismissSignOutWarning() }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (uiState.showSignOutConfirmation) {
+        AlertDialog(
+            onDismissRequest = { vm.dismissSignOutWarning() },
+            title = { Text(stringResource(Res.string.btn_sign_out)) },
+            text = { Text("Are you sure you want to sign out? Your souvenirs will remain safe in the cloud and can be restored when you sign back in.") },
+            confirmButton = {
+                TextButton(
+                    onClick = { vm.confirmSignOut() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text(stringResource(Res.string.btn_sign_out)) }
             },
             dismissButton = {
                 TextButton(onClick = { vm.dismissSignOutWarning() }) { Text("Cancel") }

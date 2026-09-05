@@ -55,10 +55,14 @@ class AddItemViewModelTest {
     private lateinit var dao: FakeItemDao
     private lateinit var categoryDao: FakeCategoryDao
     private lateinit var repository: ItemRepository
+    private var analyzeCalled = false
     private val fakeLocationService = FakeLocationService()
     private val fakeImageStorage = FakeImageStorage()
     private val fakeImageLocationAnalyzer = object : com.travelsouvenirs.main.image.ImageLocationAnalyzer {
-        override suspend fun analyze(imagePath: String, lat: Double?, lng: Double?): String? = null
+        override suspend fun analyze(imagePath: String, lat: Double?, lng: Double?): String? {
+            analyzeCalled = true
+            return "Paris, France"
+        }
     }
 
     @Before
@@ -67,6 +71,7 @@ class AddItemViewModelTest {
         dao = FakeItemDao()
         categoryDao = FakeCategoryDao()
         repository = ItemRepository(dao)
+        analyzeCalled = false
     }
 
     @After
@@ -85,6 +90,7 @@ class AddItemViewModelTest {
         editId,
         CategoryRepository(categoryDaoOverride, dao),
         fakeImageLocationAnalyzer,
+        testDispatcher,
     )
 
     private val AddItemViewModel.state get() = uiState.value
@@ -141,6 +147,20 @@ class AddItemViewModelTest {
         val vm = viewModel()
         setPhotoPath(vm, "/source/image.jpg")
         assertEquals("/source/image.jpg", vm.state.photoPath)
+    }
+
+    @Test
+    fun `onPhotoSelected triggers AI analysis when creating new item`() = runTest {
+        val vm = viewModel(editId = null)
+        vm.onPhotoSelected("/source/image.jpg")
+        assertTrue(analyzeCalled)
+    }
+
+    @Test
+    fun `onPhotoSelected does not trigger AI analysis when editing existing item`() = runTest {
+        val vm = viewModel(editId = 1L)
+        vm.onPhotoSelected("/source/image.jpg")
+        assertFalse(analyzeCalled)
     }
 
     @Test

@@ -6,13 +6,18 @@ import com.travelsouvenirs.main.util.AppSettings
 import com.travelsouvenirs.main.util.nowEpochMillis
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 
+/** Engine interface for syncing categories. */
+interface CategorySyncEngine {
+    suspend fun sync(userId: String)
+}
+
 /** Bidirectional sync of custom categories with Firestore. Wins go to whichever side is newer. */
 class CategorySyncService(
     private val firestore: FirebaseFirestore,
     private val categoryRepository: CategoryRepository,
     private val appSettings: AppSettings,
-) {
-    suspend fun sync(userId: String) {
+) : CategorySyncEngine {
+    override suspend fun sync(userId: String) {
         val remoteRef = firestore
             .collection("users").document(userId)
             .collection("settings").document("categories")

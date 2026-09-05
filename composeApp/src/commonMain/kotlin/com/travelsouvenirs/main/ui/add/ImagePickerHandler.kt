@@ -1,6 +1,7 @@
 package com.travelsouvenirs.main.ui.add
 
 import com.travelsouvenirs.main.image.ImageStorage
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,9 +18,10 @@ import kotlinx.coroutines.launch
 class ImagePickerHandler(
     private val imageStorage: ImageStorage,
     initialPhotoPath: String? = null,
+    coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : AutoCloseable {
 
-    private val cleanupScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val cleanupScope = CoroutineScope(coroutineDispatcher + SupervisorJob())
 
     private val _photoPath = MutableStateFlow(initialPhotoPath)
     val photoPath: StateFlow<String?> = _photoPath.asStateFlow()

@@ -11,6 +11,16 @@ struct iOSApp: App {
         
         // Register the Swift image cropper implementation with Kotlin/Native
         ImageCropperRegistry.shared.cropper = ImageCropperImpl()
+        
+        // Trigger a sync every time the app comes to the foreground.
+        // This is more reliable than LifecycleEventEffect(ON_RESUME) in Compose Multiplatform on iOS.
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainViewControllerKt.appDidBecomeActive()
+        }
     }
 
     var body: some Scene {

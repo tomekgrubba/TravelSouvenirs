@@ -2,20 +2,14 @@ package com.travelsouvenirs.main.sync
 
 import com.russhwolf.settings.Settings
 import com.travelsouvenirs.main.auth.AuthRepository
-import com.travelsouvenirs.main.data.ItemDao
-import com.travelsouvenirs.main.data.ItemEntity
-import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.network.NetworkMonitor
 import com.travelsouvenirs.main.util.AppSettings
 import dev.gitlive.firebase.auth.FirebaseUser
-import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import org.mockito.kotlin.mock
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -32,15 +26,44 @@ class SyncRepositoryTest {
         override val isWifi: StateFlow<Boolean> = MutableStateFlow(wifi)
     }
 
-    private class FakeAuthRepository(userId: String? = null) : AuthRepository {
-        override val currentUser: StateFlow<FirebaseUser?> = MutableStateFlow(
-            if (userId != null) mock<FirebaseUser>().also { /* uid stubbed below */ } else null
-        )
-        override suspend fun signInWithEmail(email: String, password: String): FirebaseUser = mock()
-        override suspend fun createAccount(email: String, password: String): FirebaseUser = mock()
-        override suspend fun signInWithGoogle(idToken: String): FirebaseUser = mock()
+    private class FakeAuthRepository(user: FirebaseUser? = null) : AuthRepository {
+        override val currentUser: StateFlow<FirebaseUser?> = MutableStateFlow(user)
+        override suspend fun signInWithEmail(email: String, password: String): FirebaseUser = error("Unused")
+        override suspend fun createAccount(email: String, password: String): FirebaseUser = error("Unused")
+        override suspend fun signInWithGoogle(idToken: String): FirebaseUser = error("Unused")
         override suspend fun sendPasswordResetEmail(email: String) {}
         override suspend fun signOut() {}
+    }
+
+    private class FakeCloudImageStorage : CloudImageStorage {
+        override suspend fun upload(userId: String, firebaseId: String, localPath: String): Pair<String, String> =
+            "path" to "url"
+        override suspend fun delete(storagePath: String) {}
+    }
+
+    private class FakeMetadataSyncEngine : MetadataSyncEngine {
+        var downloadCalled = false
+        var uploadCalled = false
+        override suspend fun downloadRemoteMetadata(userId: String) {
+            downloadCalled = true
+        }
+        override suspend fun uploadPending(userId: String, cloudImageStorage: CloudImageStorage) {
+            uploadCalled = true
+        }
+    }
+
+    private class FakeImageSyncEngine : ImageSyncEngine {
+        var downloadCalled = false
+        override suspend fun downloadMissingImages() {
+            downloadCalled = true
+        }
+    }
+
+    private class FakeCategorySyncEngine : CategorySyncEngine {
+        var syncCalled = false
+        override suspend fun sync(userId: String) {
+            syncCalled = true
+        }
     }
 
     private class FakeSettings(initial: Map<String, Any> = emptyMap()) : Settings {
@@ -70,45 +93,22 @@ class SyncRepositoryTest {
         override fun getBooleanOrNull(key: String) = store[key] as? Boolean
     }
 
-    private class NoOpItemDao : ItemDao {
-        private val empty = MutableStateFlow<List<ItemEntity>>(emptyList())
-        override fun getAllActiveItems(): Flow<List<ItemEntity>> = empty
-        override suspend fun getItemById(id: Long): ItemEntity? = null
-        override fun getItemByIdFlow(id: Long): Flow<ItemEntity?> = MutableStateFlow(null)
-        override suspend fun insertItem(item: ItemEntity): Long = 0L
-        override suspend fun deleteItem(item: ItemEntity) {}
-        override suspend fun reassignCategory(fromCategory: String, toCategory: String, ts: Long) {}
-        override suspend fun getPendingItems(): List<ItemEntity> = emptyList()
-        override suspend fun updateSyncMeta(id: Long, status: String, fbId: String, storagePath: String, storageUrl: String, ts: Long) {}
-        override suspend fun markSynced(fbId: String) {}
-        override suspend fun getItemByFirebaseId(fbId: String): ItemEntity? = null
-        override suspend fun hardDeleteByFirebaseId(fbId: String) {}
-        override suspend fun getItemsByCategory(categoryName: String): List<ItemEntity> = emptyList()
-        override suspend fun getItemsWithMissingLocalPhotos(): List<ItemEntity> = emptyList()
-        override suspend fun deleteAll() {}
-
-        override suspend fun deleteCategoryDirectly(name: String) {}
-        override suspend fun deleteCategoryAndReassignItems(categoryName: String, defaultCategory: String, ts: Long) {}
-        override suspend fun deleteCategoriesAndReassignItems(categoryNames: List<String>, defaultCategory: String, ts: Long) {}
-    }
-
     private fun buildRepo(
         networkMonitor: NetworkMonitor,
         appSettings: AppSettings,
-        authUserId: String? = null,
+        authRepo: AuthRepository = FakeAuthRepository(),
+        metadataSync: MetadataSyncEngine = FakeMetadataSyncEngine(),
+        imageSync: ImageSyncEngine = FakeImageSyncEngine(),
+        categorySync: CategorySyncEngine = FakeCategorySyncEngine(),
     ): SyncCoordinator {
-        val firestore = mock<FirebaseFirestore>()
-        val dao = NoOpItemDao()
-        val fakeCategoryDao = com.travelsouvenirs.main.data.FakeCategoryDao()
-        val categoryRepo = com.travelsouvenirs.main.data.CategoryRepository(fakeCategoryDao, dao)
-        return SyncCoordinator(
-            cloudImageStorage = mock<CloudImageStorage>(),
-            authRepository = FakeAuthRepository(authUserId),
+        return DefaultSyncCoordinator(
+            cloudImageStorage = FakeCloudImageStorage(),
+            authRepository = authRepo,
             appSettings = appSettings,
             networkMonitor = networkMonitor,
-            metadataSync = MetadataSyncService(dao, fakeCategoryDao, firestore, appSettings),
-            imageSync = ImageSyncService(dao, mock<com.travelsouvenirs.main.image.ImageStorage>()),
-            categorySync = CategorySyncService(firestore, categoryRepo, appSettings),
+            metadataSync = metadataSync,
+            imageSync = imageSync,
+            categorySync = categorySync,
         )
     }
 

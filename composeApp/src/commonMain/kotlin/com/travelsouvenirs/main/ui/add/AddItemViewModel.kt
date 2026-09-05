@@ -12,6 +12,8 @@ import com.travelsouvenirs.main.image.ImageLocationAnalyzer
 import com.travelsouvenirs.main.image.ImageStorage
 import com.travelsouvenirs.main.location.LocationService
 import com.travelsouvenirs.main.location.PlaceResult
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +32,7 @@ data class AddItemUiState(
     val longitude: Double = 0.0,
     val placeName: String = "",
     val isSaved: Boolean = false,
+    val isSaving: Boolean = false,
     // Location picker dialog state
     val showLocationDialog: Boolean = false,
     val pendingLat: Double? = null,
@@ -58,10 +61,11 @@ class AddItemViewModel(
     private val editId: Long? = null,
     private val categoryRepository: CategoryRepository,
     private val imageLocationAnalyzer: ImageLocationAnalyzer,
+    coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val saveItem = SaveItemUseCase(repository)
-    private val imagePicker = ImagePickerHandler(imageStorage)
+    private val imagePicker = ImagePickerHandler(imageStorage, coroutineDispatcher = coroutineDispatcher)
 
     private val _uiState = MutableStateFlow(AddItemUiState())
     val uiState: StateFlow<AddItemUiState> = _uiState
@@ -112,7 +116,7 @@ class AddItemViewModel(
     fun onPhotoSelected(sourcePath: String, exifLat: Double? = null, exifLng: Double? = null, exifDate: LocalDate? = null) {
         imagePicker.onPhotoSelected(sourcePath) { path ->
             _uiState.update { it.copy(photoPath = path) }
-            if (path != null) {
+            if (path != null && editId == null) {
                 viewModelScope.launch {
                     val result = imageLocationAnalyzer.analyze(path, exifLat, exifLng)
                     if (result != null) {
@@ -141,8 +145,6 @@ class AddItemViewModel(
             if (first != null) {
                 val resolved = runCatching { locationService.reverseGeocode(first.latitude, first.longitude) }.getOrElse { first.name }
                 _uiState.update { it.copy(latitude = first.latitude, longitude = first.longitude, placeName = resolved) }
-            } else if (state.placeName.isBlank()) {
-                _uiState.update { it.copy(placeName = place) }
             }
         }
     }
@@ -304,24 +306,30 @@ class AddItemViewModel(
 
     fun saveItem() {
         val state = _uiState.value
+        if (state.isSaving || state.isSaved) return
         val path = state.photoPath ?: return
+        _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
-            val trimmedNotes = state.notes.trim()
-            val cleanNotes = trimmedNotes.replace(Regex("(\\r?\\n){3,}"), "\n\n")
-            val saved = saveItem(Item(
-                id = editId ?: 0,
-                name = state.name,
-                notes = cleanNotes,
-                photoPath = path,
-                latitude = state.latitude,
-                longitude = state.longitude,
-                placeName = state.placeName,
-                dateAcquired = state.dateAcquired,
-                category = state.category,
-            ))
-            if (saved) {
-                imagePicker.cleanupOnSave(path)
-                _uiState.update { it.copy(isSaved = true) }
+            try {
+                val trimmedNotes = state.notes.trim()
+                val cleanNotes = trimmedNotes.replace(Regex("(\\r?\\n){3,}"), "\n\n")
+                val saved = saveItem(Item(
+                    id = editId ?: 0,
+                    name = state.name,
+                    notes = cleanNotes,
+                    photoPath = path,
+                    latitude = state.latitude,
+                    longitude = state.longitude,
+                    placeName = state.placeName,
+                    dateAcquired = state.dateAcquired,
+                    category = state.category,
+                ))
+                if (saved) {
+                    imagePicker.cleanupOnSave(path)
+                    _uiState.update { it.copy(isSaved = true) }
+                }
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
             }
         }
     }

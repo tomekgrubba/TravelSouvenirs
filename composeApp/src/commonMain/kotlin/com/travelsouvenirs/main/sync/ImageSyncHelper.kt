@@ -10,4 +10,15 @@ class ImageSyncHelper(private val storage: FirebaseStorage) : CloudImageStorage 
         val url = ref.getDownloadUrl()
         return storagePath to url
     }
+
+    override suspend fun delete(storagePath: String) {
+        if (storagePath.isNotBlank()) {
+            try {
+                storage.reference(storagePath).delete()
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                // Ignore if already deleted or not found
+            }
+        }
+    }
 }

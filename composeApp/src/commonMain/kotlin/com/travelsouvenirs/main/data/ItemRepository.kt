@@ -19,6 +19,9 @@ class ItemRepository(private val dao: ItemDao) {
     suspend fun insertItem(item: Item): Long {
         val now = nowEpochMillis()
         val existing: ItemEntity? = if (item.id != 0L) dao.getItemById(item.id) else null
+        // If the photo has changed (new file selected), clear the old Firebase Storage
+        // path/URL so uploadPending knows it must re-upload the new image.
+        val photoChanged = existing != null && item.photoPath != existing.photoPath
         val entity = ItemEntity(
             id = item.id,
             name = item.name,
@@ -32,8 +35,8 @@ class ItemRepository(private val dao: ItemDao) {
             firebaseId = existing?.firebaseId ?: "",
             syncStatus = SyncStatus.PENDING_UPLOAD.name,
             updatedAtMillis = now,
-            photoStoragePath = existing?.photoStoragePath ?: "",
-            photoStorageUrl = existing?.photoStorageUrl ?: "",
+            photoStoragePath = if (photoChanged) "" else (existing?.photoStoragePath ?: ""),
+            photoStorageUrl  = if (photoChanged) "" else (existing?.photoStorageUrl  ?: ""),
         )
         return dao.insertItem(entity)
     }

@@ -143,9 +143,6 @@ fun MainScreen(
     val allItems by itemRepository.allItems.collectAsState(initial = emptyList())
     val showOnboarding = currentUser == null && allItems.isEmpty()
 
-    // Block back navigation during metadata sync
-    PlatformBackHandler(enabled = isSyncing) { /* block */ }
-
     BoxWithConstraints(Modifier.fillMaxSize()) {
     val isTablet = maxWidth >= 600.dp
     CompositionLocalProvider(LocalCategoryFilter provides categoryFilterVM) {
@@ -179,7 +176,6 @@ fun MainScreen(
                             )
                         }
                         IconButton(
-                            enabled = !isSyncing,
                             onClick = onSettingsClick
                         ) {
                             Icon(Icons.Default.Settings, contentDescription = stringResource(Res.string.cd_settings))
@@ -206,14 +202,12 @@ fun MainScreen(
                     ) {
                         Tab(
                             selected = selectedTab == MainTab.MAP,
-                            enabled = !isSyncing,
                             onClick = { selectedTabName = MainTab.MAP.name },
                             text = { Text(stringResource(Res.string.tab_map), style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 21.sp else 16.sp)) },
                             icon = { Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(if (isTablet) 32.dp else 24.dp)) }
                         )
                         Tab(
                             selected = selectedTab == MainTab.LIST,
-                            enabled = !isSyncing,
                             onClick = { selectedTabName = MainTab.LIST.name },
                             text = { Text(stringResource(Res.string.tab_list), style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isTablet) 21.sp else 16.sp)) },
                             icon = { Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(if (isTablet) 32.dp else 24.dp)) }

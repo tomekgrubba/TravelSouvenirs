@@ -7,4 +7,5 @@ interface CloudImageStorage {
      * Returns a Pair of: (relative storage path, absolute download URL).
      */
     suspend fun upload(userId: String, firebaseId: String, localPath: String): Pair<String, String>
+    suspend fun delete(storagePath: String)
 }

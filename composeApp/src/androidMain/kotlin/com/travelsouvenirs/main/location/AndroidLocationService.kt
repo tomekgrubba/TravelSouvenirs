@@ -12,6 +12,7 @@ import com.travelsouvenirs.main.domain.LatLon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -62,14 +63,25 @@ class AndroidLocationService(private val context: Context) : LocationService {
         return try {
             val geocoder = Geocoder(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                suspendCancellableCoroutine { cont ->
-                    geocoder.getFromLocation(lat, lng, 1) { addresses ->
-                        val name = addresses.firstOrNull()?.let { addr ->
-                            addr.locality ?: addr.subAdminArea ?: addr.adminArea
-                        } ?: "%.4f, %.4f".format(lat, lng)
-                        cont.resume(name)
+                withTimeoutOrNull(5_000) {
+                    suspendCancellableCoroutine { cont ->
+                        geocoder.getFromLocation(lat, lng, 1, object : Geocoder.GeocodeListener {
+                            override fun onGeocode(addresses: MutableList<android.location.Address>) {
+                                if (cont.isActive) {
+                                    val name = addresses.firstOrNull()?.let { addr ->
+                                        addr.locality ?: addr.subAdminArea ?: addr.adminArea
+                                    } ?: "%.4f, %.4f".format(lat, lng)
+                                    cont.resume(name)
+                                }
+                            }
+                            override fun onError(errorMessage: String?) {
+                                if (cont.isActive) {
+                                    cont.resume("%.4f, %.4f".format(lat, lng))
+                                }
+                            }
+                        })
                     }
-                }
+                } ?: "%.4f, %.4f".format(lat, lng)
             } else {
                 withContext(Dispatchers.IO) {
                     @Suppress("DEPRECATION")
@@ -89,9 +101,18 @@ class AndroidLocationService(private val context: Context) : LocationService {
         return try {
             val geocoder = Geocoder(context)
             val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                suspendCancellableCoroutine { cont ->
-                    geocoder.getFromLocationName(query, 5) { cont.resume(it) }
-                }
+                withTimeoutOrNull(5_000) {
+                    suspendCancellableCoroutine { cont ->
+                        geocoder.getFromLocationName(query, 5, object : Geocoder.GeocodeListener {
+                            override fun onGeocode(addresses: MutableList<android.location.Address>) {
+                                if (cont.isActive) cont.resume(addresses)
+                            }
+                            override fun onError(errorMessage: String?) {
+                                if (cont.isActive) cont.resume(emptyList())
+                            }
+                        })
+                    }
+                } ?: emptyList()
             } else {
                 withContext(Dispatchers.IO) {
                     @Suppress("DEPRECATION")

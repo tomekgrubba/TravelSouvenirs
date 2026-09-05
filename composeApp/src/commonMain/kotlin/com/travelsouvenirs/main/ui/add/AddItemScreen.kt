@@ -90,6 +90,7 @@ import com.travelsouvenirs.main.platform.PlatformMapLocationPicker
 import com.travelsouvenirs.main.platform.rememberCameraCapture
 import com.travelsouvenirs.main.platform.rememberLocationPermissionLauncher
 import com.travelsouvenirs.main.platform.rememberPhotoPicker
+import com.travelsouvenirs.main.platform.todayLocalDate
 import com.travelsouvenirs.main.util.formatDisplayDate
 import com.travelsouvenirs.main.util.localImageModel
 import com.travelsouvenirs.main.di.LocalAppViewModel
@@ -245,7 +246,7 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
         )
     }
 
-    val isFormValid = photoPath != null && name.isNotBlank() && placeName.isNotBlank()
+    val isFormValid = photoPath != null && name.isNotBlank() && placeName.isNotBlank() && (uiState.latitude != 0.0 || uiState.longitude != 0.0)
 
     Scaffold(
         topBar = {
@@ -556,11 +557,19 @@ fun AddItemScreen(onSaved: () -> Unit, onBack: () -> Unit, itemId: Long? = null)
 
             Button(
                 onClick = viewModel::saveItem,
-                enabled = isFormValid,
+                enabled = isFormValid && !uiState.isSaving,
                 shape = buttonShape,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(stringResource(Res.string.btn_save_item))
+                if (uiState.isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(stringResource(Res.string.btn_save_item))
+                }
             }
         }
     }
@@ -830,16 +839,17 @@ fun CustomDatePickerDialog(
     var selectedTab by remember { mutableStateOf(initialTab) }
 
     val initialParts = initialDate?.split("-")
-    val initialYear = initialParts?.getOrNull(0)?.toIntOrNull() ?: 2026
-    val initialMonth = initialParts?.getOrNull(1)?.toIntOrNull() ?: 5
+    val today = todayLocalDate()
+    val initialYear = initialParts?.getOrNull(0)?.toIntOrNull() ?: today.year
+    val initialMonth = initialParts?.getOrNull(1)?.toIntOrNull() ?: today.monthNumber
 
     var selectedYear by remember { mutableStateOf(initialYear) }
     var selectedMonth by remember { mutableStateOf(initialMonth) }
 
     val initialSelectedMillis = if (initialDate != null && initialParts?.size == 3) {
-        val y = initialParts[0].toIntOrNull() ?: 2026
-        val m = initialParts[1].toIntOrNull() ?: 5
-        val d = initialParts[2].toIntOrNull() ?: 12
+        val y = initialParts[0].toIntOrNull() ?: today.year
+        val m = initialParts[1].toIntOrNull() ?: today.monthNumber
+        val d = initialParts[2].toIntOrNull() ?: today.dayOfMonth
         runCatching {
             val localDate = LocalDate(y, m, d)
             localDate.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
@@ -972,8 +982,8 @@ fun CustomDatePickerDialog(
 
 @Composable
 fun YearPicker(selectedYear: Int, onYearSelected: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val currentYear = 2026
-    val years = remember { (currentYear downTo 1970).toList() }
+    val currentYear = todayLocalDate().year
+    val years = remember(currentYear) { (currentYear downTo 1970).toList() }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),

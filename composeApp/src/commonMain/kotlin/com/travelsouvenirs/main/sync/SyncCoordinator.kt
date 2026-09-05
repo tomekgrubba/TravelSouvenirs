@@ -19,32 +19,47 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
+ * Interface for orchestrating the two-phase sync: metadata first, then images.
+ */
+interface SyncCoordinator {
+    val isSyncing: StateFlow<Boolean>
+    val isSyncingImages: StateFlow<Boolean>
+    val errors: SharedFlow<String>
+    fun cancelAllSyncs()
+    suspend fun sync()
+    suspend fun syncData()
+    suspend fun syncImages()
+}
+
+/**
  * Orchestrates the two-phase sync: metadata first, then images.
  * Delegates the actual work to [MetadataSyncService], [ImageSyncService], and [CategorySyncService].
  */
-class SyncCoordinator(
+open class DefaultSyncCoordinator(
     private val cloudImageStorage: CloudImageStorage,
     private val authRepository: AuthRepository,
     private val appSettings: AppSettings,
     private val networkMonitor: NetworkMonitor,
-    private val metadataSync: MetadataSyncService,
-    private val imageSync: ImageSyncService,
-    private val categorySync: CategorySyncService,
-) {
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val metadataSync: MetadataSyncEngine,
+    private val imageSync: ImageSyncEngine,
+    private val categorySync: CategorySyncEngine,
+    coroutineScope: CoroutineScope? = null,
+) : SyncCoordinator {
+    private val scope = coroutineScope ?: CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var syncJob = SupervisorJob()
 
     private val _isSyncing = MutableStateFlow(false)
-    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+    override val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
     private val _isSyncingImages = MutableStateFlow(false)
-    val isSyncingImages: StateFlow<Boolean> = _isSyncingImages.asStateFlow()
+    override val isSyncingImages: StateFlow<Boolean> = _isSyncingImages.asStateFlow()
 
     private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 4)
-    val errors: SharedFlow<String> = _errors.asSharedFlow()
+    override val errors: SharedFlow<String> = _errors.asSharedFlow()
 
     init {
-        // Trigger sync whenever the signed-in user changes from null → non-null.
+        // Trigger sync whenever the signed-in user changes from null → non-null,
+        // or directly switches to a different non-null account.
         // Lives in a singleton scope so it catches sign-in regardless of which screen is active.
         scope.launch {
             var prevUid: String? = null
@@ -52,7 +67,7 @@ class SyncCoordinator(
                 val uid = user?.uid
                 if (uid == null) {
                     cancelAllSyncs()
-                } else if (prevUid == null) {
+                } else if (prevUid == null || prevUid != uid) {
                     syncData()
                     launch { syncImages() }
                 }
@@ -67,7 +82,7 @@ class SyncCoordinator(
     }
 
     /** Cancels any ongoing sync operations immediately. */
-    fun cancelAllSyncs() {
+    override fun cancelAllSyncs() {
         syncJob.cancel()
         syncJob = SupervisorJob()
         _isSyncing.value = false
@@ -75,7 +90,7 @@ class SyncCoordinator(
     }
 
     /** Full bidirectional sync (metadata then images). Used for periodic background sync. */
-    suspend fun sync() {
+    override suspend fun sync() {
         if (!canSync()) return
         syncData()
         syncImages()
@@ -85,7 +100,7 @@ class SyncCoordinator(
      * Phase 1: Syncs item metadata and categories from Firestore without downloading image files.
      * Fast; can be awaited before navigating.
      */
-    suspend fun syncData() {
+    override suspend fun syncData() {
         if (!canSync()) return
         if (_isSyncing.value) return
         val userId = authRepository.currentUser.value?.uid ?: return
@@ -112,7 +127,7 @@ class SyncCoordinator(
      * Phase 2: Uploads pending items (with photos) and downloads missing local image files.
      * Runs in the background.
      */
-    suspend fun syncImages() {
+    override suspend fun syncImages() {
         if (!canSync()) return
         if (_isSyncingImages.value) return
         val userId = authRepository.currentUser.value?.uid ?: return
